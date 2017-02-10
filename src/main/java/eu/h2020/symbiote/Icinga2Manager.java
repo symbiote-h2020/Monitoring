@@ -1,0 +1,146 @@
+package eu.h2020.symbiote;
+
+import java.util.Collection;
+
+import javax.annotation.PostConstruct;
+
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import eu.h2020.symbiote.beans.HostBean;
+import eu.h2020.symbiote.icinga2.datamodel.ModelConverter;
+import eu.h2020.symbiote.rest.RestProxy;
+
+@Component
+public class Icinga2Manager {
+
+	 private static final Log logger = LogFactory.getLog(Icinga2Manager.class);
+	 private RestProxy icinga2client = new RestProxy();
+	 
+	 @Value("${symbiote.icinga2.api.url}")
+	 private String url;
+
+	 @Value("${symbiote.icinga2.api.user}")
+	 private String user;
+
+	 @Value("${symbiote.icinga2.api.password}")
+	 private String password; 
+	 
+		
+	 @PostConstruct
+	 private void init() {
+		 icinga2client.setBasicAuthenticationUser(user);
+		 icinga2client.setBasicAuthenticationPassword(password);
+	 }
+	 
+	 public String getURL() {
+		 return url;
+	 }
+
+	 public void setURL(String url) {
+		 this.url = url;
+	 }
+		
+	 public Collection<HostBean> getHosts(){
+		Collection<HostBean> collection  = null;
+		Boolean exception = false;
+		String targetUrl = url + "/objects/hosts?attrs=name&attrs=address&attrs=active&attrs=last_check&attrs=groups";
+		logger.info("URL build: " + targetUrl);
+		 
+		 try {
+				icinga2client.setUrl(targetUrl);
+				icinga2client.setMethod("GET");
+				icinga2client.execute();
+				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
+					String response = icinga2client.getContentResponse();
+					logger.info("PAYLOAD: " + response);		
+					System.out.println();
+					collection = ModelConverter.jsonHostsToObject(response);
+				}
+				else {
+					logger.warn("Execution of GET method to: " + targetUrl + " failed: " + icinga2client.getStatusResponse());
+					exception = true;
+				}
+
+			} catch(Exception e) {
+				logger.warn("Error trying to parse JSON response from Icinga2: " + targetUrl + " Exception: " + e.getMessage());
+				exception = true;
+			}
+			
+			if(exception) return null;
+			return collection;
+	 }
+	 
+	 public HostBean getHost(String hostname){
+			HostBean host  = null;
+			Boolean exception = false;
+			String targetUrl = url + "/objects/hosts?host=" + hostname + "&attrs=name&attrs=address&attrs=active&attrs=last_check&attrs=groups";
+//			String targetUrl = url + "/objects/hosts";
+			logger.info("URL build: " + targetUrl);
+			
+			try {
+				icinga2client.setUrl(targetUrl);
+				icinga2client.setMethod("GET");
+				icinga2client.execute();
+				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
+					String response = icinga2client.getContentResponse();
+					logger.info("PAYLOAD: " + response);		
+					System.out.println();
+					host = ModelConverter.jsonHostToObject(response);
+				}
+				else {
+					logger.warn("Execution failed of GET method to: " + targetUrl);
+					logger.warn("HTTP STATUS: " + icinga2client.getStatusResponse() + " - " + 
+							icinga2client.getStatusMessage());
+					exception = true;
+				}
+
+			} catch(Exception e) {
+				logger.warn("Error trying to parse JSON response from Icinga2: " + targetUrl + " Exception: " + e.getMessage());
+				exception = true;
+			}
+			
+			if(exception) return null;
+			return host;
+	 }
+	 
+	 
+	 public HostBean getServicesFromHost(String hostname){
+			HostBean host  = null;
+			Boolean exception = false;
+			String targetUrl = url + "/objects/services";
+//			String targetUrl = url + "/objects/hosts";
+			logger.info("URL build: " + targetUrl);
+			
+			try {
+				icinga2client.setUrl(targetUrl);
+				icinga2client.setMethod("POST");
+				icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: GET");
+				icinga2client.setContent("{\"joins\": [\"host.name\", \"host.address\"], \"filter\": \"match(\\\"" + hostname + "\\\",host.name)\", \"attrs\": [\"display_name\",\"active\",\"check_interval\",\"check_command\",\"last_check\",\"last_check_result\"] }");
+				System.out.println("BODY REQUEST: " + icinga2client.getContent());
+				icinga2client.execute();
+				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
+					String response = icinga2client.getContentResponse();
+					logger.info("PAYLOAD: " + response);		
+					System.out.println();
+					host = ModelConverter.jsonHostToObject(response);
+				}
+				else {
+					logger.warn("Execution failed of GET method to: " + targetUrl);
+					logger.warn("HTTP STATUS: " + icinga2client.getStatusResponse() + " - " + 
+							icinga2client.getStatusMessage());
+					exception = true;
+				}
+
+			} catch(Exception e) {
+				logger.warn("Error trying to parse JSON response from Icinga2: " + targetUrl + " Exception: " + e.getMessage());
+				exception = true;
+			}
+			
+			if(exception) return null;
+			return host;
+	 }
+}
