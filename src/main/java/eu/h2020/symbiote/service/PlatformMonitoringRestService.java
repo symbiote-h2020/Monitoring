@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import eu.h2020.symbiote.Icinga2Manager;
 import eu.h2020.symbiote.beans.HostBean;
+import eu.h2020.symbiote.beans.ServiceBean;
 
 /**
  * This class implements the rest interfaces. Initially created by jose
@@ -32,26 +33,29 @@ public class PlatformMonitoringRestService {
 
   @RequestMapping(method = RequestMethod.GET, path = "/hosts")
   public List<HostBean> getHosts() {
-    List<HostBean>result = (List<HostBean>) icinga2Manager.getHosts();
-    return result;
+	  List<HostBean>result = (List<HostBean>) icinga2Manager.getHosts();
+	  return result;
   }
-  
+
   @RequestMapping(method = RequestMethod.GET, path = "/host/{hostname:.+}")
   @ResponseBody
   public HostBean getHost(@PathVariable("hostname") String hostname) {
-    logger.info("START OF getHost");
-    HostBean result = icinga2Manager.getHost(hostname);
-    logger.info("END OF getHosts, result "+ result);
-    return result;
+	  HostBean result = icinga2Manager.getHost(hostname);
+	  return result;
   }
-  
+
   @RequestMapping(method = RequestMethod.GET, path = "/host/{hostname:.+}/services")
   @ResponseBody
-  public HostBean getServicesFromHost(@PathVariable("hostname") String hostname) {
-    logger.info("START OF getHost");
-    HostBean result = icinga2Manager.getServicesFromHost(hostname);
-    logger.info("END OF getHosts, result "+ result);
-    return result;
+  public List<ServiceBean> getServicesFromHost(@PathVariable("hostname") String hostname) {
+	  List<ServiceBean> result = (List<ServiceBean>) icinga2Manager.getServicesFromHost(hostname);
+	  return result;
+  }
+  
+  @RequestMapping(method = RequestMethod.GET, path = "/host/{hostname:.+}/service/{service:.+}")
+  @ResponseBody
+  public ServiceBean getServiceFromHost(@PathVariable("hostname") String hostname, @PathVariable("service") String service) {
+	  ServiceBean result = icinga2Manager.getServiceFromHost(hostname, service);
+	  return result;
   }
 
 

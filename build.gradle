@@ -40,14 +40,23 @@ targetCompatibility = 1.8
 dependencies {
     compile('org.springframework.cloud:spring-cloud-starter-config')
     compile('org.springframework.cloud:spring-cloud-starter-eureka')
-    compile('org.springframework.cloud:spring-cloud-starter-zipkin') // Causes the java.net.ConnectException
+    //compile('org.springframework.cloud:spring-cloud-starter-zipkin') // Causes the java.net.ConnectException
     compile('org.springframework.cloud:spring-cloud-starter-stream-rabbit')
     compile('org.springframework.boot:spring-boot-starter-data-rest')
     compile('org.springframework.boot:spring-boot-starter-web')
-    compile('org.springframework.boot:spring-boot-starter-data-mongodb')
+   // compile('org.springframework.boot:spring-boot-starter-data-mongodb')
 
     testCompile('org.springframework.boot:spring-boot-starter-test')
 
+    compile('org.springframework.cloud:spring-cloud-starter-feign')  
+    compile('com.netflix.feign:feign-gson:8.18.0')
+    //http libraries to develop icinga2 REST client
+    compile ('org.apache.commons:commons-lang3:3.5')
+    compile ('commons-httpclient:commons-httpclient:3.1')
+	compile ('org.apache.httpcomponents:httpcore:4.4.6')
+    compile ('org.apache.httpcomponents:httpmime:4.5.2')
+    compile ('commons-configuration:commons-configuration:1.10')
+    compile ('org.eclipse.persistence:org.eclipse.persistence.moxy:2.5.0')
 
     // Use JUnit4
     testCompile 'junit:junit:4.12'

@@ -21,6 +21,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import eu.h2020.symbiote.beans.HostBean;
+import eu.h2020.symbiote.beans.ServiceBean;
 
 public class ModelConverter {
 	 private static final Log logger = LogFactory.getLog(ModelConverter.class);
@@ -150,6 +151,23 @@ public class ModelConverter {
 				hostsList.add(hosts.getResults()[i].getAttrs());
 			}
 			return hostsList;
+		}
+		
+		public static Collection<ServiceBean> jsonServicesToObject(String jsonString){
+			JsonServicesResponse services =  gson.fromJson(jsonString, JsonServicesResponse.class);
+			List<ServiceBean> servicesList = new ArrayList<>();
+			for (int i = 0; i<services.getResults().length;i++){
+				servicesList.add(services.getResults()[i].getAttrs());
+			}
+			return servicesList;
+		}
+		
+		public static ServiceBean jsonServiceToObject(String jsonString) {
+			JsonServicesResponse services =  gson.fromJson(jsonString, JsonServicesResponse.class);
+			if (services.getResults().length == 1){
+				return services.getResults()[0].getAttrs();
+			}
+			return null;
 		}
 
 }
