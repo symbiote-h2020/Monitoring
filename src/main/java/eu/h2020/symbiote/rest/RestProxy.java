@@ -9,12 +9,15 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
@@ -50,7 +53,7 @@ public class RestProxy {
     public static String GET = "GET";
 	private static String var_bracket = "#{";
 	private static String end_var_bracket = "}";
-	private static String token_var_prefix = "TOKEN_";
+	
    
     String[] uriParameterNames;
 	String[] uriParameterValues;
@@ -73,6 +76,8 @@ public class RestProxy {
 	String keyStorePassword;
 	String keyStoreType;
 	String certificateSupportedProtocols;
+	boolean disableSSLValidation;
+	boolean enableSSL;
 
 	String contentResponse;
 	int statusResponse;
@@ -170,6 +175,25 @@ public class RestProxy {
 		return statusMessage;
 	}
 
+	
+	public boolean isDisableSSLValidation() {
+		return disableSSLValidation;
+	}
+
+	
+	
+	public boolean isEnableSSL() {
+		return enableSSL;
+	}
+
+	public void setEnableSSL(boolean enableSSL) {
+		this.enableSSL = enableSSL;
+	}
+
+	public void setDisableSSLValidation(boolean disableSSLValidation) {
+		this.disableSSLValidation = disableSSLValidation;
+	}
+
 	private HttpClientContext getContextForBasicAuthentication() {
 		HttpClientContext context = null; 
 		if (basicAuthenticationUser!=null){
@@ -198,6 +222,7 @@ public class RestProxy {
 		            instream.close();
 		        }
 				sslContext = SSLContexts.custom().loadKeyMaterial(keyStore, keyStorePassword.toCharArray()).build();
+				 
 			} catch (KeyManagementException  e) {
 				LOGGER.error("Error with certificates", e);
 				throw new Exception(e.getMessage());
@@ -217,8 +242,18 @@ public class RestProxy {
 				LOGGER.error("Error with certificates", e);
 				throw new Exception(e.getMessage());
 			}
-
 			sslsf = new SSLConnectionSocketFactory(sslContext) ;
+		}else{
+			if (isEnableSSL()){
+				if (isDisableSSLValidation()){
+					SSLContext sslContext = SSLContext.getInstance("SSL");
+					TrustManager[] tm = {new RelaxedX509TrustManager()};
+					sslContext.init(null /*keymanager*/, tm, new SecureRandom());
+					sslsf = new SSLConnectionSocketFactory(sslContext) ;
+				}else{
+					throw new Exception("TO BE IMPLEMENTED");
+				}
+			}
 		}
 		return sslsf;		
 	}
@@ -308,7 +343,6 @@ public class RestProxy {
 			//To be removed, when we will include the exception on the workflow.
 			String fullurl = buidFullURL();
 			LOGGER.info("URL TO EXECUTE "+fullurl);
-			System.out.println("RestProxy(): URL TO EXECUTE "+fullurl);
 			HttpRequestBase request;
 			if ("GET".equals(method)) request = new HttpGet(fullurl);
 			else if ("POST".equals(method)) request = obtainPost(fullurl);
@@ -320,7 +354,8 @@ public class RestProxy {
 			
 			HttpClientContext context = getContextForBasicAuthentication();
 			if ((sslsf != null) && (context!=null)){
-				throw new Exception("Both, certificate and basic authentication are beeing used and it is not allowed");
+				if (!isEnableSSL())
+					throw new Exception("Both, certificate and basic authentication are beeing used and it is not allowed");
 			}
 			
 			HttpClient httpclient=(sslsf!=null)?HttpClients.custom().setSSLSocketFactory(sslsf).build():HttpClientBuilder.create().build();
@@ -353,11 +388,9 @@ public class RestProxy {
 			HttpResponse response =(context!=null)?httpclient.execute(request, context):httpclient.execute(request);
 			
 			LOGGER.info("Result status:" +response.getStatusLine().getStatusCode()+ " -- "+response.getStatusLine().getReasonPhrase());
-			System.out.println("RestProxy(): Result status:" +response.getStatusLine().getStatusCode()+ " -- "+response.getStatusLine().getReasonPhrase());
 			statusResponse = response.getStatusLine().getStatusCode();
 			statusMessage = response.getStatusLine().getReasonPhrase();
 			
-			StringBuffer result = new StringBuffer();
 			if (response.getEntity() != null){
 //				String str_response = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
 				contentResponse = new Scanner(response.getEntity().getContent()).useDelimiter("\\A").next();
@@ -365,15 +398,13 @@ public class RestProxy {
 		    
 		    if (response instanceof CloseableHttpResponse) ((CloseableHttpResponse)response).close(); 
 		    if (httpclient instanceof CloseableHttpClient) ((CloseableHttpClient)httpclient).close(); 
-	  		System.out.println(result);
 	  		
 		} catch (Exception e) {
 			LOGGER.error("RestProxy(): ERROR!!!: "+ e.toString());
-			System.out.println("RestProxy(): ERROR!!!!: "+ e.toString());
 		}
 	}
 	
-	public static void main (String[] args) throws Exception {
+/*	public static void main (String[] args) throws Exception {
 		RestProxy restProxy = new RestProxy();
 		restProxy.setUrl("https://VTSS031.cs1local:5665/v1/objects/hosts");
         restProxy.setBasicAuthenticationUser("user");
@@ -390,6 +421,13 @@ public class RestProxy {
         LOGGER.info("STATUS RESPONSE: " + restProxy.getStatusResponse());
         LOGGER.info("CONTENT RESPONSE: " + restProxy.getContentResponse());
         LOGGER.info("*****************************************************");
+	}*/
+	class RelaxedX509TrustManager implements X509TrustManager {
+	    public boolean isClientTrusted(java.security.cert.X509Certificate[] chain){ return true; }
+	    public boolean isServerTrusted(java.security.cert.X509Certificate[] chain){ return true; }
+	    public java.security.cert.X509Certificate[] getAcceptedIssuers() { return null; }
+	    public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String input) {}
+	    public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String input) {}
 	}
 
 }

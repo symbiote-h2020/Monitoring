@@ -35,6 +35,8 @@ public class Icinga2Manager {
 	 private void init() {
 		 icinga2client.setBasicAuthenticationUser(user);
 		 icinga2client.setBasicAuthenticationPassword(password);
+		 icinga2client.setEnableSSL(true);
+		 icinga2client.setDisableSSLValidation(true);
 	 }
 	 
 	 public String getURL() {
