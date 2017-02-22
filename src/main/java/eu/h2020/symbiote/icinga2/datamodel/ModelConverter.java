@@ -169,5 +169,40 @@ public class ModelConverter {
 			}
 			return null;
 		}
+		
+		public static JsonDeleteMessageIcingaResult jsonDeleteMessageToObject(String jsonString){
+			JsonDeleteErrorIcingaResponse error = null;
+			JsonDeleteMessageIcingaResponse message = null;
+			boolean isDeleteOk = true;
+			try {
+				error = gson.fromJson(jsonString, JsonDeleteErrorIcingaResponse.class);
+				if (error.getResults()[0].getErrors() != null){
+					//the object has value in errors attribute
+					isDeleteOk = false;
+				}
+			}
+			catch (Exception e){
+				logger.error("Error converting object to JSON: " + e.getMessage());
+				return null;
+			}
+			
+			if (isDeleteOk){
+				message = gson.fromJson(jsonString, JsonDeleteMessageIcingaResponse.class);
+				return message.getResults()[0];
+			}
+			else {
+				return error.getResults()[0];
+			}
+			
+			
+		}
+
+		public static JsonUpdatedObjectMessageResult jsonUpdateMessageToObject(String jsonString) {
+			JsonUpdatedObjectMessageResponse response =  gson.fromJson(jsonString, JsonUpdatedObjectMessageResponse.class);
+			if (response.getResults().length == 1){
+				return response.getResults()[0];
+			}
+			return null;
+		}
 
 }

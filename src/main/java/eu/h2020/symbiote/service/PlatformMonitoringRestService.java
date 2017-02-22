@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import eu.h2020.symbiote.Icinga2Manager;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
+import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
+import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
 
 /**
  * This class implements the rest interfaces. Initially created by jose
@@ -58,6 +60,36 @@ public class PlatformMonitoringRestService {
 	  return result;
   }
 
+//  @RequestMapping(method = RequestMethod.PUT, path = "/hostgroups/{hostgroup:.+}")
+//  @ResponseBody
+//  public HostGroupBean addHostGroup(@PathVariable("hostgroup") String hostgroup){
+//	  HostGroupBean result = null;
+//	  //TODO to be implemented
+//	  return result;
+//  }
+  
+  @RequestMapping(method = RequestMethod.DELETE, path = "/host/{hostname:.+}")
+  @ResponseBody
+  public JsonDeleteMessageIcingaResult deleteHost(@PathVariable("hostname") String hostname) {
+	  JsonDeleteMessageIcingaResult result = icinga2Manager.deleteHost(hostname);
+	  return result;
+  }
+
+  @RequestMapping(method = RequestMethod.DELETE, path = "/host/{hostname:.+}/service/{service:.+}")
+  @ResponseBody
+  public JsonDeleteMessageIcingaResult deleteServiceFromHost(@PathVariable("hostname") String hostname, @PathVariable("service") String service) {
+	  JsonDeleteMessageIcingaResult result = icinga2Manager.deleteServiceFromHost(hostname, service);
+	  return result;
+  }
+  
+  @RequestMapping(method = RequestMethod.POST, path = "/host/{hostname:.+}/address/{address:.+}")
+  @ResponseBody
+  public JsonUpdatedObjectMessageResult updateHostAddress(@PathVariable("hostname") String hostname, @PathVariable("address") String address) {
+	  JsonUpdatedObjectMessageResult result = icinga2Manager.updateHostAddress(hostname, address);
+	  return result;
+  }
+
+  
 
 
 }

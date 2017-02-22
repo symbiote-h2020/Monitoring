@@ -26,6 +26,7 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
@@ -179,8 +180,6 @@ public class RestProxy {
 	public boolean isDisableSSLValidation() {
 		return disableSSLValidation;
 	}
-
-	
 	
 	public boolean isEnableSSL() {
 		return enableSSL;
@@ -270,13 +269,19 @@ public class RestProxy {
 		return put;
 	}
 	
+	private HttpRequestBase obtainDelete(String fullurl) throws Exception{
+		HttpDelete delete = new HttpDelete(fullurl); 
+		configureHttpRequestBase(delete);
+		return delete;
+	}
+	
 	private HttpRequestBase obtainPatch(String fullurl) throws Exception{
 		HttpPatch patch = new HttpPatch(fullurl);
 		configureHttpRequestBase(patch);
 		return patch;
 	}
 
-	//internal method to configure POST, PUT, PATCH
+	//internal method to configure POST, PUT, PATCH, DELETE
 	private void configureHttpRequestBase(HttpRequestBase httpRequestBase) throws Exception{
 
 		StringEntity input = null;
@@ -348,7 +353,8 @@ public class RestProxy {
 			else if ("POST".equals(method)) request = obtainPost(fullurl);
 			else if ("PUT".equals(method)) request = obtainPut(fullurl);
 			else if ("PATCH".equals(method)) request = obtainPatch(fullurl);
-			else throw new Exception("Unknown method called "+method+"; only GET, POST and PUT are implemented");
+			else if ("DELETE".equals(method)) request = obtainDelete(fullurl);
+			else throw new Exception("Unknown method called "+method+"; only GET, POST, PUT and DELTED are implemented");
 			
 			SSLConnectionSocketFactory sslsf = getConnectionSocketForCertificateAuthentication();
 			
