@@ -1,18 +1,22 @@
 package eu.h2020.symbiote;
 
 import java.util.Collection;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
+import eu.h2020.symbiote.beans.ResourceBean;
 import eu.h2020.symbiote.beans.ServiceBean;
+import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
 import eu.h2020.symbiote.icinga2.datamodel.ModelConverter;
@@ -33,6 +37,8 @@ public class Icinga2Manager {
 	 @Value("${symbiote.icinga2.api.password}")
 	 private String password; 
 	 
+	 @Autowired
+	  private ResourceRepository resourceRepository;
 		
 	 @PostConstruct
 	 private void init() {
@@ -291,7 +297,6 @@ public class Icinga2Manager {
 	 }
 
 	public JsonUpdatedObjectMessageResult updateHostAddress(String hostname, String address) {
-		// TODO Auto-generated method stub
 		
 		JsonUpdatedObjectMessageResult jsonMessage  = null;
 		Boolean exception = false;
@@ -326,4 +331,23 @@ public class Icinga2Manager {
 		return jsonMessage;
 	}
 	 	 
+	
+	  public List<ResourceBean> getResources() {
+		    return resourceRepository.findAll();
+		  }
+
+		//! Get a resource.
+		/*!
+		 * The getResource method retrieves \a ResourceBean identified by \a resourceId 
+		 * from the mondodb database and will return it.
+		 *
+		 * \param resourceId id from the resource to be retrieved from the database
+		 * \return \a getResource returns the \a ResourceBean, 
+		 */
+		  public ResourceBean getResource(String resourceId) {
+			if (!"".equals(resourceId)) {
+			     return resourceRepository.getByInternalId(resourceId);
+			}
+			return null;
+		  }
 }
