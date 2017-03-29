@@ -2,7 +2,7 @@ package eu.h2020.symbiote.db;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import eu.h2020.symbiote.beans.ResourceBean;
+import eu.h2020.symbiote.cloud.model.CloudResource;
 
 /**
  * Created by jose on 27/09/16.
@@ -11,7 +11,7 @@ import eu.h2020.symbiote.beans.ResourceBean;
  * \brief ResourceRepository interface to connect with the mongodb database where the registered resources will be stored
  * within the platform
  **/
-public interface ResourceRepository extends MongoRepository<ResourceBean, String> {
+public interface ResourceRepository extends MongoRepository<CloudResource, String> {
 
 	//! Retrieves a \a ResourceBean.
 	/*!
@@ -21,6 +21,6 @@ public interface ResourceRepository extends MongoRepository<ResourceBean, String
 	 * \param resourceId id from the resource to be retrieved 
 	 * \return \a getByInternalId returns the \a ResourceBean identified by  \a resourceId
 	 */
-  ResourceBean getByInternalId(String resourceId);
+  CloudResource getByInternalId(String resourceId);
 
 }

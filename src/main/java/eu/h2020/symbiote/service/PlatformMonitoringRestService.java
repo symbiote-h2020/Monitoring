@@ -5,6 +5,8 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import eu.h2020.symbiote.Icinga2Manager;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringResource;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
 
@@ -87,6 +90,27 @@ public class PlatformMonitoringRestService {
   public JsonUpdatedObjectMessageResult updateHostAddress(@PathVariable("hostname") String hostname, @PathVariable("address") String address) {
 	  JsonUpdatedObjectMessageResult result = icinga2Manager.updateHostAddress(hostname, address);
 	  return result;
+  }
+  
+  @Scheduled(cron = "${symbiote.crm.publish.period}")
+  public void publishMonitoringInfo2Crm(){
+	  List<HostBean> hosts = (List<HostBean>) icinga2Manager.getHosts();
+
+	  for (HostBean host : hosts){
+		  logger.info("Number of hosts: " + hosts.size());
+		  List<ServiceBean> services = (List<ServiceBean>) icinga2Manager.getServicesFromHost(host.getName());
+		  CloudMonitoringResource[] message = new CloudMonitoringResource[services.size()];
+		  logger.info("Number of services in host " + host.getName() + " : " + services.size());
+		  int i = 0;
+		  for (ServiceBean service : services){
+			  message[i] = service.toCloudMonitoringResource();
+			  logger.info("Publishing info about service " + message[i].getDisplay_name() + " from host " + host.getName());
+			  //TODO publish to cmr
+			  i++;
+			  
+		  }
+	  }
+	  
   }
 
   

@@ -1,8 +1,8 @@
 package eu.h2020.symbiote.beans;
 
-import com.google.gson.annotations.Expose;
-
 import org.springframework.data.annotation.Id;
+
+import com.google.gson.annotations.Expose;
 
 /**
  * Created by jose on 27/09/16.

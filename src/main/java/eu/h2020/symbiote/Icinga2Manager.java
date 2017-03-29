@@ -1,7 +1,9 @@
 package eu.h2020.symbiote;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -14,8 +16,8 @@ import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
-import eu.h2020.symbiote.beans.ResourceBean;
 import eu.h2020.symbiote.beans.ServiceBean;
+import eu.h2020.symbiote.cloud.model.CloudResource;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
@@ -28,6 +30,9 @@ public class Icinga2Manager {
 	 private static final Log logger = LogFactory.getLog(Icinga2Manager.class);
 	 private RestProxy icinga2client = new RestProxy();
 	 
+	 //TODO define details
+	 private RestProxy crmClient = new RestProxy();
+	 
 	 @Value("${symbiote.icinga2.api.url}")
 	 private String url;
 
@@ -36,6 +41,7 @@ public class Icinga2Manager {
 
 	 @Value("${symbiote.icinga2.api.password}")
 	 private String password; 
+	 
 	 
 	 @Autowired
 	  private ResourceRepository resourceRepository;
@@ -331,23 +337,51 @@ public class Icinga2Manager {
 		return jsonMessage;
 	}
 	 	 
-	
-	  public List<ResourceBean> getResources() {
-		    return resourceRepository.findAll();
-		  }
+	 private List<CloudResource>  addOrUpdateInInternalRepository(List<CloudResource>  resources){
+		 return resources.stream().map(resource -> {
+			  CloudResource existingResource = resourceRepository.getByInternalId(resource.getInternalId());
+		      if (existingResource != null) {
+		    	  logger.info("update will be done");
+		      }
+		      return resourceRepository.save(resource);
+		 })
+	     .collect(Collectors.toList());
+	  }
 
-		//! Get a resource.
-		/*!
-		 * The getResource method retrieves \a ResourceBean identified by \a resourceId 
-		 * from the mondodb database and will return it.
-		 *
-		 * \param resourceId id from the resource to be retrieved from the database
-		 * \return \a getResource returns the \a ResourceBean, 
-		 */
-		  public ResourceBean getResource(String resourceId) {
-			if (!"".equals(resourceId)) {
-			     return resourceRepository.getByInternalId(resourceId);
-			}
-			return null;
+	  private List<CloudResource> deleteInInternalRepository(List<String> resourceIds){
+		  List<CloudResource>  result = new ArrayList<CloudResource>();
+		  for (String resourceId:resourceIds){
+			  CloudResource existingResource = resourceRepository.getByInternalId(resourceId);
+		      if (existingResource != null) {
+		    	  result.add(existingResource);
+		    	  resourceRepository.delete(resourceId);
+		      }
 		  }
+		  return result;
+	  }
+	  
+	public List<CloudResource> getResources() {
+		return resourceRepository.findAll();
+	}
+	
+
+	//! Get a resource.
+	/*!
+	 * The getResource method retrieves \a ResourceBean identified by \a resourceId 
+	 * from the mondodb database and will return it.
+	 *
+	 * \param resourceId id from the resource to be retrieved from the database
+	 * \return \a getResource returns the \a ResourceBean, 
+	 */
+	public CloudResource getResource(String resourceId) {
+		if (!"".equals(resourceId)) {
+			return resourceRepository.getByInternalId(resourceId);
+		}
+		return null;
+	}
+		  
+	
+	
+		 
+
 }

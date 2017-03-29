@@ -1,9 +1,10 @@
 package eu.h2020.symbiote;
 
-import com.mongodb.Mongo;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+
+import com.mongodb.Mongo;
 
 @Configuration
 @EnableMongoRepositories
