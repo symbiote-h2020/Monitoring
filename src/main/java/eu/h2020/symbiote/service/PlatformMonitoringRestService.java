@@ -99,11 +99,11 @@ public class PlatformMonitoringRestService {
 	  for (HostBean host : hosts){
 		  logger.info("Number of hosts: " + hosts.size());
 		  List<ServiceBean> services = (List<ServiceBean>) icinga2Manager.getServicesFromHost(host.getName());
-		  CloudMonitoringResource[] message = new CloudMonitoringResource[services.size()];
+		  ServiceBean[] message = new ServiceBean[services.size()];
 		  logger.info("Number of services in host " + host.getName() + " : " + services.size());
 		  int i = 0;
 		  for (ServiceBean service : services){
-			  message[i] = service.toCloudMonitoringResource();
+			  message[i] = service;
 			  logger.info("Publishing info about service " + message[i].getDisplay_name() + " from host " + host.getName());
 			  //TODO publish to cmr
 			  i++;
