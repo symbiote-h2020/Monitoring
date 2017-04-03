@@ -103,7 +103,7 @@ public class PlatformMonitoringRestService {
 		  for (ServiceBean service : services){
 			  message[i] = service;
 			  logger.info("Publishing info about service " + message[i].getDisplay_name() + " from host " + host.getName());
-			  //TODO publish to cmr
+			  //TODO publish to cmr only monitoring data
 			  i++;
 			  
 		  }
