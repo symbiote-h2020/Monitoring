@@ -66,8 +66,9 @@ public class IIFRestDummyServer {
 
   @Scheduled(cron = "${symbiote.crm.publish.period}")
   @RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.PUBLISH_MONITORING_DATA,  produces = "application/json", consumes = "application/json")
-  public @ResponseBody List<ServiceBean>  publishMonitoringData(@PathVariable(MonitoringConstants.PLATFORM_ID) String platformId) {
-	  logger.info("Publishing monitoring data for platform " + platformId);
+//  public @ResponseBody List<ServiceBean>  publishMonitoringData(@PathVariable(MonitoringConstants.PLATFORM_ID) String platformId) {
+  public @ResponseBody List<ServiceBean>  publishMonitoringData() {
+//	  logger.info("Publishing monitoring data for platform " + platformId);
 	  List<HostBean> hosts = (List<HostBean>) icinga2Manager.getHosts();
 	  List<ServiceBean> services = null;
 	  
