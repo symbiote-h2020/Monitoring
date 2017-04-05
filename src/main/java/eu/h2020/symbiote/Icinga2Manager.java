@@ -2,7 +2,10 @@ package eu.h2020.symbiote;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -22,8 +25,11 @@ import eu.h2020.symbiote.icinga2.datamodel.JsonCreateServiceOkResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
 import eu.h2020.symbiote.icinga2.datamodel.ModelConverter;
+import eu.h2020.symbiote.icinga2.utils.Icinga2Utils;
 import eu.h2020.symbiote.rest.RestProxy;
 import eu.h2020.symbiotelibraries.cloud.model.CloudResource;
+import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringDevice;
+import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 
 @Component
 public class Icinga2Manager {
@@ -499,6 +505,94 @@ public class Icinga2Manager {
 		 }		
 	}
 		  
+	private List<CloudMonitoringPlatform> publishMonitoringInfo2Cram(){
+		List<CloudResource> resources = resourceRepository.findAll();
+		List<CloudMonitoringPlatform> result = null;
+		if (resources != null){
+			Map<String, ArrayList<CloudMonitoringDevice>> map = new HashMap<String, ArrayList<CloudMonitoringDevice>>();
+			for (CloudResource resource : resources){
+				CloudMonitoringDevice device = this.getMonitoringInfoFromDevice(resource);
+				if (map.isEmpty() || map.get(resource.getInternalId()) == null){
+					ArrayList<CloudMonitoringDevice> devices = new ArrayList<>();
+					devices.add(device);
+					map.put(resource.getInternalId(), devices);
+				}
+				else {
+					//the platform exists in the map, add the new device
+					map.get(resource.getInternalId()).add(device);
+				}
+			}
+
+			//Convert the map to list of cloudMonitoringPlatform object to return it
+			if (!map.isEmpty()){
+				result = new ArrayList<CloudMonitoringPlatform>();
+				Iterator it = map.entrySet().iterator();
+				while (it.hasNext()) {
+					Map.Entry pair = (Map.Entry)it.next();
+					CloudMonitoringPlatform platform = new CloudMonitoringPlatform();
+					platform.setInternalId((String) pair.getKey());
+					List<CloudMonitoringDevice> list = (List<CloudMonitoringDevice>)pair.getValue();
+					platform.setDevices((CloudMonitoringDevice[]) list.toArray());
+					it.remove(); // avoids a ConcurrentModificationException
+					result.add(platform);
+				}	
+			}
+			 
+		}
+		return result;
+	}
+	
+	
+	private CloudMonitoringDevice getMonitoringInfoFromDevice(CloudResource resource){
+		CloudMonitoringDevice monitoringDevice = null;
+		
+		String hostname = this.getHostnameByIpAddress(resource.getHost());
+		if (hostname == null || hostname.equalsIgnoreCase("")){
+			 //Verify that the host is registered in Icinga2 server
+			 logger.warn("The platform with ip address " + resource.getHost() + " is not registered in Monitoring environment. Icinga agent must be installed");
+			 return null;
+		 }
+		 else {
+			 	ServiceBean service = null;
+				Boolean exception = false;
+				String targetUrl = url + "/objects/services";
+				logger.info("URL build: " + targetUrl);
+				
+				try {
+					icinga2client.setUrl(targetUrl);
+					icinga2client.setMethod("POST");
+					icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: GET");
+					icinga2client.setContent("{\"joins\": [\"host.name\", \"host.address\"], \"filter\": \"match(\\\"" + hostname + "\\\",host.name) && match(\"" + resource.getName() + "\",service.name)\", \"attrs\": [\"display_name\",\"active\",\"check_interval\",\"check_command\",\"last_check\",\"last_check_result\"] }");
+					System.out.println("BODY REQUEST: " + icinga2client.getContent());
+					icinga2client.execute();
+					if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
+						String response = icinga2client.getContentResponse();
+						logger.info("PAYLOAD: " + response);		
+						System.out.println();
+						service = ModelConverter.jsonServiceToObject(response);
+						monitoringDevice = new CloudMonitoringDevice();
+						monitoringDevice.setTimestamp(service.getLast_check());
+						monitoringDevice.setId(resource.getId());
+						monitoringDevice.setAvailability(Icinga2Utils.getAvailability(service.getLast_check_result().getOutput()));
+						monitoringDevice.setLoad(Icinga2Utils.getLoad(service.getLast_check_result().getOutput()));
+					}
+					else {
+						logger.warn("Execution failed of POST method to: " + targetUrl);
+						logger.warn("HTTP STATUS: " + icinga2client.getStatusResponse() + " - " + 
+								icinga2client.getStatusMessage());
+						exception = true;
+					}
+
+				} catch(Exception e) {
+					logger.warn("Error trying to parse JSON response from Icinga2: " + targetUrl + " Exception: " + e.getMessage());
+					exception = true;
+				}
+				
+				if(exception) return null;
+				return monitoringDevice;
+		 }
+				
+	}
 	
 	
 		 

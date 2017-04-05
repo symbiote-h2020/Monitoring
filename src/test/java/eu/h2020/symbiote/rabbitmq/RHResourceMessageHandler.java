@@ -26,17 +26,18 @@ import eu.h2020.symbiotelibraries.cloud.model.CloudResource;
  * done with the data. 
  **/
 @Component
-public class RAPResourceMessageHandler {
+public class RHResourceMessageHandler {
 
-    private static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rh.reg";
+	private static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rh.reg";
     private static final String EXCHANGE_NAME_UNREGISTRATION = "symbIoTe.rh.unreg";
     private static final String EXCHANGE_NAME_UPDATED = "symbIoTe.rh.update";
-    private static final String RESOURCE_REGISTRATION_QUEUE_NAME = "symbIoTe.rap.registrationHandler.register_resources";
-    private static final String RESOURCE_UNREGISTRATION_QUEUE_NAME = "symbIoTe.rap.registrationHandler.unregister_resources";
-    private static final String RESOURCE_UPDATED_QUEUE_NAME = "symbIoTe.rap.registrationHandler.update_resources";
+	
+	private static final String RESOURCE_REGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.register_resources";
+	private static final String RESOURCE_UNREGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.unregister_resources";
+	private static final String RESOURCE_UPDATED_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.update_resources";
+	
 
-
-    private static Log logger = LogFactory.getLog(RAPResourceMessageHandler.class);
+    private static Log logger = LogFactory.getLog(RHResourceMessageHandler.class);
     
 	@Autowired
 	private ApplicationContext applicationContext;
@@ -48,7 +49,7 @@ public class RAPResourceMessageHandler {
         	applicationContext.getAutowireCapableBeanFactory().autowireBean(rabbitMQMessageHandler);
         	rabbitMQMessageHandler.sendMessage(resources);
         } catch (Exception e) {
-            logger.error("Fatal error sending data to EXCHANGE_NAME: "+EXCHANGE_NAME_REGISTRATION+", RESOURCE_REGISTRATION_QUEUE_NAME:"+RESOURCE_REGISTRATION_QUEUE_NAME, e);
+            logger.error("Fatal error sending data to EXCHANGE_NAME: " + EXCHANGE_NAME_REGISTRATION+", RESOURCE_REGISTRATION_QUEUE_NAME:"+RESOURCE_REGISTRATION_QUEUE_NAME, e);
         }
     }
 
@@ -70,7 +71,7 @@ public class RAPResourceMessageHandler {
         	applicationContext.getAutowireCapableBeanFactory().autowireBean(rabbitMQMessageHandler);
         	rabbitMQMessageHandler.sendMessage(resources);
         } catch (Exception e) {
-            logger.error("Fatal error sending data to EXCHANGE_NAME: "+EXCHANGE_NAME_UPDATED+", RESOURCE_UPDATED_QUEUE_NAME:"+RESOURCE_UPDATED_QUEUE_NAME, e);
+            logger.error("Fatal error sending data to EXCHANGE_NAME: " + EXCHANGE_NAME_UPDATED+", RESOURCE_UPDATED_QUEUE_NAME:"+RESOURCE_UPDATED_QUEUE_NAME, e);
         }
     }
 

@@ -48,7 +48,7 @@ public class GenericRabbitMQFanoutMessageHandler <T>{
      * @throws Exception
      */
     public void sendMessage(T object) throws Exception {
-        logger.info("START OF sendMessage to queue"+queueName);
+        logger.info("START OF sendMessage to queue: "+queueName);
         Gson gson = new Gson();
         String objectInJson = gson.toJson(object);
 

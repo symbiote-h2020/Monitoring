@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import eu.h2020.symbiote.core.model.Location;
+import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
 import eu.h2020.symbiotelibraries.cloud.model.CloudResource;
 import eu.h2020.symbiotelibraries.cloud.model.CloudResourceParams;
 
@@ -22,8 +23,7 @@ public class MonitoringApplicationTests {
 	//urlformcram localhost
 
 	@Autowired
-	private Icinga2Manager icinga2Manager;
-
+	 private RHResourceMessageHandler rhResourceRegistrationMessageHandler;
 	@Test
 	public void contextLoads() {
 	}
@@ -31,15 +31,13 @@ public class MonitoringApplicationTests {
 	
 	@Test
 	public void createResource(){
-		//create resource
+		//create resource and add it to a list
 		CloudResource resource = getTestResource();
 		List<CloudResource> resources = new ArrayList<CloudResource>();
-		resources.add(resource);
-				
-		//add the list to mongoDB
-		icinga2Manager.addResources(resources);
-
-//		sendResourcesRegistrationMessage(List<CloudResource> resources)
+		resources.add(resource);	
+		
+		//send the message using RabbitMQ
+		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
 	}
 		
 	

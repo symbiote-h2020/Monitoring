@@ -23,6 +23,8 @@ import com.google.gson.GsonBuilder;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
 import eu.h2020.symbiote.icinga2.datamodel.host.ip.JsonHostByIpResponse;
+import eu.h2020.symbiote.icinga2.datamodel.service.JsonServiceLastCheckResult;
+import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringDevice;
 
 public class ModelConverter {
 	 private static final Log logger = LogFactory.getLog(ModelConverter.class);

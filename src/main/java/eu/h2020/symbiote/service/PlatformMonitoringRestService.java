@@ -90,7 +90,7 @@ public class PlatformMonitoringRestService {
 	  return result;
   }
   
-  @Scheduled(cron = "${symbiote.crm.publish.period}")
+//  @Scheduled(cron = "${symbiote.crm.publish.period}")
   public void publishMonitoringInfo2Crm(){
 	  List<HostBean> hosts = (List<HostBean>) icinga2Manager.getHosts();
 
