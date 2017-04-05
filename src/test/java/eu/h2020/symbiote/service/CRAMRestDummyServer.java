@@ -2,15 +2,12 @@ package eu.h2020.symbiote.service;
 
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -19,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import eu.h2020.symbiote.Icinga2Manager;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
-import eu.h2020.symbiote.cloud.model.CloudResource;
 import eu.h2020.symbiote.constants.MonitoringConstants;
 
 
@@ -30,8 +26,8 @@ import eu.h2020.symbiote.constants.MonitoringConstants;
 @RestController
 @WebAppConfiguration
 @RequestMapping("/testiif")
-public class IIFRestDummyServer {
-  private static final Log logger = LogFactory.getLog(IIFRestDummyServer.class);
+public class CRAMRestDummyServer {
+  private static final Log logger = LogFactory.getLog(CRAMRestDummyServer.class);
   
   @Autowired
   private Icinga2Manager icinga2Manager;
@@ -64,7 +60,7 @@ public class IIFRestDummyServer {
 //	  return resources;
 //  }
 
-  @Scheduled(cron = "${symbiote.crm.publish.period}")
+//  @Scheduled(cron = "${symbiote.crm.publish.period}")
   @RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.PUBLISH_MONITORING_DATA,  produces = "application/json", consumes = "application/json")
 //  public @ResponseBody List<ServiceBean>  publishMonitoringData(@PathVariable(MonitoringConstants.PLATFORM_ID) String platformId) {
   public @ResponseBody List<ServiceBean>  publishMonitoringData() {
@@ -82,6 +78,8 @@ public class IIFRestDummyServer {
 			  //TODO take in account the mongoDB format, publish only the devices that exists in mongoDB
 			  i++;			  
 		  }
+		  
+		  //object o  --> rest endpoint
 		  
 	  }
 	  return services;

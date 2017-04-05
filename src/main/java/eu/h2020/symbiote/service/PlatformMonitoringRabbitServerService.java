@@ -1,5 +1,6 @@
 package eu.h2020.symbiote.service;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import org.springframework.amqp.core.ExchangeTypes;
@@ -8,11 +9,15 @@ import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Headers;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 
+import eu.h2020.symbiote.Icinga2Manager;
 import eu.h2020.symbiote.beans.ResourceBean;
+import eu.h2020.symbiotelibraries.cloud.model.CloudResource;
 
 //@Service
 public class PlatformMonitoringRabbitServerService {
@@ -26,6 +31,8 @@ public class PlatformMonitoringRabbitServerService {
 	private static final String RESOURCE_UNREGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.unregister_resources";
 	private static final String RESOURCE_UPDATED_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.update_resources";
 
+	
+	@Autowired Icinga2Manager icinga2Manager;
 	/**
 	 * Spring AMQP Listener for resource registration requests. This method is invoked when Registration
 	 * Handler sends a resource registration request and it is responsible for forwarding the message
@@ -42,9 +49,9 @@ public class PlatformMonitoringRabbitServerService {
 			)
 	public void resourceRegistration(Message message, @Headers() Map<String, String> headers) {
 		          Gson gson = new Gson();
-		          ResourceBean resourceBean = gson.fromJson(new String(message.getBody()), ResourceBean.class);
-		          System.out.println("resourceBean "+resourceBean + " - "+ message.getBody());
-
+		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
+//		          System.out.println("resourceBean "+resourceBean + " - "+ message.getBody());
+		          icinga2Manager.addResources(resources);
 	}
 
 	@RabbitListener(bindings = @QueueBinding(

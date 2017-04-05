@@ -219,6 +219,11 @@ public class ModelConverter {
 			}
 			return hostname;
 		}
+
+		public static JsonCreateServiceOkResult jsonServicesOkToObject(String jsonString) {
+			JsonCreateServiceOkResponse response =  gson.fromJson(jsonString, JsonCreateServiceOkResponse.class);
+			return response.getResults()[0];
+		}
 		
 
 }

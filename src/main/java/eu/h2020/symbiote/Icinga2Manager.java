@@ -17,12 +17,13 @@ import org.springframework.stereotype.Component;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
 import eu.h2020.symbiote.beans.ServiceBean;
-import eu.h2020.symbiote.cloud.model.CloudResource;
 import eu.h2020.symbiote.db.ResourceRepository;
+import eu.h2020.symbiote.icinga2.datamodel.JsonCreateServiceOkResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
 import eu.h2020.symbiote.icinga2.datamodel.ModelConverter;
 import eu.h2020.symbiote.rest.RestProxy;
+import eu.h2020.symbiotelibraries.cloud.model.CloudResource;
 
 @Component
 public class Icinga2Manager {
@@ -384,7 +385,7 @@ public class Icinga2Manager {
 		 String hostname = "";
 		 
 		 Boolean exception = false;
-			String targetUrl = url + "/objects/services";
+			String targetUrl = url + "/objects/hosts";
 			logger.info("URL build: " + targetUrl);
 			
 			try {
@@ -417,6 +418,86 @@ public class Icinga2Manager {
 		 
 		 return hostname;
 	 }
+
+	public List<CloudResource> addResources(List<CloudResource> resources) {
+		logger.info("Adding devices to database");
+		List<CloudResource> result  = addOrUpdateInInternalRepository(resources);
+		logger.info("Adding " + resources.size() + " devices to icinga2");
+		List<CloudResource> resourcesAdded = this.createServices(resources);
+		logger.info("Added " + resourcesAdded.size() + " devices to icinga2");
+	    //rapresourceRegistrationMessageHandler.sendResourcesRegistrationMessage(result);
+	    return result;
+	}
+	
+	private List<CloudResource> createServices(List<CloudResource> resources){
+		List <CloudResource> result = new ArrayList<CloudResource>();
+		for (CloudResource resource : resources){
+			JsonCreateServiceOkResult response = createService(resource);
+			if (response != null && response.getCode() == 200.0){
+				//if the resource is successfully added in Icinga, it is added in the response
+				//if any problem exists in the creation of the resource, the resource will not be part of the response
+				result.add(resource);
+			}
+		}
+		return result;
+	}
+	
+	private JsonCreateServiceOkResult createService(CloudResource resource){
+		 JsonCreateServiceOkResult okResponse  = null;
+		 String hostname = this.getHostnameByIpAddress(resource.getHost());
+		 if (hostname == null || hostname.equalsIgnoreCase("")){
+			 //Verify that the host is registered in Icinga2 server
+			 logger.warn("The platform with ip address " + resource.getHost() + " is not registered in Monitoring environment. Icinga agent must be installed");
+			 return null;
+		 }
+		 else {
+			 //Verify that no other service with this name exists
+			 ServiceBean service = this.getServiceFromHost(hostname, resource.getName());
+			if (service != null){
+				logger.warn("There is a device registered in platform " + resource.getInternalId() + " with this name. Please select another name");
+				return null;
+			}
+			else {
+				Boolean exception = false;
+				String targetUrl = url + "/objects/services/" + hostname + "!" + resource.getName();
+				logger.info("URL build: " + targetUrl);
+				try {
+					icinga2client.setUrl(targetUrl);
+					icinga2client.setMethod("PUT");
+					icinga2client.setCustomHeaders("Accept: application/json");
+					//{ "templates": [ "generic-service" ], "attrs": { "display_name": "check_iot", "check_command" : "checkIot", "vars.IOT_SYMBIOTEID": "symbioteID_1", "vars.IOT_DEVICE_NAME": "device_name1", "vars.IOT_IPADDRESS": "X.X.X.X", "host_name": "api_dummy_host_2" } }'
+					icinga2client.setContent("{ \"templates\": [ \"generic-service\" ], \"attrs\": "
+							+ "{ \"display_name\": \"" + resource.getName() + "\","
+							+ " \"check_command\" : \"checkIot\","
+							+ " \"vars.IOT_SYMBIOTEID\": \"" + resource.getParams().getSymbiote_id() + "\","
+							+ " \"vars.IOT_DEVICE_NAME\": \"" + resource.getParams().getDevice_name() + "\","
+							+ " \"vars.IOT_IPADDRESS\": \"" + resource.getParams().getIp_address() +"\","
+							+ " \"host_name\": \"" + hostname + "\" } }");
+					System.out.println("BODY REQUEST: " + icinga2client.getContent());
+					icinga2client.execute();
+					if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
+						String response = icinga2client.getContentResponse();
+						logger.info("PAYLOAD: " + response);		
+						System.out.println();
+						okResponse = ModelConverter.jsonServicesOkToObject(response);
+					}
+					else {
+						logger.warn("Execution failed of GET method to: " + targetUrl);
+						logger.warn("HTTP STATUS: " + icinga2client.getStatusResponse() + " - " + 
+								icinga2client.getStatusMessage());
+						exception = true;
+					}
+
+				} catch(Exception e) {
+					logger.warn("Error trying to parse JSON response from Icinga2: " + targetUrl + " Exception: " + e.getMessage());
+					exception = true;
+				}
+				if(exception) return null;
+				return okResponse;
+			}
+			
+		 }		
+	}
 		  
 	
 	
