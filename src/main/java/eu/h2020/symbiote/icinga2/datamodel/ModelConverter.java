@@ -22,6 +22,7 @@ import com.google.gson.GsonBuilder;
 
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
+import eu.h2020.symbiote.icinga2.datamodel.host.ip.JsonHostByIpResponse;
 
 public class ModelConverter {
 	 private static final Log logger = LogFactory.getLog(ModelConverter.class);
@@ -204,5 +205,20 @@ public class ModelConverter {
 			}
 			return null;
 		}
+		
+		public static String jsonHostByIpToString(String jsonString){
+			JsonHostByIpResponse hostByIp =  gson.fromJson(jsonString, JsonHostByIpResponse.class);
+			String hostname = "";
+			try {
+				if (hostByIp.getResults() != null && hostByIp.getResults().length ==1){
+					return hostByIp.getResults()[0].getAttrs().getDisplay_name();
+				}
+			}
+			catch (Exception e){
+				return "";
+			}
+			return hostname;
+		}
+		
 
 }

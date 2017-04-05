@@ -79,7 +79,7 @@ public class IIFRestDummyServer {
 		  int i = 0;
 		  for (ServiceBean service : services){
 			  logger.info("Publishing info about service " + service.getDisplay_name() + " from host " + host.getName());
-			  //TODO take in account the mongoDB format
+			  //TODO take in account the mongoDB format, publish only the devices that exists in mongoDB
 			  i++;			  
 		  }
 		  

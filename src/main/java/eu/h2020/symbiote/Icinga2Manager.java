@@ -98,7 +98,7 @@ public class Icinga2Manager {
 			String targetUrl = url + "/objects/hosts?host=" + hostname + "&attrs=name&attrs=address&attrs=active&attrs=last_check&attrs=groups";
 //			String targetUrl = url + "/objects/hosts";
 			logger.info("URL build: " + targetUrl);
-			
+			logger.info("The hostname of the IP address 127.0.0.1 is " + this.getHostnameByIpAddress("127.0.0.1"));
 			try {
 				icinga2client.setUrl(targetUrl);
 				icinga2client.setMethod("GET");
@@ -379,6 +379,44 @@ public class Icinga2Manager {
 		}
 		return null;
 	}
+	
+	 private String getHostnameByIpAddress(String ipAddress){
+		 String hostname = "";
+		 
+		 Boolean exception = false;
+			String targetUrl = url + "/objects/services";
+			logger.info("URL build: " + targetUrl);
+			
+			try {
+				icinga2client.setUrl(targetUrl);
+				icinga2client.setMethod("POST");
+				icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: GET");
+				icinga2client.setContent("{\"joins\": [\"host.name\", \"host.address\"], \"filter\": \"match(\\\"" + ipAddress + "\\\",host.address)\", \"attrs\": [\"display_name\"] }");
+				System.out.println("BODY REQUEST: " + icinga2client.getContent());
+				icinga2client.execute();
+				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
+					String response = icinga2client.getContentResponse();
+					logger.info("PAYLOAD: " + response);		
+					System.out.println();
+					hostname = ModelConverter.jsonHostByIpToString(response);
+				}
+				else {
+					logger.warn("Execution failed of GET method to: " + targetUrl);
+					logger.warn("HTTP STATUS: " + icinga2client.getStatusResponse() + " - " + 
+							icinga2client.getStatusMessage());
+					exception = true;
+				}
+
+			} catch(Exception e) {
+				logger.warn("Error trying to parse JSON response from Icinga2: " + targetUrl + " Exception: " + e.getMessage());
+				exception = true;
+			}
+			
+			if(exception) return null;
+		 
+		 
+		 return hostname;
+	 }
 		  
 	
 	
