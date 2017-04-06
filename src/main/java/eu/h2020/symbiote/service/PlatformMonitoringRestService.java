@@ -17,6 +17,8 @@ import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
+import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringDevice;
+import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 
 /**
  * This class implements the rest interfaces. Initially created by jose
@@ -109,6 +111,21 @@ public class PlatformMonitoringRestService {
 		  }
 	  }
 	  
+  }
+  
+  @Scheduled(cron = "${symbiote.crm.publish.period}")
+  public void publishMonitoringData2Cram(){
+	  List<CloudMonitoringPlatform> platforms = icinga2Manager.getMonitoringInfo();
+	  if (platforms != null && !platforms.isEmpty()){
+		  logger.info("Publishing monitoring info to CRAM");
+		  logger.info("Number of platforms in the system: " + platforms.size());
+		  for (CloudMonitoringPlatform platform : platforms){
+			  logger.info("Platform " + platform.getInternalId() + " has " + platform.getDevices().length + " devices");
+			  for (int i = 0; i<platform.getDevices().length; i++){
+				  logger.info("Device " + platform.getDevices()[i].getId());
+			  }
+		  }
+	  }	 
   }
 
   

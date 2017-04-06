@@ -21,7 +21,7 @@ import eu.h2020.symbiotelibraries.cloud.model.CloudResourceParams;
 public class MonitoringApplicationTests {
 	//symbiote.rabbitmq.host.ip
 	//urlformcram localhost
-
+	@Autowired Icinga2Manager icinga2Manager;
 	@Autowired
 	 private RHResourceMessageHandler rhResourceRegistrationMessageHandler;
 	@Test
@@ -36,8 +36,9 @@ public class MonitoringApplicationTests {
 		List<CloudResource> resources = new ArrayList<CloudResource>();
 		resources.add(resource);	
 		
+//		icinga2Manager.addResources(resources);
 		//send the message using RabbitMQ
-		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
+//		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
 	}
 		
 	

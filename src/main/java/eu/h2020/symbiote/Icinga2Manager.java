@@ -15,6 +15,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.beans.HostBean;
@@ -504,8 +505,9 @@ public class Icinga2Manager {
 			
 		 }		
 	}
-		  
-	private List<CloudMonitoringPlatform> publishMonitoringInfo2Cram(){
+	
+	
+	public List<CloudMonitoringPlatform> getMonitoringInfo(){
 		List<CloudResource> resources = resourceRepository.findAll();
 		List<CloudMonitoringPlatform> result = null;
 		if (resources != null){
@@ -532,7 +534,11 @@ public class Icinga2Manager {
 					CloudMonitoringPlatform platform = new CloudMonitoringPlatform();
 					platform.setInternalId((String) pair.getKey());
 					List<CloudMonitoringDevice> list = (List<CloudMonitoringDevice>)pair.getValue();
-					platform.setDevices((CloudMonitoringDevice[]) list.toArray());
+					CloudMonitoringDevice[] devicesArray = new CloudMonitoringDevice[list.size()];
+					for (int i=0;i<devicesArray.length;i++){
+						devicesArray[i] = list.get(i);
+					}
+					platform.setDevices(devicesArray);
 					it.remove(); // avoids a ConcurrentModificationException
 					result.add(platform);
 				}	
@@ -555,14 +561,14 @@ public class Icinga2Manager {
 		 else {
 			 	ServiceBean service = null;
 				Boolean exception = false;
-				String targetUrl = url + "/objects/services";
+				String targetUrl = url + "/objects/services/";
 				logger.info("URL build: " + targetUrl);
 				
 				try {
 					icinga2client.setUrl(targetUrl);
 					icinga2client.setMethod("POST");
 					icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: GET");
-					icinga2client.setContent("{\"joins\": [\"host.name\", \"host.address\"], \"filter\": \"match(\\\"" + hostname + "\\\",host.name) && match(\"" + resource.getName() + "\",service.name)\", \"attrs\": [\"display_name\",\"active\",\"check_interval\",\"check_command\",\"last_check\",\"last_check_result\"] }");
+					icinga2client.setContent("{\"joins\": [\"host.name\", \"host.address\"], \"filter\": \"match(\\\"" + hostname + "\\\",host.name) && match(\\\"" + resource.getName() + "\\\",service.name)\", \"attrs\": [\"display_name\",\"active\",\"check_interval\",\"check_command\",\"last_check\",\"last_check_result\"] }");
 					System.out.println("BODY REQUEST: " + icinga2client.getContent());
 					icinga2client.execute();
 					if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
