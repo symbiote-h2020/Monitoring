@@ -1,18 +1,18 @@
 package eu.h2020.symbiote.rest.cram;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 import feign.Feign;
 import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
-
-@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"symbiote.cram.url=http://localhost:8080"})
+//COMMENTED @Component
+//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"symbiote.cram.url=http://localhost:8080"})
 public  class CRAMMessageHandler {
 	
 	private static final Log logger = LogFactory.getLog(CRAMMessageHandler.class);
@@ -22,9 +22,15 @@ public  class CRAMMessageHandler {
 	@Value("${symbiote.cram.url}")
 	private String url;
 
-    public CRAMMessageHandler() {
+//    public CRAMMessageHandler() {
+//		
+//    }
+    
+    @PostConstruct
+	public void createClient() {
+		logger.info("Will use "+ url +" to access to CRAM");
 		jsonclient = Feign.builder().decoder(new GsonDecoder()).encoder(new GsonEncoder()).target(CRAMRestService.class, url);
-    }
+	}
 		
 	
     public void doPostAlCram(CloudMonitoringPlatform platform)  {

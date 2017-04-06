@@ -3,8 +3,6 @@ package eu.h2020.symbiote.rest.cram;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import eu.h2020.symbiote.Icinga2Manager;
 import eu.h2020.symbiote.constants.MonitoringConstants;
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 
@@ -23,7 +20,7 @@ import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform
  */
 @RestController
 //@WebAppConfiguration
-@RequestMapping("/cram_test")
+//COMMENTED @RequestMapping("/cram_test")
 public class CRAMRestDummyServer {
   private static final Log logger = LogFactory.getLog(CRAMRestDummyServer.class);
   

@@ -30,7 +30,7 @@ import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform
 public class PlatformMonitoringRestService {
   private static final Log logger = LogFactory.getLog(PlatformMonitoringRestService.class);
   
-//  @Autowired
+//COMMENTED @Autowired
   private CRAMMessageHandler cramMessageHandler;
   
   @Autowired
