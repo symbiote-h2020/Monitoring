@@ -11,27 +11,20 @@ import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Headers;
+import org.springframework.stereotype.Service;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 
 import eu.h2020.symbiote.Icinga2Manager;
 import eu.h2020.symbiote.beans.ResourceBean;
+import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
 import eu.h2020.symbiotelibraries.cloud.model.CloudResource;
 
-//@Service
+@Service
 public class PlatformMonitoringRabbitServerService {
 
 
-	private static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rh.reg";
-    private static final String EXCHANGE_NAME_UNREGISTRATION = "symbIoTe.rh.unreg";
-    private static final String EXCHANGE_NAME_UPDATED = "symbIoTe.rh.update";
-	
-	private static final String RESOURCE_REGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.register_resources";
-	private static final String RESOURCE_UNREGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.unregister_resources";
-	private static final String RESOURCE_UPDATED_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.update_resources";
-
-	
 	@Autowired Icinga2Manager icinga2Manager;
 	/**
 	 * Spring AMQP Listener for resource registration requests. This method is invoked when Registration
@@ -43,9 +36,9 @@ public class PlatformMonitoringRabbitServerService {
 	 * @param headers The AMQP headers
 	 */
 	@RabbitListener(bindings = @QueueBinding(
-			value = @Queue(value = "symbIoTe-register_resources", durable = "true", autoDelete = "false", exclusive = "false"),
-			exchange = @Exchange(value = EXCHANGE_NAME_REGISTRATION, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
-			key = RESOURCE_REGISTRATION_QUEUE_NAME)
+			value = @Queue(value = RHResourceMessageHandler.RESOURCE_REGISTRATION_QUEUE_NAME, durable = "true", autoDelete = "false", exclusive = "false"),
+			exchange = @Exchange(value = RHResourceMessageHandler.EXCHANGE_NAME_REGISTRATION, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
+			key = RHResourceMessageHandler.RESOURCE_REGISTRATION_QUEUE_NAME)
 			)
 	public void resourceRegistration(Message message, @Headers() Map<String, String> headers) {
 		          Gson gson = new Gson();
@@ -55,18 +48,18 @@ public class PlatformMonitoringRabbitServerService {
 	}
 
 	@RabbitListener(bindings = @QueueBinding(
-			value = @Queue(value = "symbIoTe-unregister_resources", durable = "true", autoDelete = "false", exclusive = "false"),
-			exchange = @Exchange(value = EXCHANGE_NAME_UNREGISTRATION, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
-			key = RESOURCE_UNREGISTRATION_QUEUE_NAME)
+			value = @Queue(value = RHResourceMessageHandler.RESOURCE_UNREGISTRATION_QUEUE_NAME, durable = "true", autoDelete = "false", exclusive = "false"),
+			exchange = @Exchange(value = RHResourceMessageHandler.EXCHANGE_NAME_UNREGISTRATION, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
+			key = RHResourceMessageHandler.RESOURCE_UNREGISTRATION_QUEUE_NAME)
 			)
 	public void resourceUnregistration(Message message, @Headers() Map<String, String> headers) {
 		          System.out.println(message.getBody());
 	}
 
 	@RabbitListener(bindings = @QueueBinding(
-			value = @Queue(value = "symbIoTe-update_resources", durable = "true", autoDelete = "false", exclusive = "false"),
-			exchange = @Exchange(value = EXCHANGE_NAME_UPDATED, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
-			key = RESOURCE_UPDATED_QUEUE_NAME)
+			value = @Queue(value = RHResourceMessageHandler.RESOURCE_UPDATED_QUEUE_NAME, durable = "true", autoDelete = "false", exclusive = "false"),
+			exchange = @Exchange(value = RHResourceMessageHandler.EXCHANGE_NAME_UPDATED, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
+			key = RHResourceMessageHandler.RESOURCE_UPDATED_QUEUE_NAME)
 			)
 	public void resourceUpdate(Message message, @Headers() Map<String, String> headers) {
 		          Gson gson = new Gson();

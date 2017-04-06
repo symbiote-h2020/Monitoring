@@ -24,9 +24,8 @@ public class MonitoringApplicationTests {
 	@Autowired Icinga2Manager icinga2Manager;
 	@Autowired
 	 private RHResourceMessageHandler rhResourceRegistrationMessageHandler;
-	@Test
-	public void contextLoads() {
-	}
+
+	
 
 	
 	@Test
@@ -38,7 +37,7 @@ public class MonitoringApplicationTests {
 		
 //		icinga2Manager.addResources(resources);
 		//send the message using RabbitMQ
-//		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
+		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
 	}
 		
 	

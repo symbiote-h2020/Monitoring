@@ -28,13 +28,13 @@ import eu.h2020.symbiotelibraries.cloud.model.CloudResource;
 @Component
 public class RHResourceMessageHandler {
 
-	private static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rh.reg";
-    private static final String EXCHANGE_NAME_UNREGISTRATION = "symbIoTe.rh.unreg";
-    private static final String EXCHANGE_NAME_UPDATED = "symbIoTe.rh.update";
+	public static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rh.reg";
+	public static final String EXCHANGE_NAME_UNREGISTRATION = "symbIoTe.rh.unreg";
+	public static final String EXCHANGE_NAME_UPDATED = "symbIoTe.rh.update";
 	
-	private static final String RESOURCE_REGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.register_resources";
-	private static final String RESOURCE_UNREGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.unregister_resources";
-	private static final String RESOURCE_UPDATED_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.update_resources";
+	public static final String RESOURCE_REGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.register_resources";
+	public static final String RESOURCE_UNREGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.unregister_resources";
+	public static final String RESOURCE_UPDATED_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.update_resources";
 	
 
     private static Log logger = LogFactory.getLog(RHResourceMessageHandler.class);

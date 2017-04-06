@@ -33,7 +33,7 @@ public class PlatformMonitoringRestService {
 //  @Autowired
 //  private PlatformMonitoringManager monitoringManager;
   
-  @Autowired
+//  @Autowired
   private CRAMMessageHandler cramMessageHandler;
   
   @Autowired
