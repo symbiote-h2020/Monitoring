@@ -17,7 +17,7 @@ import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
-import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringDevice;
+import eu.h2020.symbiote.rest.cram.CRAMMessageHandler;
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 
 /**
@@ -32,6 +32,9 @@ public class PlatformMonitoringRestService {
 
 //  @Autowired
 //  private PlatformMonitoringManager monitoringManager;
+  
+  @Autowired
+  private CRAMMessageHandler cramMessageHandler;
   
   @Autowired
   private Icinga2Manager icinga2Manager;
@@ -106,8 +109,7 @@ public class PlatformMonitoringRestService {
 			  message[i] = service;
 			  logger.info("Publishing info about service " + message[i].getDisplay_name() + " from host " + host.getName());
 			  //TODO publish to cmr only monitoring data
-			  i++;
-			  
+			  i++;			  
 		  }
 	  }
 	  
@@ -124,6 +126,8 @@ public class PlatformMonitoringRestService {
 			  for (int i = 0; i<platform.getDevices().length; i++){
 				  logger.info("Device " + platform.getDevices()[i].getId());
 			  }
+			  //Send data to POST endpoint in CRAM
+			  cramMessageHandler.doPostAlCram(platform);
 		  }
 	  }	 
   }

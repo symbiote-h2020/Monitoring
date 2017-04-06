@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 
-import eu.h2020.symbiote.commons.security.messaging.bean.Token;
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 import feign.Feign;
 import feign.gson.GsonDecoder;
@@ -27,16 +26,14 @@ public  class CRAMMessageHandler {
     }
 		
 	
-    public Token doPostAlCRAM(CloudMonitoringPlatform platform)  {
-		Token result = null;
+    public void doPostAlCram(CloudMonitoringPlatform platform)  {
 		try{
 			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
 					platform.getDevices().length + " devices");
-			jsonclient.publishMonitoringData(platform);
+			jsonclient.doPostAlCram(platform.getInternalId(), platform);
 		}catch(Throwable t){
 			logger.error("Error accessing to CRAM server at " + url, t);
 		}
-		return result;
 	}
 
 }
