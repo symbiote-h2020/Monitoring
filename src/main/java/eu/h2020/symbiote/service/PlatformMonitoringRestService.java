@@ -29,9 +29,6 @@ import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform
 @RestController
 public class PlatformMonitoringRestService {
   private static final Log logger = LogFactory.getLog(PlatformMonitoringRestService.class);
-
-//  @Autowired
-//  private PlatformMonitoringManager monitoringManager;
   
 //  @Autowired
   private CRAMMessageHandler cramMessageHandler;
@@ -95,25 +92,6 @@ public class PlatformMonitoringRestService {
 	  return result;
   }
   
-//  @Scheduled(cron = "${symbiote.crm.publish.period}")
-  public void publishMonitoringInfo2Crm(){
-	  List<HostBean> hosts = (List<HostBean>) icinga2Manager.getHosts();
-
-	  for (HostBean host : hosts){
-		  logger.info("Number of hosts: " + hosts.size());
-		  List<ServiceBean> services = (List<ServiceBean>) icinga2Manager.getServicesFromHost(host.getName());
-		  ServiceBean[] message = new ServiceBean[services.size()];
-		  logger.info("Number of services in host " + host.getName() + " : " + services.size());
-		  int i = 0;
-		  for (ServiceBean service : services){
-			  message[i] = service;
-			  logger.info("Publishing info about service " + message[i].getDisplay_name() + " from host " + host.getName());
-			  //TODO publish to cmr only monitoring data
-			  i++;			  
-		  }
-	  }
-	  
-  }
   
   @Scheduled(cron = "${symbiote.crm.publish.period}")
   public void publishMonitoringData2Cram(){
@@ -127,7 +105,15 @@ public class PlatformMonitoringRestService {
 				  logger.info("Device " + platform.getDevices()[i].getId());
 			  }
 			  //Send data to POST endpoint in CRAM
-			  cramMessageHandler.doPostAlCram(platform);
+//			  cramMessageHandler.doPostAlCram(platform);
+			  logger.info("Publishing monitoring data for platform " + platform.getInternalId());
+			  logger.info("Platform " + platform.getInternalId() + " has " + platform.getDevices().length + " devices");
+			  for (int i = 0; i<platform.getDevices().length; i++){
+				  logger.info("Device " + platform.getDevices()[i].getId());
+				  logger.info("load: " + platform.getDevices()[i].getLoad());
+				  logger.info("availability: " + platform.getDevices()[i].getAvailability());
+				  logger.info("timestamp: " + platform.getDevices()[i].getTimestamp());		  
+			  }
 		  }
 	  }	 
   }

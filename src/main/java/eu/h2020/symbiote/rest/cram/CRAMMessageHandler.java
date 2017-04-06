@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 import feign.Feign;

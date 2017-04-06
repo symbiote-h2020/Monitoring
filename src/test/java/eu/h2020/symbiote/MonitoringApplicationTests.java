@@ -34,8 +34,7 @@ public class MonitoringApplicationTests {
 		CloudResource resource = getTestResource();
 		List<CloudResource> resources = new ArrayList<CloudResource>();
 		resources.add(resource);	
-		
-//		icinga2Manager.addResources(resources);
+
 		//send the message using RabbitMQ
 		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
 	}

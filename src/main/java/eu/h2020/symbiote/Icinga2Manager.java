@@ -15,7 +15,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.beans.HostBean;
@@ -427,12 +426,12 @@ public class Icinga2Manager {
 	 }
 
 	public List<CloudResource> addResources(List<CloudResource> resources) {
-		logger.info("Adding devices to database");
-		List<CloudResource> result  = addOrUpdateInInternalRepository(resources);
 		logger.info("Adding " + resources.size() + " devices to icinga2");
 		List<CloudResource> resourcesAdded = this.createServices(resources);
 		logger.info("Added " + resourcesAdded.size() + " devices to icinga2");
-	    //rapresourceRegistrationMessageHandler.sendResourcesRegistrationMessage(result);
+		//add to database only the devices created in icinga2
+		logger.info("Adding devices to database");
+		List<CloudResource> result  = addOrUpdateInInternalRepository(resourcesAdded);		
 	    return result;
 	}
 	
@@ -542,8 +541,7 @@ public class Icinga2Manager {
 					it.remove(); // avoids a ConcurrentModificationException
 					result.add(platform);
 				}	
-			}
-			 
+			}		 
 		}
 		return result;
 	}
