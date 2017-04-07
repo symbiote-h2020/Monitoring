@@ -30,7 +30,7 @@ import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform
 public class PlatformMonitoringRestService {
   private static final Log logger = LogFactory.getLog(PlatformMonitoringRestService.class);
   
-//COMMENTED @Autowired
+  @Autowired
   private CRAMMessageHandler cramMessageHandler;
   
   @Autowired
@@ -105,7 +105,8 @@ public class PlatformMonitoringRestService {
 				  logger.info("Device " + platform.getDevices()[i].getId());
 			  }
 			  //Send data to POST endpoint in CRAM
-//			  cramMessageHandler.doPostAlCram(platform);
+			  String result = cramMessageHandler.doPostAlCram(platform);
+			  logger.info("************** Result of post to cram = " + result);
 			  logger.info("Publishing monitoring data for platform " + platform.getInternalId());
 			  logger.info("Platform " + platform.getInternalId() + " has " + platform.getDevices().length + " devices");
 			  for (int i = 0; i<platform.getDevices().length; i++){

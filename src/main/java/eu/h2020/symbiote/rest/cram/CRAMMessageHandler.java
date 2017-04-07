@@ -11,7 +11,7 @@ import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform
 import feign.Feign;
 import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
-//COMMENTED @Component
+@Component
 //@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"symbiote.cram.url=http://localhost:8080"})
 public  class CRAMMessageHandler {
 	
@@ -33,14 +33,16 @@ public  class CRAMMessageHandler {
 	}
 		
 	
-    public void doPostAlCram(CloudMonitoringPlatform platform)  {
-		try{
+    public String doPostAlCram(CloudMonitoringPlatform platform)  {
+		String result = "not send";
+    	try{
 			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
 					platform.getDevices().length + " devices");
-			jsonclient.doPostAlCram(platform.getInternalId(), platform);
+			result = jsonclient.doPostAlCram(platform.getInternalId(), platform);
 		}catch(Throwable t){
 			logger.error("Error accessing to CRAM server at " + url, t);
 		}
+    	return result;
 	}
 
 }

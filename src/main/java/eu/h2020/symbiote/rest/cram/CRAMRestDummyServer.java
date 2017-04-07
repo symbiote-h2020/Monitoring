@@ -20,13 +20,13 @@ import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform
  */
 @RestController
 //@WebAppConfiguration
-//COMMENTED @RequestMapping("/cram_test")
+@RequestMapping("/")
 public class CRAMRestDummyServer {
   private static final Log logger = LogFactory.getLog(CRAMRestDummyServer.class);
   
   
   @RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.PUBLISH_MONITORING_DATA,  produces = "application/json", consumes = "application/json")
-  public @ResponseBody void  publishMonitoringData(@PathVariable(MonitoringConstants.PLATFORM_ID) String platformId, @RequestBody CloudMonitoringPlatform platform) {
+  public @ResponseBody String  publishMonitoringData(@PathVariable("platformId") String platformId, @RequestBody CloudMonitoringPlatform platform) {
 	  logger.info("*********************************************************");
 	  logger.info("Publishing monitoring data for platform " + platformId);
 	  logger.info("Platform " + platform.getInternalId() + " has " + platform.getDevices().length + " devices");
@@ -36,6 +36,7 @@ public class CRAMRestDummyServer {
 		  logger.info("availability: " + platform.getDevices()[i].getAvailability());
 		  logger.info("timestamp: " + platform.getDevices()[i].getTimestamp());		  
 	  }
+	  return "received";
   }
 
   
