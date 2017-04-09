@@ -1,4 +1,4 @@
-package eu.h2020.symbiotelibraries.cloud.model;
+package eu.h2020.symbiotelibraries.cloud.model.previous;
 
 import java.util.List;
 

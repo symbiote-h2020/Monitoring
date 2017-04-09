@@ -20,11 +20,10 @@ import org.eclipse.persistence.jaxb.UnmarshallerProperties;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import eu.h2020.symbiote.beans.CheckCommandBean;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
 import eu.h2020.symbiote.icinga2.datamodel.host.ip.JsonHostByIpResponse;
-import eu.h2020.symbiote.icinga2.datamodel.service.JsonServiceLastCheckResult;
-import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringDevice;
 
 public class ModelConverter {
 	 private static final Log logger = LogFactory.getLog(ModelConverter.class);
@@ -225,6 +224,14 @@ public class ModelConverter {
 		public static JsonCreateServiceOkResult jsonServicesOkToObject(String jsonString) {
 			JsonCreateServiceOkResponse response =  gson.fromJson(jsonString, JsonCreateServiceOkResponse.class);
 			return response.getResults()[0];
+		}
+
+		public static CheckCommandBean jsonCheckCommandToObject(String jsonString) {
+			JsonCheckCommandsResponse checkCommands =  gson.fromJson(jsonString, JsonCheckCommandsResponse.class);
+			if (checkCommands.getResults().length == 1){
+				return checkCommands.getResults()[0].getAttrs();
+			}
+			return null;
 		}
 		
 

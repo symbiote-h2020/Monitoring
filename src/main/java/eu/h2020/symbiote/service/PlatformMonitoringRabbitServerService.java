@@ -19,7 +19,8 @@ import com.google.gson.Gson;
 import eu.h2020.symbiote.Icinga2Manager;
 import eu.h2020.symbiote.beans.ResourceBean;
 import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
-import eu.h2020.symbiotelibraries.cloud.model.CloudResource;
+import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
+
 
 @Service
 public class PlatformMonitoringRabbitServerService {

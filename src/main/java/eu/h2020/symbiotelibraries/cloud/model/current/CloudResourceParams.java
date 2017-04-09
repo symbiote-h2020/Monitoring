@@ -1,8 +1,8 @@
-package eu.h2020.symbiotelibraries.cloud.model;
+package eu.h2020.symbiotelibraries.cloud.model.current;
 
 public class CloudResourceParams {
 
-	private String symbiote_id;
+	private String internalId;
 	
 	private String device_name;
 	
@@ -12,12 +12,12 @@ public class CloudResourceParams {
 		
 	}
 
-	public String getSymbiote_id() {
-		return symbiote_id;
+	public String getInternalId() {
+		return internalId;
 	}
 
-	public void setSymbiote_id(String symbiote_id) {
-		this.symbiote_id = symbiote_id;
+	public void setInternalId(String internalId) {
+		this.internalId = internalId;
 	}
 
 	public String getDevice_name() {

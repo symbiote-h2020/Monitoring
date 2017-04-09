@@ -2,10 +2,7 @@ package eu.h2020.symbiote;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -17,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import eu.h2020.symbiote.beans.CheckCommandBean;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
 import eu.h2020.symbiote.beans.ServiceBean;
@@ -27,7 +25,7 @@ import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
 import eu.h2020.symbiote.icinga2.datamodel.ModelConverter;
 import eu.h2020.symbiote.icinga2.utils.Icinga2Utils;
 import eu.h2020.symbiote.rest.RestProxy;
-import eu.h2020.symbiotelibraries.cloud.model.CloudResource;
+import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringDevice;
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 
@@ -48,6 +46,9 @@ public class Icinga2Manager {
 
 	 @Value("${symbiote.icinga2.api.password}")
 	 private String password; 
+	 
+	 @Value("${platform.id}")
+	 private String platformId; 
 	 
 	 
 	 @Autowired
@@ -105,7 +106,6 @@ public class Icinga2Manager {
 			String targetUrl = url + "/objects/hosts?host=" + hostname + "&attrs=name&attrs=address&attrs=active&attrs=last_check&attrs=groups";
 //			String targetUrl = url + "/objects/hosts";
 			logger.info("URL build: " + targetUrl);
-			logger.info("The hostname of the IP address 127.0.0.1 is " + this.getHostnameByIpAddress("127.0.0.1"));
 			try {
 				icinga2client.setUrl(targetUrl);
 				icinga2client.setMethod("GET");
@@ -464,6 +464,10 @@ public class Icinga2Manager {
 				return null;
 			}
 			else {
+				//If the checkCommand do not exists, is created before the creation of the service
+				if (!this.existCheckCommandForHost(hostname)){
+					createCheckCommand(hostname);
+				}
 				Boolean exception = false;
 				String targetUrl = url + "/objects/services/" + hostname + "!" + resource.getName();
 				logger.info("URL build: " + targetUrl);
@@ -474,11 +478,11 @@ public class Icinga2Manager {
 					//{ "templates": [ "generic-service" ], "attrs": { "display_name": "check_iot", "check_command" : "checkIot", "vars.IOT_SYMBIOTEID": "symbioteID_1", "vars.IOT_DEVICE_NAME": "device_name1", "vars.IOT_IPADDRESS": "X.X.X.X", "host_name": "api_dummy_host_2" } }'
 					icinga2client.setContent("{ \"templates\": [ \"generic-service\" ], \"attrs\": "
 							+ "{ \"display_name\": \"" + resource.getName() + "\","
-							+ " \"check_command\" : \"checkIot\","
-							+ " \"vars.IOT_SYMBIOTEID\": \"" + resource.getParams().getSymbiote_id() + "\","
+							+ " \"check_command\" : \"checkIot_" + hostname + "\","
+							+ " \"vars.IOT_INTERNAL_ID\": \"" + resource.getParams().getInternalId() + "\","
 							+ " \"vars.IOT_DEVICE_NAME\": \"" + resource.getParams().getDevice_name() + "\","
 							+ " \"vars.IOT_IPADDRESS\": \"" + resource.getParams().getIp_address() +"\","
-							+ " \"host_name\": \"" + hostname + "\" } }");
+							+ " \"command_endpoint\": \"" + hostname + "\" } }");
 					System.out.println("BODY REQUEST: " + icinga2client.getContent());
 					icinga2client.execute();
 					if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
@@ -506,44 +510,20 @@ public class Icinga2Manager {
 	}
 	
 	
-	public List<CloudMonitoringPlatform> getMonitoringInfo(){
+	public CloudMonitoringPlatform getMonitoringInfo(){
 		List<CloudResource> resources = resourceRepository.findAll();
-		List<CloudMonitoringPlatform> result = null;
+		CloudMonitoringPlatform platform = null;
 		if (resources != null){
-			Map<String, ArrayList<CloudMonitoringDevice>> map = new HashMap<String, ArrayList<CloudMonitoringDevice>>();
-			for (CloudResource resource : resources){
-				CloudMonitoringDevice device = this.getMonitoringInfoFromDevice(resource);
-				if (map.isEmpty() || map.get(resource.getInternalId()) == null){
-					ArrayList<CloudMonitoringDevice> devices = new ArrayList<>();
-					devices.add(device);
-					map.put(resource.getInternalId(), devices);
-				}
-				else {
-					//the platform exists in the map, add the new device
-					map.get(resource.getInternalId()).add(device);
-				}
+			platform = new CloudMonitoringPlatform();
+			CloudMonitoringDevice[] devices = new CloudMonitoringDevice[resources.size()];
+			for (int i=0;i<resources.size();i++){
+				CloudMonitoringDevice device = this.getMonitoringInfoFromDevice(resources.get(i));
+				devices[i] = device;
 			}
-
-			//Convert the map to list of cloudMonitoringPlatform object to return it
-			if (!map.isEmpty()){
-				result = new ArrayList<CloudMonitoringPlatform>();
-				Iterator it = map.entrySet().iterator();
-				while (it.hasNext()) {
-					Map.Entry pair = (Map.Entry)it.next();
-					CloudMonitoringPlatform platform = new CloudMonitoringPlatform();
-					platform.setInternalId((String) pair.getKey());
-					List<CloudMonitoringDevice> list = (List<CloudMonitoringDevice>)pair.getValue();
-					CloudMonitoringDevice[] devicesArray = new CloudMonitoringDevice[list.size()];
-					for (int i=0;i<devicesArray.length;i++){
-						devicesArray[i] = list.get(i);
-					}
-					platform.setDevices(devicesArray);
-					it.remove(); // avoids a ConcurrentModificationException
-					result.add(platform);
-				}	
-			}		 
+			platform.setInternalId(platformId);	
+			platform.setDevices(devices);			 
 		}
-		return result;
+		return platform;
 	}
 	
 	
@@ -576,7 +556,7 @@ public class Icinga2Manager {
 						service = ModelConverter.jsonServiceToObject(response);
 						monitoringDevice = new CloudMonitoringDevice();
 						monitoringDevice.setTimestamp(service.getLast_check());
-						monitoringDevice.setId(resource.getId());
+						monitoringDevice.setId(resource.getInternalId());
 						monitoringDevice.setAvailability(Icinga2Utils.getAvailability(service.getLast_check_result().getOutput()));
 						monitoringDevice.setLoad(Icinga2Utils.getLoad(service.getLast_check_result().getOutput()));
 					}
@@ -595,9 +575,96 @@ public class Icinga2Manager {
 				if(exception) return null;
 				return monitoringDevice;
 		 }
-				
 	}
 	
+	
+	
+	 private CheckCommandBean getCheckCommand(String checkCommandName){
+		 CheckCommandBean checkCmd  = null;
+			Boolean exception = false;
+			String targetUrl = url + "/objects/checkcommands/" + checkCommandName;
+			logger.info("URL build: " + targetUrl);
+			try {
+				icinga2client.setUrl(targetUrl);
+				icinga2client.setMethod("GET");
+				icinga2client.execute();
+				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
+					String response = icinga2client.getContentResponse();
+					logger.info("PAYLOAD: " + response);		
+					System.out.println();
+					checkCmd = ModelConverter.jsonCheckCommandToObject(response);
+				}
+				else {
+					logger.warn("Execution failed of GET method to: " + targetUrl);
+					logger.warn("HTTP STATUS: " + icinga2client.getStatusResponse() + " - " + 
+							icinga2client.getStatusMessage());
+					exception = true;
+				}
+
+			} catch(Exception e) {
+				logger.warn("Error trying to parse JSON response from Icinga2: " + targetUrl + " Exception: " + e.getMessage());
+				exception = true;
+			}
+			
+			if(exception) return null;
+			return checkCmd;
+	 }
+	
+	
+	 private boolean existCheckCommandForHost(String hostname){
+		 CheckCommandBean checkCmd = getCheckCommand("checkIot_" + hostname);
+		 if (checkCmd == null){
+			 return false;
+		 }
+		 return true;
+	 }
+	 
+	 
+	 private JsonCreateServiceOkResult createCheckCommand(String hostname){
+		 JsonCreateServiceOkResult okResponse  = null;
+		//Verify that no other checkCommand exists
+			if (this.existCheckCommandForHost(hostname)){
+				logger.warn("Symbiote checkCommand exits on hostname " + hostname);
+				return null;
+			}
+			else {
+				Boolean exception = false;
+				String targetUrl = url + "/objects/checkcommands/checkIot_" + hostname;
+				logger.info("URL build: " + targetUrl);
+				try {
+					icinga2client.setUrl(targetUrl);
+					icinga2client.setMethod("PUT");
+					icinga2client.setCustomHeaders("Accept: application/json");
+					// { "templates": [ "plugin-check-command" ], "attrs": { "command": [ "/usr/lib/nagios/plugins/check_symbiote_iot.sh"], "zone": "zabbix.atos.net", "arguments": { "-s": "$IOT_INTERNALID$", "-d": "$IOT_DEVICE_NAME$", "-i": "$IOT_IPADDRESS$" } } }
+					icinga2client.setContent(
+							"{ \"templates\": [ \"plugin-check-command\" ], \"attrs\": { "
+							+ "\"command\": [ \"/usr/lib/nagios/plugins/check_symbiote_iot.sh\"], "
+							+ "\"zone\": \"" + hostname + "\", "
+							+ "\"arguments\": { \"-s\": \"$IOT_INTERNALID$\", \"-d\": \"$IOT_DEVICE_NAME$\", \"-i\": \"$IOT_IPADDRESS$\" } } }");
+					System.out.println("BODY REQUEST: " + icinga2client.getContent());
+					icinga2client.execute();
+					if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
+						String response = icinga2client.getContentResponse();
+						logger.info("PAYLOAD: " + response);		
+						System.out.println();
+						//the OK response is the same for CheckCommand class, so I use the same code
+						okResponse = ModelConverter.jsonServicesOkToObject(response);
+					}
+					else {
+						logger.warn("Execution failed of GET method to: " + targetUrl);
+						logger.warn("HTTP STATUS: " + icinga2client.getStatusResponse() + " - " + 
+								icinga2client.getStatusMessage());
+						exception = true;
+					}
+
+				} catch(Exception e) {
+					logger.warn("Error trying to parse JSON response from Icinga2: " + targetUrl + " Exception: " + e.getMessage());
+					exception = true;
+				}
+				if(exception) return null;
+				return okResponse;
+			}
+	}
 	
 		 
 

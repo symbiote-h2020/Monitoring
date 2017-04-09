@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import eu.h2020.symbiotelibraries.cloud.model.CloudResource;
+import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
+
 
 
 
