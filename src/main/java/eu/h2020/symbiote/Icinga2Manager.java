@@ -1,6 +1,7 @@
 package eu.h2020.symbiote;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -279,7 +280,7 @@ public class Icinga2Manager {
 	 public JsonDeleteMessageIcingaResult deleteServiceFromHost(String hostname, String servicename){
 		 JsonDeleteMessageIcingaResult jsonMessage  = null;
 		 Boolean exception = false;
-		 String targetUrl = url + "/objects/services/" + hostname + "!" + servicename;
+		 String targetUrl = url + "/objects/services/" + hostname + "!" + servicename + "?cascade=1";
 		 logger.info("URL build: " + targetUrl);
 
 		 try {
@@ -294,7 +295,7 @@ public class Icinga2Manager {
 				 jsonMessage = ModelConverter.jsonDeleteMessageToObject(response);
 			 }
 			 else {
-				 logger.warn("Execution failed of GET method to: " + targetUrl);
+				 logger.warn("Execution failed of POST method to: " + targetUrl);
 				 logger.warn("HTTP STATUS: " + icinga2client.getStatusResponse() + " - " + 
 						 icinga2client.getStatusMessage());
 				 exception = true;
@@ -435,6 +436,44 @@ public class Icinga2Manager {
 	    return result;
 	}
 	
+	public List<CloudResource> deleteResources(List<String> resources) {
+		logger.info("Deleting " + resources.size() + " devices to icinga2");
+		
+		Iterator<String> it = resources.listIterator();
+		List<String>  listIdDeleted = new ArrayList<String>();
+		try {
+			while( it.hasNext() ) {
+			String internalId = (String) it.next();
+			CloudResource c = this.resourceRepository.getByInternalId(internalId);
+			String host = this.getHostnameByIpAddress(c.getHost());
+			String service  = c.getInternalId();
+			JsonDeleteMessageIcingaResult res = this.deleteServiceFromHost(host, service);
+			if( res.getCode() == 200 ) 
+			{
+				logger.info("Deleted service:" + service  +" from host:"+host + "to icinga2");
+				listIdDeleted.add(service);
+				System.out.println("****************************listIdDeleted:"+listIdDeleted);
+			
+			}
+			else
+			{
+				logger.info("Cant Deleted service:" + service  +" from host:"+host + "to icinga2");
+				logger.info("Code:" + res.getCode());
+				logger.info("Status:" + res.getStatus());
+			}
+			System.out.println("****************************listIdDeleted:"+listIdDeleted);
+		}
+		}catch(Exception e){
+			
+			e.printStackTrace();
+		}
+		
+		logger.info("Deleting devices to database: "+listIdDeleted);
+		List<CloudResource> result  = deleteInInternalRepository(listIdDeleted);		
+		
+		return result;
+	}
+	
 	private List<CloudResource> createServices(List<CloudResource> resources){
 		List <CloudResource> result = new ArrayList<CloudResource>();
 		for (CloudResource resource : resources){
@@ -458,7 +497,7 @@ public class Icinga2Manager {
 		 }
 		 else {
 			 //Verify that no other service with this name exists
-			 ServiceBean service = this.getServiceFromHost(hostname, resource.getName());
+			 ServiceBean service = this.getServiceFromHost(hostname, resource.getInternalId());
 			if (service != null){
 				logger.warn("There is a device registered in platform " + resource.getInternalId() + " with this name. Please select another name");
 				return null;
@@ -469,7 +508,7 @@ public class Icinga2Manager {
 					createCheckCommand(hostname);
 				}
 				Boolean exception = false;
-				String targetUrl = url + "/objects/services/" + hostname + "!" + resource.getName();
+				String targetUrl = url + "/objects/services/" + hostname + "!" + resource.getInternalId();
 				logger.info("URL build: " + targetUrl);
 				try {
 					icinga2client.setUrl(targetUrl);
@@ -477,7 +516,7 @@ public class Icinga2Manager {
 					icinga2client.setCustomHeaders("Accept: application/json");
 					//{ "templates": [ "generic-service" ], "attrs": { "display_name": "check_iot", "check_command" : "checkIot", "vars.IOT_SYMBIOTEID": "symbioteID_1", "vars.IOT_DEVICE_NAME": "device_name1", "vars.IOT_IPADDRESS": "X.X.X.X", "host_name": "api_dummy_host_2" } }'
 					icinga2client.setContent("{ \"templates\": [ \"generic-service\" ], \"attrs\": "
-							+ "{ \"display_name\": \"" + resource.getName() + "\","
+							+ "{ \"display_name\": \"" + resource.getInternalId() + "\","
 							+ " \"check_command\" : \"checkIot_" + hostname + "\","
 							+ " \"vars.IOT_INTERNAL_ID\": \"" + resource.getParams().getInternalId() + "\","
 							+ " \"vars.IOT_DEVICE_NAME\": \"" + resource.getParams().getDevice_name() + "\","
@@ -546,7 +585,7 @@ public class Icinga2Manager {
 					icinga2client.setUrl(targetUrl);
 					icinga2client.setMethod("POST");
 					icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: GET");
-					icinga2client.setContent("{\"joins\": [\"host.name\", \"host.address\"], \"filter\": \"match(\\\"" + hostname + "\\\",host.name) && match(\\\"" + resource.getName() + "\\\",service.name)\", \"attrs\": [\"display_name\",\"active\",\"check_interval\",\"check_command\",\"last_check\",\"last_check_result\"] }");
+					icinga2client.setContent("{\"joins\": [\"host.name\", \"host.address\"], \"filter\": \"match(\\\"" + hostname + "\\\",host.name) && match(\\\"" + resource.getInternalId() + "\\\",service.name)\", \"attrs\": [\"display_name\",\"active\",\"check_interval\",\"check_command\",\"last_check\",\"last_check_result\"] }");
 					System.out.println("BODY REQUEST: " + icinga2client.getContent());
 					icinga2client.execute();
 					if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){

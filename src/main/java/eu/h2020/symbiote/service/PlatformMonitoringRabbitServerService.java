@@ -55,6 +55,12 @@ public class PlatformMonitoringRabbitServerService {
 			)
 	public void resourceUnregistration(Message message, @Headers() Map<String, String> headers) {
 		          System.out.println(message.getBody());
+		          
+		          Gson gson = new Gson();
+		          ArrayList<String> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<String>>() {}.getType());
+		          System.out.println("******************************Llamando icinga2Manager.deleteResources:");
+		          icinga2Manager.deleteResources(resources);
+		          		          
 	}
 
 	@RabbitListener(bindings = @QueueBinding(

@@ -30,7 +30,7 @@ public class MonitoringApplicationTests {
 	
 
 	
-	@Test
+	//@Test
 	public void createResource(){
 		//create resource and add it to a list
 		CloudResource resource = getTestResource();
@@ -40,19 +40,31 @@ public class MonitoringApplicationTests {
 		//send the message using RabbitMQ
 		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
 	}
-		
+	
+	@Test
+	public void deleteResource(){
+      // test delete
+	 String id="internalId1";
+	 List<String> resources = new ArrayList<String>();
+	 resources.add(id);
+	 
+	//send the message using RabbitMQ
+	 
+	 rhResourceRegistrationMessageHandler.sendResourcesUnregistrationMessage(resources);
+	}
+	
 	
 	private CloudResource getTestResource(){
 		   CloudResource resource = new CloudResource();
 		   
 		   resource.setInternalId("internalId1");
-		   resource.setHost("127.0.0.1");
-		   resource.setName("symbiote_device1");
-		   
+		   //resource.setHost("127.0.0.1");
+		   resource.setHost("62.14.219.137");
+		   		   
 		   CloudResourceParams params = new CloudResourceParams();
 		   params.setIp_address(resource.getHost());
 		   params.setInternalId(resource.getInternalId());
-		   params.setDevice_name(resource.getName());
+		   params.setDevice_name(resource.getInternalId());
 		   resource.setParams(params);
 		   
 		   Resource r = new Resource();

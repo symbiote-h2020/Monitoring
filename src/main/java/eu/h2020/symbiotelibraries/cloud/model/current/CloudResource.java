@@ -14,8 +14,6 @@ public class CloudResource  {
     private String internalId;
     @JsonProperty("host")
     private String host;
-    @JsonProperty("name")
-    private String name;
     
     @JsonProperty("resource")
     Resource resource;
@@ -57,14 +55,6 @@ public class CloudResource  {
 
 	public void setParams(CloudResourceParams params) {
 		this.params = params;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}  	
+	}	
     
 }
