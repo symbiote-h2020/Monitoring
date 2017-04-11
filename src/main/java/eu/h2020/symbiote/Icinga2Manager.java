@@ -1,8 +1,8 @@
 package eu.h2020.symbiote;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,6 +19,7 @@ import eu.h2020.symbiote.beans.CheckCommandBean;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
 import eu.h2020.symbiote.beans.ServiceBean;
+import eu.h2020.symbiote.commons.security.SecurityHandler;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.icinga2.datamodel.JsonCreateServiceOkResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
@@ -36,7 +37,6 @@ public class Icinga2Manager {
 	 private static final Log logger = LogFactory.getLog(Icinga2Manager.class);
 	 private RestProxy icinga2client = new RestProxy();
 	 
-	 //TODO define details
 	 private RestProxy crmClient = new RestProxy();
 	 
 	 @Value("${symbiote.icinga2.api.url}")
@@ -49,12 +49,24 @@ public class Icinga2Manager {
 	 private String password; 
 	 
 	 @Value("${platform.id}")
-	 private String platformId; 
+	 private String platformId;
 	 
+	 @Value("${symbiote.sh.password}")
+	 private String secHandlerPsw;
 	 
+	 @Value("${symbiote.sh.user}")
+	 private String secHandlerUser;
+	 
+	 @Value("${symbiote.rabbitmq.host.ip}")
+	 private String rabbitMQHostIP;
+	 
+	 @Value("${symbiote.coreaam.url}")
+	 private String coreAAMUrl;
 	 @Autowired
 	  private ResourceRepository resourceRepository;
-		
+	
+	 private SecurityHandler securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP);
+	 
 	 @PostConstruct
 	 private void init() {
 		 icinga2client.setBasicAuthenticationUser(user);
@@ -613,6 +625,7 @@ public class Icinga2Manager {
 				devices[i] = device;
 			}
 			platform.setInternalId(platformId);	
+			platform.setCoreToken(securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw));
 			platform.setDevices(devices);			 
 		}
 		return platform;
