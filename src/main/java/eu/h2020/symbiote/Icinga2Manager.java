@@ -252,6 +252,7 @@ public class Icinga2Manager {
 			try {
 				icinga2client.setUrl(targetUrl);
 				icinga2client.setMethod("POST");
+				//icinga2client.
 				icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: DELETE");
 				icinga2client.execute();
 				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
@@ -427,12 +428,17 @@ public class Icinga2Manager {
 	 }
 
 	public List<CloudResource> addResources(List<CloudResource> resources) {
+		
 		logger.info("Adding " + resources.size() + " devices to icinga2");
 		List<CloudResource> resourcesAdded = this.createServices(resources);
 		logger.info("Added " + resourcesAdded.size() + " devices to icinga2");
 		//add to database only the devices created in icinga2
 		logger.info("Adding devices to database");
-		List<CloudResource> result  = addOrUpdateInInternalRepository(resourcesAdded);		
+		List<CloudResource> result  = addOrUpdateInInternalRepository(resourcesAdded);
+				
+		//List<CloudResource> result  = addOrUpdateInInternalRepository(resources);
+		
+		
 	    return result;
 	}
 	
@@ -448,7 +454,7 @@ public class Icinga2Manager {
 			String host = this.getHostnameByIpAddress(c.getHost());
 			String service  = c.getInternalId();
 			JsonDeleteMessageIcingaResult res = this.deleteServiceFromHost(host, service);
-			if( res.getCode() == 200 ) 
+			if( res.getCode() == 200.0 ) 
 			{
 				logger.info("Deleted service:" + service  +" from host:"+host + "to icinga2");
 				listIdDeleted.add(service);
