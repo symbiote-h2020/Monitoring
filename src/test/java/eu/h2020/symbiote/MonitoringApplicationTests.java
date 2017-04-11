@@ -30,7 +30,7 @@ public class MonitoringApplicationTests {
 	
 
 	
-	@Test
+	//@Test
 	public void createResource(){
 		//create resource and add it to a list
 		CloudResource resource = getTestResource();
@@ -41,7 +41,7 @@ public class MonitoringApplicationTests {
 		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
 	}
 	
-	//@Test
+	@Test
 	public void deleteResource(){
       // test delete
 	 String id="internalId1";
