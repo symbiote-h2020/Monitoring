@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import eu.h2020.symbiote.core.model.Location;
 import eu.h2020.symbiote.core.model.resources.Resource;
 import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
 import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
@@ -30,7 +29,7 @@ public class MonitoringApplicationTests {
 	
 
 	
-	//@Test
+	@Test
 	public void createResource(){
 		//create resource and add it to a list
 		CloudResource resource = getTestResource();
@@ -41,23 +40,30 @@ public class MonitoringApplicationTests {
 		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
 	}
 	
-	@Test
+//	@Test
 	public void deleteResource(){
       // test delete
-	 String id="internalId1";
+	 String id="internalId4";
 	 List<String> resources = new ArrayList<String>();
 	 resources.add(id);
 	 
 	//send the message using RabbitMQ
 	 
 	 rhResourceRegistrationMessageHandler.sendResourcesUnregistrationMessage(resources);
+	 try {
+		Thread.sleep(900000);
+	} catch (InterruptedException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	 
 	}
 	
 	
 	private CloudResource getTestResource(){
 		   CloudResource resource = new CloudResource();
 		   
-		   resource.setInternalId("internalId1");
+		   resource.setInternalId("internalId3");
 		   //resource.setHost("127.0.0.1");
 		   resource.setHost("62.14.219.137");
 		   		   

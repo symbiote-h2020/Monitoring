@@ -282,18 +282,38 @@ public class Icinga2Manager {
 		 JsonDeleteMessageIcingaResult jsonMessage  = null;
 		 Boolean exception = false;
 		 String targetUrl = url + "/objects/services/" + hostname + "!" + servicename + "?cascade=1";
+//		 String targetUrl = url + "/objects/services?service=" + hostname + "!" + servicename + "&cascade=1";
+		 //"https://VTSS031.cs1local:5665/v1/objects/services?service=zabbix.atos.net%21internalId1&cascade=1
 		 logger.info("URL build: " + targetUrl);
-
+		//Retrieve services from host from mongoDB
+		 List<CloudResource> services = getDevicesFromHostFromDB(hostname);		
 		 try {
 			 icinga2client.setUrl(targetUrl);
 			 icinga2client.setMethod("POST");
-			 icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: DELETE");
+			 icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: DELETE");	 
 			 icinga2client.execute();
 			 if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 				 String response = icinga2client.getContentResponse();
 				 logger.info("PAYLOAD: " + response);		
 				 System.out.println();
 				 jsonMessage = ModelConverter.jsonDeleteMessageToObject(response);
+			 }
+			 else if (icinga2client.getStatusResponse() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+				 String response = icinga2client.getContentResponse();
+				 logger.info("PAYLOAD: " + response);		
+				 System.out.println();
+				 jsonMessage = ModelConverter.jsonDeleteMessageToObject(response);
+				 
+				 //As we have in devices var all the existing services for this hostname, we delete of the list the one that we want to delete
+				 //and add again the other services
+				 int deleted = -1;
+				 for (int i=0;i<services.size();i++){
+					 if (services.get(i).getInternalId().equalsIgnoreCase(servicename)){
+						deleted = i;
+					 }
+				 }
+				 services.remove(deleted);
+				 this.addResources(services, false);
 			 }
 			 else {
 				 logger.warn("Execution failed of POST method to: " + targetUrl);
@@ -310,6 +330,7 @@ public class Icinga2Manager {
 		 if(exception) return null;
 		 return jsonMessage;
 	 }
+
 
 	public JsonUpdatedObjectMessageResult updateHostAddress(String hostname, String address) {
 		
@@ -428,18 +449,23 @@ public class Icinga2Manager {
 	 }
 
 	public List<CloudResource> addResources(List<CloudResource> resources) {
+		return addResources(resources, true);
+	}
+	
+	private  List<CloudResource> addResources(List<CloudResource> resources, boolean addMongoDB) {
 		
 		logger.info("Adding " + resources.size() + " devices to icinga2");
 		List<CloudResource> resourcesAdded = this.createServices(resources);
 		logger.info("Added " + resourcesAdded.size() + " devices to icinga2");
-		//add to database only the devices created in icinga2
-		logger.info("Adding devices to database");
-		List<CloudResource> result  = addOrUpdateInInternalRepository(resourcesAdded);
-				
-		//List<CloudResource> result  = addOrUpdateInInternalRepository(resources);
-		
-		
-	    return result;
+		if (addMongoDB){
+			//add to database only the devices created in icinga2
+			logger.info("Adding devices to database");
+			List<CloudResource> result  = addOrUpdateInInternalRepository(resourcesAdded);
+			logger.info("Added " + result.size() + "devices to database");
+			return result;
+		}
+		return resourcesAdded;
+	    
 	}
 	
 	public List<CloudResource> deleteResources(List<String> resources) {
@@ -451,30 +477,51 @@ public class Icinga2Manager {
 			while( it.hasNext() ) {
 			String internalId = (String) it.next();
 			CloudResource c = this.resourceRepository.getByInternalId(internalId);
-			String host = this.getHostnameByIpAddress(c.getHost());
-			String service  = c.getInternalId();
-			JsonDeleteMessageIcingaResult res = this.deleteServiceFromHost(host, service);
-			if( res.getCode() == 200.0 ) 
-			{
-				logger.info("Deleted service:" + service  +" from host:"+host + "to icinga2");
-				listIdDeleted.add(service);
-				System.out.println("****************************listIdDeleted:"+listIdDeleted);
+			if (c!=null){
+				String host = this.getHostnameByIpAddress(c.getHost());
+				String service  = c.getInternalId();
+				if (host != null){
+					JsonDeleteMessageIcingaResult res = this.deleteServiceFromHost(host, service);
+					if( res.getCode() == 200.0 ) 
+					{
+						logger.info("Deleted service:" + service  +" from host: "+host + "to icinga2");
+						listIdDeleted.add(service);
+						System.out.println("****************************listIdDeleted: "+ listIdDeleted);
+					
+					}
+					else if (res.getCode() == 500.0){
+						ServiceBean s = this.getServiceFromHost(host, service);
+						if (s == null){
+							logger.info("Device " + service + " does not exist in host " + host + ". DELETED!! ");
+							listIdDeleted.add(service);
+						}
+						else {
+							logger.error("Device " + service + " still exits in host " + host);
+						}
+					}
+					else {
+						logger.info("Cannot Deleted service: " + service  +" from host: "+ host + " to icinga2");
+						logger.info("Code:" + res.getCode());
+						logger.info("Status:" + res.getStatus());
+					}
+					System.out.println("****************************listIdDeleted:"+listIdDeleted);					
+				}
+				else {
+					logger.warn("Host with IP address " + c.getHost() + " not found in icinga2");
+				}
+				
+			}
+			else {
+				logger.warn("Device with name " + internalId + " not found in MongoDB");
+			}
 			
-			}
-			else
-			{
-				logger.info("Cant Deleted service:" + service  +" from host:"+host + "to icinga2");
-				logger.info("Code:" + res.getCode());
-				logger.info("Status:" + res.getStatus());
-			}
-			System.out.println("****************************listIdDeleted:"+listIdDeleted);
 		}
 		}catch(Exception e){
 			
 			e.printStackTrace();
 		}
 		
-		logger.info("Deleting devices to database: "+listIdDeleted);
+		logger.info("Deleting devices to database: " + listIdDeleted);
 		List<CloudResource> result  = deleteInInternalRepository(listIdDeleted);		
 		
 		return result;
@@ -712,5 +759,67 @@ public class Icinga2Manager {
 	}
 	
 		 
+	 public String getIpAddressByHostname(String hostname){
+		 String ipAddress = "";
+		 
+		 Boolean exception = false;
+			String targetUrl = url + "/objects/hosts";
+			logger.info("URL build: " + targetUrl);
+			
+			try {
+				icinga2client.setUrl(targetUrl);
+				icinga2client.setMethod("POST");
+				icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: GET");
+				icinga2client.setContent("{\"joins\": [\"host.name\", \"host.address\"], \"filter\": \"match(\\\"" + hostname + "\\\",host.display_name)\", \"attrs\": [\"address\"] }");
+				System.out.println("BODY REQUEST: " + icinga2client.getContent());
+				icinga2client.execute();
+				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
+					String response = icinga2client.getContentResponse();
+					logger.info("PAYLOAD: " + response);		
+					ipAddress = ModelConverter.jsonIpByHostToString(response);
+				}
+				else {
+					logger.warn("Execution failed of GET method to: " + targetUrl);
+					logger.warn("HTTP STATUS: " + icinga2client.getStatusResponse() + " - " + 
+							icinga2client.getStatusMessage());
+					exception = true;
+				}
+
+			} catch(Exception e) {
+				logger.warn("Error trying to parse JSON response from Icinga2: " + targetUrl + " Exception: " + e.getMessage());
+				exception = true;
+			}
+			
+			if(exception) return null;
+		 
+		 
+		 return ipAddress;
+	 }
+	 
+		private List<CloudResource> getDevicesFromHostFromDB(String hostname) {
+			String ipAddress = this.getIpAddressByHostname(hostname);
+			List<CloudResource> devices = null;
+			if (ipAddress != null){
+				List<CloudResource> allServices = resourceRepository.findAll();
+				for (CloudResource c : allServices){
+					if (c.getHost().equalsIgnoreCase(ipAddress)){
+						if (devices == null){
+							devices = new ArrayList<CloudResource>();
+						}
+						devices.add(c);
+					}
+				}
+				if (devices != null){
+					logger.info("Host " + hostname + " has " + devices.size() + " devices in mongoDB");
+				}
+				else {
+					logger.info("Host " + hostname + " has 0 devices in mongoDB");
+				}
+			}
+			else {
+				logger.warn("Cannot identify any host in icinga2 with hostname " + hostname );
+			}
+			return devices;
+		}
 
 }

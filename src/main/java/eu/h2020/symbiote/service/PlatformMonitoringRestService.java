@@ -77,6 +77,8 @@ public class PlatformMonitoringRestService {
 	  JsonDeleteMessageIcingaResult result = icinga2Manager.deleteHost(hostname);
 	  return result;
   }
+  
+  
 
   @RequestMapping(method = RequestMethod.DELETE, path = "/host/{hostname:.+}/service/{service:.+}")
   @ResponseBody
@@ -116,8 +118,13 @@ public class PlatformMonitoringRestService {
 
 	  }	 
   }
-
   
+  @RequestMapping(method = RequestMethod.GET, path = "/host/{hostname:.+}/ip")
+  @ResponseBody
+  public String getServiceFromHost(@PathVariable("hostname") String hostname) {
+	  String result = icinga2Manager.getIpAddressByHostname(hostname);
+	  return result;
+  }
 
 
 }

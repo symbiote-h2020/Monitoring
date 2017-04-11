@@ -61,7 +61,7 @@ public class RHResourceMessageHandler {
         	applicationContext.getAutowireCapableBeanFactory().autowireBean(rabbitMQMessageHandler);
         	rabbitMQMessageHandler.sendMessage(resourceIds);
         } catch (Exception e) {
-            logger.error("Fatal error sending data to EXCHANGE_NAME: "+EXCHANGE_NAME_UNREGISTRATION+", RESOURCE_UNREGISTRATION_QUEUE_NAME:"+RESOURCE_UNREGISTRATION_QUEUE_NAME, e);
+            logger.error("Fatal error sending data to EXCHANGE_NAME: "+ EXCHANGE_NAME_UNREGISTRATION +", RESOURCE_UNREGISTRATION_QUEUE_NAME:"+RESOURCE_UNREGISTRATION_QUEUE_NAME, e);
         }
     }
 

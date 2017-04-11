@@ -24,6 +24,7 @@ import eu.h2020.symbiote.beans.CheckCommandBean;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
 import eu.h2020.symbiote.icinga2.datamodel.host.ip.JsonHostByIpResponse;
+import eu.h2020.symbiote.icinga2.datamodel.host.ip.JsonIpByHostResponse;
 
 public class ModelConverter {
 	 private static final Log logger = LogFactory.getLog(ModelConverter.class);
@@ -232,6 +233,20 @@ public class ModelConverter {
 				return checkCommands.getResults()[0].getAttrs();
 			}
 			return null;
+		}
+		
+		public static String jsonIpByHostToString(String jsonString){
+			JsonIpByHostResponse hostByIp =  gson.fromJson(jsonString, JsonIpByHostResponse.class);
+			String ipAddress = "";
+			try {
+				if (hostByIp.getResults() != null && hostByIp.getResults().length ==1){
+					return hostByIp.getResults()[0].getAttrs().getAddress();
+				}
+			}
+			catch (Exception e){
+				return "";
+			}
+			return ipAddress;
 		}
 		
 
