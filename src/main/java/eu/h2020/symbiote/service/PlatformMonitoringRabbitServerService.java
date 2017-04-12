@@ -1,6 +1,7 @@
 package eu.h2020.symbiote.service;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.amqp.core.ExchangeTypes;
@@ -17,7 +18,6 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 
 import eu.h2020.symbiote.Icinga2Manager;
-import eu.h2020.symbiote.beans.ResourceBean;
 import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
 import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
 
@@ -84,7 +84,15 @@ public class PlatformMonitoringRabbitServerService {
 	public void resourceRegistrationTest(Message message, @Headers() Map<String, String> headers) {
 		          Gson gson = new Gson();
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
+		          
 		          System.out.println("I am in the add method for testtttttttttttttttttttttttttt");
+		          List<CloudResource> added = icinga2Manager.addOrUpdateInInternalRepository(resources);
+		          if (added != null && added.size()>0){
+		        	  System.out.println("TEST: added " + added.size() + " devices to database");  
+		          }
+		          else {
+		        	  System.out.println("TEST: added 0 devices to database");
+		          }
 //		          icinga2Manager.addResources(resources);
 	}
 	
@@ -99,7 +107,14 @@ public class PlatformMonitoringRabbitServerService {
 		          Gson gson = new Gson();
 		          ArrayList<String> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<String>>() {}.getType());
 		          System.out.println("I am in the delete method for testtttttttttttttttttttttttttt");
-		          //		          icinga2Manager.deleteResources(resources);        		          
+		          //		          icinga2Manager.deleteResources(resources);    
+		          List<CloudResource> deleted = icinga2Manager.deleteInInternalRepository(resources);
+		          if (deleted != null && deleted.size()>0){
+		        	  System.out.println("TEST: deleted " + deleted.size() + " devices from database");  
+		          }
+		          else {
+		        	  System.out.println("TEST: deleted 0 devices to database");
+		          }
 	}
 	
 	@RabbitListener(bindings = @QueueBinding(
@@ -112,6 +127,13 @@ public class PlatformMonitoringRabbitServerService {
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
 		          System.out.println("I am in the update method for testtttttttttttttttttttttttttt");
 		          //		          icinga2Manager.updateResources(resources);
+		          List<CloudResource> updated = icinga2Manager.addOrUpdateInInternalRepository(resources);
+		          if (updated != null && updated.size()>0){
+		        	  System.out.println("TEST: updated " + updated.size() + " devices from database");  
+		          }
+		          else {
+		        	  System.out.println("TEST: updated 0 devices to database");
+		          }
 		          
 	}
 	

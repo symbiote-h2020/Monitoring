@@ -377,7 +377,7 @@ public class Icinga2Manager {
 		return jsonMessage;
 	}
 	 	 
-	 private List<CloudResource>  addOrUpdateInInternalRepository(List<CloudResource>  resources){
+	 public List<CloudResource>  addOrUpdateInInternalRepository(List<CloudResource>  resources){
 		 return resources.stream().map(resource -> {
 			  CloudResource existingResource = resourceRepository.getByInternalId(resource.getInternalId());
 		      if (existingResource != null) {
@@ -388,7 +388,7 @@ public class Icinga2Manager {
 	     .collect(Collectors.toList());
 	  }
 
-	  private List<CloudResource> deleteInInternalRepository(List<String> resourceIds){
+	  public List<CloudResource> deleteInInternalRepository(List<String> resourceIds){
 		  List<CloudResource>  result = new ArrayList<CloudResource>();
 		  for (String resourceId:resourceIds){
 			  CloudResource existingResource = resourceRepository.getByInternalId(resourceId);
