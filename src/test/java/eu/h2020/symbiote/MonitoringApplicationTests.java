@@ -7,12 +7,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import eu.h2020.symbiote.core.model.resources.Resource;
 import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
+import eu.h2020.symbiote.rest.RestProxy;
 import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
 import eu.h2020.symbiotelibraries.cloud.model.current.CloudResourceParams;
 
@@ -22,6 +25,8 @@ import eu.h2020.symbiotelibraries.cloud.model.current.CloudResourceParams;
 @RunWith(SpringRunner.class)
 @SpringBootTest({"eureka.client.enabled=false"})
 public class MonitoringApplicationTests {
+
+	protected static final Logger LOGGER = LoggerFactory.getLogger(MonitoringApplicationTests.class);
 	//symbiote.rabbitmq.host.ip
 	//urlformcram localhost
 //	@Autowired Icinga2Manager icinga2Manager;
@@ -33,7 +38,7 @@ public class MonitoringApplicationTests {
 		
 	
     // Execute the Setup method before the test.     
-	//@Before     
+	@Before     
 	public void setUp() throws Exception { 
 		
 		//CREATE
@@ -41,7 +46,7 @@ public class MonitoringApplicationTests {
 		
 		
 		//UPDATE
-		upd_resource = getTestResource();
+		upd_resource = getTestResource("Upd");
 		System.out.println("Creating resource with InternalId=" + upd_resource.getInternalId());
 		List<CloudResource> resources = new ArrayList<CloudResource>();
 		resources.add(upd_resource);	
@@ -57,12 +62,14 @@ public class MonitoringApplicationTests {
 		
 	} 
 
-	//@Test
+	@Test
 	public void updateResource(){
       // test update
 		String id= upd_resource.getInternalId();
 		System.out.println("Updating resource with InternalId=" + id);
-	 
+		
+		LOGGER.error("ORIGINAL: "+ upd_resource.getResource().getComments().get(0));
+		LOGGER.error("ORIGINAL: "+ upd_resource.getResource().getComments().get(1));
 	  // data to update 
 		Resource r = new Resource();
 		r.setId("symbioteId1");
@@ -75,13 +82,15 @@ public class MonitoringApplicationTests {
 			labels.add("label1");
 			labels.add("label2");
 		r.setLabels(labels);
-		upd_resource.setResource(r);	
-	
 		
 		// Update
-		upd_resource = getTestResource();
+		CloudResource upd_res = getTestResource();
 		List<CloudResource> resources = new ArrayList<CloudResource>();
-		resources.add(upd_resource);	
+		upd_res.setResource(r);
+		upd_res.setInternalId(id);
+		resources.add(upd_res);	
+		LOGGER.error("UPDATED: "+ upd_res.getResource().getComments().get(0));
+		LOGGER.error("UPDATED: "+ upd_res.getResource().getComments().get(1));
 		//send the message using RabbitMQ
 		rhResourceRegistrationMessageHandler.sendResourcesUpdateMessage(resources);
 		
@@ -101,10 +110,10 @@ public class MonitoringApplicationTests {
 		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
 	}
 	
-	@Test
+	//@Test
 	public void deleteResource(){
       // test delete
-	 String id="TS-01c088e7-99f1-4de6-bdb3-7fc4c83fe2dd";
+	 String id="Upd-459111a5-e0e2-417a-9fd2-2ab6e9fc0546";
 	 List<String> resources = new ArrayList<String>();
 	 resources.add(id);
 	 
@@ -123,7 +132,7 @@ public class MonitoringApplicationTests {
 	}	
 	
 	
-	//@After
+	@After
 	public void after(){
       // test update
 		String id= upd_resource.getInternalId();
@@ -146,13 +155,15 @@ public class MonitoringApplicationTests {
 	}	
 	
 	
-	
 	private CloudResource getTestResource(){
+		return getTestResource("Test");
+	}
+	private CloudResource getTestResource(String prefix){
 		
 			CloudResource resource = new CloudResource();
 		   
 		   //String id="IdUpdateTest";
-		   String id = "TS-"+java.util.UUID.randomUUID().toString();
+		   String id = prefix+"-"+java.util.UUID.randomUUID().toString();
 		   resource.setInternalId(id);
 		   //resource.setHost("127.0.0.1");
 		   resource.setHost("62.14.219.137");
