@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import eu.h2020.symbiote.beans.CheckCommandBean;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
+import eu.h2020.symbiote.beans.ResourceBean;
 import eu.h2020.symbiote.beans.ServiceBean;
 import eu.h2020.symbiote.commons.security.SecurityHandler;
 import eu.h2020.symbiote.db.ResourceRepository;
@@ -65,7 +66,7 @@ public class Icinga2Manager {
 	 @Autowired
 	  private ResourceRepository resourceRepository;
 	
-	 private SecurityHandler securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP);
+	 //private SecurityHandler securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP);
 	 
 	 @PostConstruct
 	 private void init() {
@@ -479,8 +480,37 @@ public class Icinga2Manager {
 		return resourcesAdded;
 	    
 	}
+
 	
-	public List<CloudResource> deleteResources(List<String> resources) {
+	public List<CloudResource> updateResources(List<CloudResource> resources) {
+		return updateResources(resources, true);
+	}
+	
+	private  List<CloudResource> updateResources(List<CloudResource> resources, boolean updateMongoDB) {
+		
+		logger.info("Updating " + resources.size() + " devices to icinga2");
+		List<CloudResource> resourcesUpdated = this.updateServices(resources);
+		logger.info("Updated " + resourcesUpdated.size() + " devices to icinga2");
+		if (updateMongoDB){
+			//add to database only the devices created in icinga2
+			logger.info("Updating devices to database");
+			List<CloudResource> result  = addOrUpdateInInternalRepository(resourcesUpdated);
+			logger.info("Updating " + result.size() + "devices to database");
+			return result;
+		}
+		return resourcesUpdated;
+	    
+	}
+	
+	public boolean deleteServices(List<String> resources) {
+		return deleteResources(resources, false);
+	}
+	
+	public boolean deleteResources(List<String> resources) {
+		return deleteResources(resources, true);
+	}
+	
+	public boolean deleteResources(List<String> resources, boolean mongodb) {
 		logger.info("Deleting " + resources.size() + " devices to icinga2");
 		
 		Iterator<String> it = resources.listIterator();
@@ -533,11 +563,42 @@ public class Icinga2Manager {
 			e.printStackTrace();
 		}
 		
-		logger.info("Deleting devices to database: " + listIdDeleted);
-		List<CloudResource> result  = deleteInInternalRepository(listIdDeleted);		
+		if(mongodb){
+			logger.info("Deleting devices to database: " + listIdDeleted);
+			List<CloudResource> result  = deleteInInternalRepository(listIdDeleted);		
+		}
 		
+		return true;
+	}
+
+	private List<CloudResource> updateServices(List<CloudResource> resources){
+		List <CloudResource> result = new ArrayList<CloudResource>();
+		for (CloudResource resource : resources){
+			JsonCreateServiceOkResult response = updateService(resource);
+			if (response != null && response.getCode() == 200.0){
+				//if the resource is successfully added in Icinga, it is added in the response
+				//if any problem exists in the creation of the resource, the resource will not be part of the response
+				result.add(resource);
+			}
+		}
 		return result;
 	}
+
+	private JsonCreateServiceOkResult updateService(CloudResource resource){
+		
+		//delete service
+		String id = resource.getInternalId();
+		List<String> idServices = new ArrayList<String>();
+		idServices.add(id);
+		
+		deleteServices(idServices);
+		 
+		//add service
+		return createService(resource);
+				 
+	}
+	
+
 	
 	private List<CloudResource> createServices(List<CloudResource> resources){
 		List <CloudResource> result = new ArrayList<CloudResource>();
@@ -625,7 +686,7 @@ public class Icinga2Manager {
 				devices[i] = device;
 			}
 			platform.setInternalId(platformId);	
-			platform.setCoreToken(securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw));
+			//platform.setCoreToken(securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw));
 			platform.setDevices(devices);			 
 		}
 		return platform;

@@ -58,7 +58,6 @@ public class PlatformMonitoringRabbitServerService {
 		          
 		          Gson gson = new Gson();
 		          ArrayList<String> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<String>>() {}.getType());
-		          System.out.println("******************************Llamando icinga2Manager.deleteResources:");
 		          icinga2Manager.deleteResources(resources);
 		          		          
 	}
@@ -70,7 +69,8 @@ public class PlatformMonitoringRabbitServerService {
 			)
 	public void resourceUpdate(Message message, @Headers() Map<String, String> headers) {
 		          Gson gson = new Gson();
-		          ResourceBean resourceBean = gson.fromJson(new String(message.getBody()), ResourceBean.class);
-		          System.out.println("resourceBean "+resourceBean + " - "+ message.getBody());
+		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
+		          icinga2Manager.updateResources(resources);
+		          
 	}
 }

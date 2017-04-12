@@ -3,6 +3,8 @@ package eu.h2020.symbiote;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,33 +25,93 @@ public class MonitoringApplicationTests {
 	//symbiote.rabbitmq.host.ip
 	//urlformcram localhost
 //	@Autowired Icinga2Manager icinga2Manager;
-	@Autowired
+	 @Autowired
 	 private RHResourceMessageHandler rhResourceRegistrationMessageHandler;
+	 private CloudResource cre_resource;
+	 private CloudResource upd_resource;	
+	 private CloudResource del_resource;
+		
+	
+    // Execute the Setup method before the test.     
+	//@Before     
+	public void setUp() throws Exception { 
+		
+		//CREATE
+		
+		
+		
+		//UPDATE
+		upd_resource = getTestResource();
+		System.out.println("Creating resource with InternalId=" + upd_resource.getInternalId());
+		List<CloudResource> resources = new ArrayList<CloudResource>();
+		resources.add(upd_resource);	
+		//send the message using RabbitMQ
+		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
+		int t=20000;
+		System.out.println("Sleeping: "+ t/1000 + "segs.");
+		Thread.sleep(t);
+		System.out.println("Sleeping END");
+		
+		//DELETE
+		
+		
+	} 
 
+	//@Test
+	public void updateResource(){
+      // test update
+		String id= upd_resource.getInternalId();
+		System.out.println("Updating resource with InternalId=" + id);
+	 
+	  // data to update 
+		Resource r = new Resource();
+		r.setId("symbioteId1");
+		r.setInterworkingServiceURL("http://tests.io/interworking/url");
+		List<String> comments = new ArrayList<String>();
+			comments.add("UPDATED-comment1");
+			comments.add("UPDATED-comment2");
+		r.setComments(comments);
+		List<String> labels = new ArrayList<String>();
+			labels.add("label1");
+			labels.add("label2");
+		r.setLabels(labels);
+		upd_resource.setResource(r);	
+	
+		
+		// Update
+		upd_resource = getTestResource();
+		List<CloudResource> resources = new ArrayList<CloudResource>();
+		resources.add(upd_resource);	
+		//send the message using RabbitMQ
+		rhResourceRegistrationMessageHandler.sendResourcesUpdateMessage(resources);
+		
+	}
 	
 
 	
-	@Test
+    //@Test
 	public void createResource(){
 		//create resource and add it to a list
-		CloudResource resource = getTestResource();
+		cre_resource = getTestResource();
 		List<CloudResource> resources = new ArrayList<CloudResource>();
-		resources.add(resource);	
+
+		resources.add(cre_resource);	
 
 		//send the message using RabbitMQ
 		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
 	}
 	
-//	@Test
+	@Test
 	public void deleteResource(){
       // test delete
-	 String id="internalId4";
+	 String id="TS-01c088e7-99f1-4de6-bdb3-7fc4c83fe2dd";
 	 List<String> resources = new ArrayList<String>();
 	 resources.add(id);
 	 
 	//send the message using RabbitMQ
 	 
 	 rhResourceRegistrationMessageHandler.sendResourcesUnregistrationMessage(resources);
+	 /*
 	 try {
 		Thread.sleep(900000);
 	} catch (InterruptedException e) {
@@ -57,13 +119,41 @@ public class MonitoringApplicationTests {
 		e.printStackTrace();
 	}
 	 
-	}
+	*/
+	}	
+	
+	
+	//@After
+	public void after(){
+      // test update
+		String id= upd_resource.getInternalId();
+		System.out.println("Deleting resource with InternalId=" + id);
+	// delete resource
+	 
+	 List<String> resources = new ArrayList<String>();
+	 resources.add(id);
+	 
+	//send the message using RabbitMQ
+	 
+	 rhResourceRegistrationMessageHandler.sendResourcesUnregistrationMessage(resources);
+//		 try {
+//			Thread.sleep(900000);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//	 
+	}	
+	
 	
 	
 	private CloudResource getTestResource(){
-		   CloudResource resource = new CloudResource();
+		
+			CloudResource resource = new CloudResource();
 		   
-		   resource.setInternalId("internalId3");
+		   //String id="IdUpdateTest";
+		   String id = "TS-"+java.util.UUID.randomUUID().toString();
+		   resource.setInternalId(id);
 		   //resource.setHost("127.0.0.1");
 		   resource.setHost("62.14.219.137");
 		   		   
@@ -88,4 +178,6 @@ public class MonitoringApplicationTests {
 
 		   return resource; 
 	   }
+	
+
 }
