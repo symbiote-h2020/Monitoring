@@ -26,6 +26,10 @@ public  class CRAMMessageHandler {
 //		
 //    }
     
+	public void setService(CRAMRestService service){
+		jsonclient = service;
+	}
+	
     @PostConstruct
 	public void createClient() {
 		logger.info("Will use "+ url +" to access to CRAM");

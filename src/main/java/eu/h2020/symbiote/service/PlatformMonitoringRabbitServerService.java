@@ -45,7 +45,9 @@ public class PlatformMonitoringRabbitServerService {
 		          Gson gson = new Gson();
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
 //		          System.out.println("resourceBean "+resourceBean + " - "+ message.getBody());
-		          icinga2Manager.addResources(resources);
+		          if (resources != null){
+		        	  icinga2Manager.addResources(resources);
+		          }
 	}
 
 	@RabbitListener(bindings = @QueueBinding(
@@ -73,4 +75,45 @@ public class PlatformMonitoringRabbitServerService {
 		          icinga2Manager.updateResources(resources);
 		          
 	}
+	
+	@RabbitListener(bindings = @QueueBinding(
+			value = @Queue(value = RHResourceMessageHandler.RESOURCE_REGISTRATION_QUEUE_NAME_TEST, durable = "true", autoDelete = "false", exclusive = "false"),
+			exchange = @Exchange(value = RHResourceMessageHandler.EXCHANGE_NAME_REGISTRATION_TEST, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
+			key = RHResourceMessageHandler.RESOURCE_REGISTRATION_QUEUE_NAME_TEST)
+			)
+	public void resourceRegistrationTest(Message message, @Headers() Map<String, String> headers) {
+		          Gson gson = new Gson();
+		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
+		          System.out.println("I am in the add method for testtttttttttttttttttttttttttt");
+//		          icinga2Manager.addResources(resources);
+	}
+	
+	@RabbitListener(bindings = @QueueBinding(
+			value = @Queue(value = RHResourceMessageHandler.RESOURCE_UNREGISTRATION_QUEUE_NAME_TEST, durable = "true", autoDelete = "false", exclusive = "false"),
+			exchange = @Exchange(value = RHResourceMessageHandler.EXCHANGE_NAME_UNREGISTRATION_TEST, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
+			key = RHResourceMessageHandler.RESOURCE_UNREGISTRATION_QUEUE_NAME_TEST)
+			)
+	public void resourceUnregistrationTest(Message message, @Headers() Map<String, String> headers) {
+		          System.out.println(message.getBody());
+		          
+		          Gson gson = new Gson();
+		          ArrayList<String> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<String>>() {}.getType());
+		          System.out.println("I am in the delete method for testtttttttttttttttttttttttttt");
+		          //		          icinga2Manager.deleteResources(resources);        		          
+	}
+	
+	@RabbitListener(bindings = @QueueBinding(
+			value = @Queue(value = RHResourceMessageHandler.RESOURCE_UPDATED_QUEUE_NAME_TEST, durable = "true", autoDelete = "false", exclusive = "false"),
+			exchange = @Exchange(value = RHResourceMessageHandler.EXCHANGE_NAME_UPDATED_TEST, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
+			key = RHResourceMessageHandler.RESOURCE_UPDATED_QUEUE_NAME_TEST)
+			)
+	public void resourceUpdateTest(Message message, @Headers() Map<String, String> headers) {
+		          Gson gson = new Gson();
+		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
+		          System.out.println("I am in the update method for testtttttttttttttttttttttttttt");
+		          //		          icinga2Manager.updateResources(resources);
+		          
+	}
+	
+	
 }

@@ -18,9 +18,7 @@ import org.springframework.stereotype.Component;
 import eu.h2020.symbiote.beans.CheckCommandBean;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
-import eu.h2020.symbiote.beans.ResourceBean;
 import eu.h2020.symbiote.beans.ServiceBean;
-import eu.h2020.symbiote.commons.security.SecurityHandler;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.icinga2.datamodel.JsonCreateServiceOkResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
@@ -38,7 +36,6 @@ public class Icinga2Manager {
 	 private static final Log logger = LogFactory.getLog(Icinga2Manager.class);
 	 private RestProxy icinga2client = new RestProxy();
 	 
-	 private RestProxy crmClient = new RestProxy();
 	 
 	 @Value("${symbiote.icinga2.api.url}")
 	 private String url;

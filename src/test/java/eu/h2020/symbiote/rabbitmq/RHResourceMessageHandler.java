@@ -37,6 +37,14 @@ public class RHResourceMessageHandler {
 	public static final String RESOURCE_UNREGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.unregister_resources";
 	public static final String RESOURCE_UPDATED_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.update_resources";
 	
+	public static final String EXCHANGE_NAME_REGISTRATION_TEST = "symbIoTe_test.rh.reg";
+	public static final String EXCHANGE_NAME_UNREGISTRATION_TEST = "symbIoTe_test.rh.unreg";
+	public static final String EXCHANGE_NAME_UPDATED_TEST = "symbIoTe_test.rh.update";
+	
+	public static final String RESOURCE_REGISTRATION_QUEUE_NAME_TEST = "symbIoTe_test.monitoring.registrationHandler.register_resources";
+	public static final String RESOURCE_UNREGISTRATION_QUEUE_NAME_TEST = "symbIoTe_test.monitoring.registrationHandler.unregister_resources";
+	public static final String RESOURCE_UPDATED_QUEUE_NAME_TEST = "symbIoTe_test.monitoring.registrationHandler.update_resources";
+
 
     private static Log logger = LogFactory.getLog(RHResourceMessageHandler.class);
     
