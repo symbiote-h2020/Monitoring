@@ -52,6 +52,11 @@ public class MonitoringApplicationTests {
 		resources.add(upd_resource);	
 		//send the message using RabbitMQ
 		rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
+
+		LOGGER.info("********************************************************************");
+		LOGGER.info("****** Verify CREATE:" + upd_resource.getInternalId() +"************");
+		LOGGER.info("********************************************************************");
+
 		int t=20000;
 		System.out.println("Sleeping: "+ t/1000 + "segs.");
 		Thread.sleep(t);
@@ -68,8 +73,8 @@ public class MonitoringApplicationTests {
 		String id= upd_resource.getInternalId();
 		System.out.println("Updating resource with InternalId=" + id);
 		
-		LOGGER.error("ORIGINAL: "+ upd_resource.getResource().getComments().get(0));
-		LOGGER.error("ORIGINAL: "+ upd_resource.getResource().getComments().get(1));
+		LOGGER.info("ORIGINAL: "+ upd_resource.getResource().getComments().get(0));
+		LOGGER.info("ORIGINAL: "+ upd_resource.getResource().getComments().get(1));
 	  // data to update 
 		Resource r = new Resource();
 		r.setId("symbioteId1");
@@ -89,10 +94,22 @@ public class MonitoringApplicationTests {
 		upd_res.setResource(r);
 		upd_res.setInternalId(id);
 		resources.add(upd_res);	
-		LOGGER.error("UPDATED: "+ upd_res.getResource().getComments().get(0));
-		LOGGER.error("UPDATED: "+ upd_res.getResource().getComments().get(1));
+		LOGGER.info("UPDATED: "+ upd_res.getResource().getComments().get(0));
+		LOGGER.info("UPDATED: "+ upd_res.getResource().getComments().get(1));
 		//send the message using RabbitMQ
 		rhResourceRegistrationMessageHandler.sendResourcesUpdateMessage(resources);
+		LOGGER.info("********************************************************************");
+		LOGGER.info("****** Verify UPDATED:" + upd_resource.getInternalId() +"************");
+		LOGGER.info("********************************************************************");
+		int t=20000;
+		System.out.println("Sleeping: "+ t/1000 + "segs.");
+		try {
+			Thread.sleep(t);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("Sleeping END");
 		
 	}
 	
@@ -145,6 +162,9 @@ public class MonitoringApplicationTests {
 	//send the message using RabbitMQ
 	 
 	 rhResourceRegistrationMessageHandler.sendResourcesUnregistrationMessage(resources);
+		LOGGER.info("********************************************************************");
+		LOGGER.info("****** Verify DELETED:" + upd_resource.getInternalId() +"************");
+		LOGGER.info("********************************************************************");
 //		 try {
 //			Thread.sleep(900000);
 //		} catch (InterruptedException e) {
