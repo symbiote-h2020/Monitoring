@@ -42,18 +42,54 @@ public class MonitoringRabbitTests {
 	
 	private Random rand;
 	
+	private static String INTERNAL_ID_ADD = "internalId_add_rabbit";
+	private static String INTERNAL_ID_DELETE = "internalId_delete_rabbit";
+	private static String INTERNAL_ID_UPDATE = "internalId_update_rabbit";
+	
+	private static String SYMBIOTE_ID_ADD = "symbioteId_add_rabbit";
+	private static String SYMBIOTE_ID_DELETE = "symbioteId_delete_rabbit";
+	private static String SYMBIOTE_ID_UPDATE = "symbioteId_update_rabbit";
+	
+	private CloudResource add_item;
+	private CloudResource delete_item;
+	private String idForDelete;
+	private CloudResource update_item;
+	private String oldValue = "http://tests.io/interworking/url";
+	private String newValue = "http://localhost";
+	
 	@Before
     public void setup() throws IOException, TimeoutException {
         rand = new Random();
+        
+        
+     		//CREATE
+    		add_item = getResourceForAdd();
+    		
+    		//DELETE
+    		delete_item = getResourceForDelete();
+    		resourceRepo.save(delete_item);
+    		
+    		idForDelete = delete_item.getInternalId();
+    		
+    		//UPDATE
+    		update_item = getResourceForUpdate();
+    		resourceRepo.save(update_item);
+    		
+    		// Sleep to make sure that the platform has been saved to the repo before querying
+            try {
+				TimeUnit.SECONDS.sleep(3);
+			} catch (InterruptedException e) {
+				logger.error("ERROR pausing in before method on testing");
+				e.printStackTrace();
+			} 		
     }
 	
 	
 	@Test
 	public void createDeviceTest() throws Exception {
 
-		CloudResource resource = getTestResource();
 		List<CloudResource> resources = new ArrayList<CloudResource>();
-		resources.add(resource);
+		resources.add(add_item);
 
 		ObjectMapper mapper = new ObjectMapper();
         String message = mapper.writeValueAsString(resources);
@@ -64,20 +100,63 @@ public class MonitoringRabbitTests {
 		// Sleep to make sure that the platform has been saved to the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 
-		CloudResource result = resourceRepo.findOne(resource.getInternalId());
+		CloudResource result = resourceRepo.findOne(add_item.getInternalId());
 
-		assertEquals(resource.getResource().getInterworkingServiceURL(), 
+		assertEquals(add_item.getResource().getInterworkingServiceURL(), 
 				result.getResource().getInterworkingServiceURL());   
 
-		resourceRepo.delete(resource.getInternalId());
+		resourceRepo.delete(add_item.getInternalId());
 	}
+		
+
+	@Test
+	public void deleteDeviceTest() throws Exception {
+
+		List<String> resourceIds = new ArrayList<String>();
+		resourceIds.add(idForDelete);
+
+		ObjectMapper mapper = new ObjectMapper();
+        String message = mapper.writeValueAsString(resourceIds);
+        
+		sendResourceMessage(RHResourceMessageHandler.EXCHANGE_NAME_UNREGISTRATION_TEST, 
+				RHResourceMessageHandler.RESOURCE_UNREGISTRATION_QUEUE_NAME_TEST, message.getBytes("UTF-8"));
+
+		// Sleep to make sure that the platform has been deleted for the repo before querying
+		TimeUnit.SECONDS.sleep(3);
+
+		CloudResource result = resourceRepo.findOne(delete_item.getInternalId());
+
+		assertEquals(null, result);   
+	}
+
+	@Test
+	public void updateDeviceTest() throws Exception {
+		update_item.getResource().setInterworkingServiceURL(newValue);
+		
+		List<CloudResource> resources = new ArrayList<CloudResource>();
+		resources.add(update_item);
+		
+		ObjectMapper mapper = new ObjectMapper();
+        String message = mapper.writeValueAsString(resources);
+        
+		sendResourceMessage(RHResourceMessageHandler.EXCHANGE_NAME_UPDATED_TEST, 
+				RHResourceMessageHandler.RESOURCE_UPDATED_QUEUE_NAME_TEST, message.getBytes("UTF-8"));
+
+		// Sleep to make sure that the platform has been updated for the repo before querying
+		TimeUnit.SECONDS.sleep(3);
+
+		CloudResource result = resourceRepo.findOne(update_item.getInternalId());
+
+		assertEquals(result.getResource().getInterworkingServiceURL(), newValue);
+		
+		resourceRepo.delete(update_item);
+	}
+
 	
-	
-	private CloudResource getTestResource(){
+	private CloudResource getResourceForAdd(){
 		CloudResource resource = new CloudResource();
 
-		resource.setInternalId("internalIdRabbit");
-		//resource.setHost("127.0.0.1");
+		resource.setInternalId(INTERNAL_ID_ADD);
 		resource.setHost("62.14.219.137");
 
 		CloudResourceParams params = new CloudResourceParams();
@@ -87,7 +166,7 @@ public class MonitoringRabbitTests {
 		resource.setParams(params);
 
 		Resource r = new Resource();
-		r.setId("symbioteId1");
+		r.setId(SYMBIOTE_ID_ADD);
 		r.setInterworkingServiceURL("http://tests.io/interworking/url");
 		List<String> comments = new ArrayList<String>();
 		comments.add("comment1");
@@ -110,6 +189,21 @@ public class MonitoringRabbitTests {
 					m.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
 					return m;
 				});
+	}
+	
+	private CloudResource getResourceForDelete(){
+		CloudResource r = getResourceForAdd();
+		r.setInternalId(INTERNAL_ID_DELETE);
+		r.getResource().setId(SYMBIOTE_ID_DELETE);
+		return r;
+	}
+	
+	private CloudResource getResourceForUpdate(){
+		CloudResource r = getResourceForAdd();
+		r.setInternalId(INTERNAL_ID_UPDATE);
+		r.getResource().setId(SYMBIOTE_ID_UPDATE);
+		r.getResource().setInterworkingServiceURL(oldValue);		
+		return r;
 	}
 
 }

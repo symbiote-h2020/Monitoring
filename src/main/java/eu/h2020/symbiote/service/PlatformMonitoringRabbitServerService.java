@@ -85,7 +85,6 @@ public class PlatformMonitoringRabbitServerService {
 		          Gson gson = new Gson();
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
 		          
-		          System.out.println("I am in the add method for testtttttttttttttttttttttttttt");
 		          List<CloudResource> added = icinga2Manager.addOrUpdateInInternalRepository(resources);
 		          if (added != null && added.size()>0){
 		        	  System.out.println("TEST: added " + added.size() + " devices to database");  
@@ -106,7 +105,6 @@ public class PlatformMonitoringRabbitServerService {
 		          
 		          Gson gson = new Gson();
 		          ArrayList<String> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<String>>() {}.getType());
-		          System.out.println("I am in the delete method for testtttttttttttttttttttttttttt");
 		          //		          icinga2Manager.deleteResources(resources);    
 		          List<CloudResource> deleted = icinga2Manager.deleteInInternalRepository(resources);
 		          if (deleted != null && deleted.size()>0){
@@ -125,7 +123,6 @@ public class PlatformMonitoringRabbitServerService {
 	public void resourceUpdateTest(Message message, @Headers() Map<String, String> headers) {
 		          Gson gson = new Gson();
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
-		          System.out.println("I am in the update method for testtttttttttttttttttttttttttt");
 		          //		          icinga2Manager.updateResources(resources);
 		          List<CloudResource> updated = icinga2Manager.addOrUpdateInInternalRepository(resources);
 		          if (updated != null && updated.size()>0){
