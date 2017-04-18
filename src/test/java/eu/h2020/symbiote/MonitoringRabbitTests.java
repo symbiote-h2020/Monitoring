@@ -22,6 +22,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import eu.h2020.symbiote.constants.MonitoringConstants;
 import eu.h2020.symbiote.core.model.resources.Resource;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
@@ -94,8 +95,8 @@ public class MonitoringRabbitTests {
 		ObjectMapper mapper = new ObjectMapper();
         String message = mapper.writeValueAsString(resources);
         
-		sendResourceMessage(RHResourceMessageHandler.EXCHANGE_NAME_REGISTRATION_TEST, 
-				RHResourceMessageHandler.RESOURCE_REGISTRATION_QUEUE_NAME_TEST, message.getBytes("UTF-8"));
+		sendResourceMessage(MonitoringConstants.EXCHANGE_NAME_REGISTRATION_TEST, 
+				MonitoringConstants.RESOURCE_REGISTRATION_QUEUE_NAME_TEST, message.getBytes("UTF-8"));
 
 		// Sleep to make sure that the platform has been saved to the repo before querying
 		TimeUnit.SECONDS.sleep(3);
@@ -118,8 +119,8 @@ public class MonitoringRabbitTests {
 		ObjectMapper mapper = new ObjectMapper();
         String message = mapper.writeValueAsString(resourceIds);
         
-		sendResourceMessage(RHResourceMessageHandler.EXCHANGE_NAME_UNREGISTRATION_TEST, 
-				RHResourceMessageHandler.RESOURCE_UNREGISTRATION_QUEUE_NAME_TEST, message.getBytes("UTF-8"));
+		sendResourceMessage(MonitoringConstants.EXCHANGE_NAME_UNREGISTRATION_TEST, 
+				MonitoringConstants.RESOURCE_UNREGISTRATION_QUEUE_NAME_TEST, message.getBytes("UTF-8"));
 
 		// Sleep to make sure that the platform has been deleted for the repo before querying
 		TimeUnit.SECONDS.sleep(3);
@@ -139,8 +140,8 @@ public class MonitoringRabbitTests {
 		ObjectMapper mapper = new ObjectMapper();
         String message = mapper.writeValueAsString(resources);
         
-		sendResourceMessage(RHResourceMessageHandler.EXCHANGE_NAME_UPDATED_TEST, 
-				RHResourceMessageHandler.RESOURCE_UPDATED_QUEUE_NAME_TEST, message.getBytes("UTF-8"));
+		sendResourceMessage(MonitoringConstants.EXCHANGE_NAME_UPDATED_TEST, 
+				MonitoringConstants.RESOURCE_UPDATED_QUEUE_NAME_TEST, message.getBytes("UTF-8"));
 
 		// Sleep to make sure that the platform has been updated for the repo before querying
 		TimeUnit.SECONDS.sleep(3);
