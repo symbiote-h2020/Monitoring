@@ -19,6 +19,7 @@ import eu.h2020.symbiote.beans.CheckCommandBean;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
 import eu.h2020.symbiote.beans.ServiceBean;
+import eu.h2020.symbiote.commons.security.SecurityHandler;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.icinga2.datamodel.JsonCreateServiceOkResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
@@ -60,10 +61,11 @@ public class Icinga2Manager {
 	 
 	 @Value("${symbiote.coreaam.url}")
 	 private String coreAAMUrl;
+
 	 @Autowired
 	  private ResourceRepository resourceRepository;
-	
-	 //private SecurityHandler securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP);
+
+	 private SecurityHandler securityHandler;
 	 
 	 @PostConstruct
 	 private void init() {
@@ -71,6 +73,9 @@ public class Icinga2Manager {
 		 icinga2client.setBasicAuthenticationPassword(password);
 		 icinga2client.setEnableSSL(true);
 		 icinga2client.setDisableSSLValidation(true);
+		 
+		 securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP);
+
 	 }
 	 
 	 public String getURL() {
@@ -683,7 +688,7 @@ public class Icinga2Manager {
 				devices[i] = device;
 			}
 			platform.setInternalId(platformId);	
-			//platform.setCoreToken(securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw));
+			platform.setCoreToken(securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw));
 			platform.setDevices(devices);			 
 		}
 		return platform;
