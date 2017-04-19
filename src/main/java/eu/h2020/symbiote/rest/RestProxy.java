@@ -435,6 +435,55 @@ public class RestProxy {
 	    public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String input) {}
 	    public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String input) {}
 	}
-
+	
+	public void setContentResponse(String contentResponse) {
+		this.contentResponse = contentResponse;
+	}
+	public void setStatusResponse(int statusResponse) {
+		this.statusResponse = statusResponse;
+	}
+	public void setStatusMessage(String statusMessage) {
+		this.statusMessage = statusMessage;
+	}
+	public void print(){
+	
+		LOGGER.info("RestProxy():uriParameterNames: "+ this.uriParameterNames);
+		LOGGER.info("RestProxy():uriParameterValues: "+ this.uriParameterValues);
+		LOGGER.info("RestProxy():queryParameterNames: "+ this.queryParameterNames);
+		LOGGER.info("RestProxy():queryParameterValues: "+ this.queryParameterValues);
+		LOGGER.info("RestProxy():url: "+ this.url);
+		LOGGER.info("RestProxy():method: "+ this.method);
+		LOGGER.info("RestProxy():acceptedTypes: "+ this.acceptedTypes);
+		LOGGER.info("RestProxy():basicAuthenticationUser: "+ this.basicAuthenticationUser);
+		LOGGER.info("RestProxy():basicAuthenticationPassword: "+ this.basicAuthenticationPassword);
+		LOGGER.info("RestProxy():formParameterNames: "+ this.formParameterNames);
+		LOGGER.info("RestProxy():formParameterValues: "+ this.formParameterValues);
+		LOGGER.info("RestProxy():content: "+ this.content);
+		LOGGER.info("RestProxy():contentType: "+ this.contentType);
+		LOGGER.info("RestProxy():contentReplaceCharPerDoubleQuote: "+ this.contentReplaceCharPerDoubleQuote);
+		LOGGER.info("RestProxy():resultNameVariable: "+ this.resultNameVariable);
+		LOGGER.info("RestProxy():statusCodeNameVariable: "+ this.statusCodeNameVariable);
+		LOGGER.info("RestProxy():statusReasonNameVariable: "+ this.statusReasonNameVariable);
+		LOGGER.info("RestProxy():keyStoreFile: "+ this.keyStoreFile);
+		LOGGER.info("RestProxy():keyStorePassword: "+ this.keyStorePassword);
+		LOGGER.info("RestProxy():keyStoreType: "+ this.keyStoreType);
+		LOGGER.info("RestProxy():certificateSupportedProtocols: "+ this.certificateSupportedProtocols);
+		LOGGER.info("RestProxy():disableSSLValidation: "+ this.disableSSLValidation);
+		LOGGER.info("RestProxy():enableSSL: "+ this.enableSSL);
+		LOGGER.info("RestProxy():contentResponse: "+ this.contentResponse);
+		LOGGER.info("RestProxy():statusResponse: "+ this.statusResponse);
+		LOGGER.info("RestProxy():statusMessage: "+ this.statusMessage);
+		if (this.customHeaders!=null)
+		{
+			for (int i = 0; i < this.customHeaders.length; i++){
+				LOGGER.info("RestProxy():customHeaders: ["+i+"] = "+ this.customHeaders[i]);	
+			}
+		}
+		else
+			LOGGER.info("RestProxy():customHeaders: "+ this.customHeaders);
+		
+	}
+	
+	
 }
 

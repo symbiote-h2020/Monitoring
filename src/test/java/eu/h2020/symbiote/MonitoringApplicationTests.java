@@ -46,7 +46,7 @@ public class MonitoringApplicationTests {
 	 
 	 private int tdelaym = 10000;
 	 
-	 @Test
+	 //@Test
 	public void createResource(){
 	    	
 	    	// CREATE TEST
@@ -80,7 +80,7 @@ public class MonitoringApplicationTests {
 			delay(tdelaym);
 	}
 
-	@Test
+	//@Test
 	public void updateResource(){
 		
 		//BEFORE UPDATE
@@ -167,7 +167,7 @@ public class MonitoringApplicationTests {
 	
 
 	
-	@Test
+	//@Test
 	public void deleteResource(){
 
 		//BEFORE DELETE
@@ -181,11 +181,11 @@ public class MonitoringApplicationTests {
 		LOGGER.info("********************************************************************");
 		LOGGER.info("****** Verify CREATE to DELETE:" + del_resource.getInternalId() +"************");
 		LOGGER.info("********************************************************************");
-		delay(tdelaym);	
+		delay(20000);	
 		
 		// test delete
 		String id=del_resource.getInternalId();
-		//String id = "Upd-3d4a4086-052c-46ea-8333-6ba164789d02";
+		//String id = "del-878894b5-d19e-45ad-807c-a26ed9cc7fe9";
 		List<String> resources_del = new ArrayList<String>();
 		resources_del.add(id);
 	 
@@ -194,22 +194,22 @@ public class MonitoringApplicationTests {
 		LOGGER.info("********************************************************************");
 		LOGGER.info("****** Verify DELETE:" + id +"************");
 		LOGGER.info("********************************************************************");
-		delay(tdelaym);
+		delay(20000);
 		
 
 		CloudResource result = resourceRepo.findOne(id);
 		assertEquals(null, result);   
 		
 		
-	 /*
-	 try {
-		Thread.sleep(900000);
-	} catch (InterruptedException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
 	 
-	*/
+//	 try {
+//		Thread.sleep(9000000);
+//	} catch (InterruptedException e) {
+//		// TODO Auto-generated catch block
+//		e.printStackTrace();
+//	}
+	 
+	
 	}	
 	
 	
@@ -249,16 +249,16 @@ public class MonitoringApplicationTests {
 	   }
 
 	
-private static void delay(int timems) {
-	int t=timems;
-	System.out.println("Sleeping: "+ t/1000 + "segs.");
-	try {
-		Thread.sleep(t);
-	} catch (InterruptedException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
+	private static void delay(int timems) {
+		int t=timems;
+		System.out.println("Sleeping: "+ t/1000 + "segs.");
+		try {
+			Thread.sleep(t);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("Sleeping END");
 	}
-	System.out.println("Sleeping END");
-}
 	
 }

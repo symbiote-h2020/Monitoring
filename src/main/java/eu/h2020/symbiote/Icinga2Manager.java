@@ -262,6 +262,7 @@ public class Icinga2Manager {
 		 JsonDeleteMessageIcingaResult jsonMessage  = null;
 			Boolean exception = false;
 			String targetUrl = url + "/objects/hosts/" + hostname + "?cascade=1";
+			logger.info("deleteHost()");
 			logger.info("URL build: " + targetUrl);
 			
 			try {
@@ -299,14 +300,21 @@ public class Icinga2Manager {
 		 String targetUrl = url + "/objects/services/" + hostname + "!" + servicename + "?cascade=1";
 //		 String targetUrl = url + "/objects/services?service=" + hostname + "!" + servicename + "&cascade=1";
 		 //"https://VTSS031.cs1local:5665/v1/objects/services?service=zabbix.atos.net%21internalId1&cascade=1
+		 logger.info("deleteServiceFromHost() " );
 		 logger.info("URL build: " + targetUrl);
+
+		
 		//Retrieve services from host from mongoDB
-		 List<CloudResource> services = getDevicesFromHostFromDB(hostname);		
+		 //List<CloudResource> services = getDevicesFromHostFromDB(hostname);		
 		 try {
 			 icinga2client.setUrl(targetUrl);
 			 icinga2client.setMethod("POST");
-			 icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: DELETE");	 
-			 icinga2client.execute();
+			 icinga2client.setCustomHeaders("Accept: application/json,-,X-HTTP-Method-Override: DELETE");
+			 icinga2client.setContent(null);
+			 
+			 //icinga2client.print();
+
+			 icinga2client.execute();		 
 			 if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 				 String response = icinga2client.getContentResponse();
 				 logger.info("PAYLOAD: " + response);		
@@ -314,6 +322,8 @@ public class Icinga2Manager {
 				 jsonMessage = ModelConverter.jsonDeleteMessageToObject(response);
 			 }
 			 else if (icinga2client.getStatusResponse() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+				 
+				 List<CloudResource> services = getDevicesFromHostFromDB(hostname);	
 				 String response = icinga2client.getContentResponse();
 				 logger.info("PAYLOAD: " + response);		
 				 System.out.println();
