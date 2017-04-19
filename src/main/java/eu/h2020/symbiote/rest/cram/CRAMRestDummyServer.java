@@ -38,36 +38,6 @@ public class CRAMRestDummyServer {
 	  }
 	  return "received";
   }
-
-  
-//  @RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.DO_CREATE_RESOURCES,  produces = "application/json", consumes = "application/json")
-//  public @ResponseBody List<CloudResource>  createResources(@PathVariable(MonitoringConstants.PLATFORM_ID) String platformId, @RequestBody List<CloudResource> resources) {
-//	  logger.info("User trying to createResources platformId"+platformId);
-//      //List<CloudResource> resources = gson.fromJson(new String(message.getBody()),  new TypeToken<ArrayList<CloudResource>>(){}.getType());
-//
-//      List<CloudResource> result = resources.stream().map(resource -> { resource.setId("symbiote"+resource.getName()); return resource;})
-//      .collect(Collectors.toList());
-//
-//	  return result;
-//  }
-//  
-//  @RequestMapping(method = RequestMethod.PUT, path = MonitoringConstants.DO_UPDATE_RESOURCES,  produces = "application/json", consumes = "application/json")
-//  public @ResponseBody List<CloudResource>  updateResources(@PathVariable(MonitoringConstants.PLATFORM_ID) String platformId, @RequestBody List<CloudResource> resources) {
-//	  logger.info("User trying to ypdateResources platformId"+platformId);
-//      //List<CloudResource> resources = gson.fromJson(new String(message.getBody()),  new TypeToken<ArrayList<CloudResource>>(){}.getType());
-//
-//      List<CloudResource> result = resources.stream().map(resource -> { resource.setId("symbiote"+resource.getName()); return resource;})
-//      .collect(Collectors.toList());
-//
-//	  return result;
-//  }
-//
-//  @RequestMapping(method = RequestMethod.DELETE, path = MonitoringConstants.DO_REMOVE_RESOURCES,  produces = "application/json", consumes = "application/json")
-//  public @ResponseBody List<String>  removeResources(@PathVariable(MonitoringConstants.PLATFORM_ID) String platformId, @RequestBody List<String> resources) {
-//	  logger.info("User trying to ypdateResources platformId"+platformId);
-//	  return resources;
-//  }
-
   
 }
 

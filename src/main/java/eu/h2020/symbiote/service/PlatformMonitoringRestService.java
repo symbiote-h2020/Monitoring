@@ -99,14 +99,14 @@ public class PlatformMonitoringRestService {
   public void publishMonitoringData2Cram(){
 	  CloudMonitoringPlatform platform = icinga2Manager.getMonitoringInfo();
 	  if (platform != null){
-		  logger.info("Publishing monitoring info to CRAM");
+		  logger.info("Publishing monitoring info to CRM");
 		  logger.info("Platform " + platform.getInternalId() + " has " + platform.getDevices().length + " devices");
 		  for (int i = 0; i<platform.getDevices().length; i++){
 			  logger.info("Device " + platform.getDevices()[i].getId());
 		  }
 		  //Send data to POST endpoint in CRAM
 		  String result = cramMessageHandler.doPostAlCram(platform);
-		  logger.info("************** Result of post to cram = " + result);
+		  logger.info("************** Result of post to crm = " + result);
 		  logger.info("Publishing monitoring data for platform " + platform.getInternalId());
 		  logger.info("Platform " + platform.getInternalId() + " has " + platform.getDevices().length + " devices");
 		  for (int i = 0; i<platform.getDevices().length; i++){

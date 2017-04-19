@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 import feign.Feign;
-import feign.gson.GsonDecoder;
-import feign.gson.GsonEncoder;
+import feign.jackson.JacksonDecoder;
+import feign.jackson.JacksonEncoder;
 @Component
 //@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"symbiote.cram.url=http://localhost:8080"})
 public  class CRAMMessageHandler {
@@ -33,7 +33,7 @@ public  class CRAMMessageHandler {
     @PostConstruct
 	public void createClient() {
 		logger.info("Will use "+ url +" to access to CRAM");
-		jsonclient = Feign.builder().decoder(new GsonDecoder()).encoder(new GsonEncoder()).target(CRAMRestService.class, url);
+		jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).target(CRAMRestService.class, url);
 	}
 		
 	

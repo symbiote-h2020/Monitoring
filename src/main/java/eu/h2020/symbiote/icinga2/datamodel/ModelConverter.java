@@ -17,8 +17,7 @@ import org.eclipse.persistence.jaxb.JAXBContextProperties;
 import org.eclipse.persistence.jaxb.MarshallerProperties;
 import org.eclipse.persistence.jaxb.UnmarshallerProperties;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.h2020.symbiote.beans.CheckCommandBean;
 import eu.h2020.symbiote.beans.HostBean;
@@ -28,7 +27,7 @@ import eu.h2020.symbiote.icinga2.datamodel.host.ip.JsonIpByHostResponse;
 
 public class ModelConverter {
 	 private static final Log logger = LogFactory.getLog(ModelConverter.class);
-	 private static Gson gson = new GsonBuilder().create();
+	 private static ObjectMapper mapper = new ObjectMapper();
 	 
 	 /**
 		 * Converts a Collection object to its String XML representation
@@ -140,36 +139,72 @@ public class ModelConverter {
 		}
 
 		public static HostBean jsonHostToObject(String jsonString) {
-			JsonHostsResponse host =  gson.fromJson(jsonString, JsonHostsResponse.class);
-			if (host.getResults().length == 1){
+			JsonHostsResponse host = null;
+			try {
+				host = mapper.readValue(jsonString, JsonHostsResponse.class);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Error converting JSON to object", e);
+			}
+			if (host!=null && host.getResults().length == 1){
 				return host.getResults()[0].getAttrs();
 			}
 			return null;
 		}
 		
 		public static Collection<HostBean> jsonHostsToObject(String jsonString){
-			JsonHostsResponse hosts =  gson.fromJson(jsonString, JsonHostsResponse.class);
-			List<HostBean> hostsList = new ArrayList<>();
-			for (int i = 0; i<hosts.getResults().length;i++){
-				hostsList.add(hosts.getResults()[i].getAttrs());
+			
+			JsonHostsResponse hosts = null;
+			try {
+				hosts = mapper.readValue(jsonString, JsonHostsResponse.class);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Error converting JSON to object", e);
 			}
+			List<HostBean> hostsList = null;
+			if (hosts!=null){
+				hostsList = new ArrayList<>();
+				for (int i = 0; i<hosts.getResults().length;i++){
+					hostsList.add(hosts.getResults()[i].getAttrs());
+				}
+			}
+			
 			return hostsList;
 		}
 		
 		public static Collection<ServiceBean> jsonServicesToObject(String jsonString){
-			JsonServicesResponse services =  gson.fromJson(jsonString, JsonServicesResponse.class);
-			List<ServiceBean> servicesList = new ArrayList<>();
-			for (int i = 0; i<services.getResults().length;i++){
-				servicesList.add(services.getResults()[i].getAttrs());
+			JsonServicesResponse services = null;
+			try {
+				services = mapper.readValue(jsonString, JsonServicesResponse.class);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Error converting JSON to object", e);
 			}
+			List<ServiceBean> servicesList = null;
+			if (services != null){
+				servicesList = new ArrayList<>();
+				for (int i = 0; i<services.getResults().length;i++){
+					servicesList.add(services.getResults()[i].getAttrs());
+				}
+			}
+
 			return servicesList;
 		}
 		
 		public static ServiceBean jsonServiceToObject(String jsonString) {
-			JsonServicesResponse services =  gson.fromJson(jsonString, JsonServicesResponse.class);
-			if (services.getResults().length == 1){
-				return services.getResults()[0].getAttrs();
+			JsonServicesResponse services = null;
+			try {
+				services = mapper.readValue(jsonString, JsonServicesResponse.class);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Error converting JSON to object", e);
 			}
+			if (services != null){
+				if (services.getResults().length == 1){
+					return services.getResults()[0].getAttrs();
+				}
+			}
+			
 			return null;
 		}
 		
@@ -178,7 +213,7 @@ public class ModelConverter {
 			JsonDeleteMessageIcingaResponse message = null;
 			boolean isDeleteOk = true;
 			try {
-				error = gson.fromJson(jsonString, JsonDeleteErrorIcingaResponse.class);
+				error = mapper.readValue(jsonString, JsonDeleteErrorIcingaResponse.class);
 				if (error.getResults()[0].getErrors() != null){
 					//the object has value in errors attribute
 					isDeleteOk = false;
@@ -190,8 +225,19 @@ public class ModelConverter {
 			}
 			
 			if (isDeleteOk){
-				message = gson.fromJson(jsonString, JsonDeleteMessageIcingaResponse.class);
-				return message.getResults()[0];
+				try {
+					message = mapper.readValue(jsonString, JsonDeleteMessageIcingaResponse.class);
+				}
+				catch (Exception e){
+					e.printStackTrace();
+					logger.error("Error converting JSON to object", e);
+				}
+				if (message != null){
+					return message.getResults()[0];
+				}
+				else {
+					return null;
+				}
 			}
 			else {
 				return error.getResults()[0];
@@ -201,42 +247,82 @@ public class ModelConverter {
 		}
 
 		public static JsonUpdatedObjectMessageResult jsonUpdateMessageToObject(String jsonString) {
-			JsonUpdatedObjectMessageResponse response =  gson.fromJson(jsonString, JsonUpdatedObjectMessageResponse.class);
-			if (response.getResults().length == 1){
+			JsonUpdatedObjectMessageResponse response = null;
+			try {
+				response = mapper.readValue(jsonString, JsonUpdatedObjectMessageResponse.class);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Error converting JSON to object", e);
+			}
+			if (response != null && response.getResults().length == 1){
 				return response.getResults()[0];
 			}
 			return null;
 		}
 		
 		public static String jsonHostByIpToString(String jsonString){
-			JsonHostByIpResponse hostByIp =  gson.fromJson(jsonString, JsonHostByIpResponse.class);
-			String hostname = "";
+			JsonHostByIpResponse hostByIp =  null;
 			try {
-				if (hostByIp.getResults() != null && hostByIp.getResults().length ==1){
-					return hostByIp.getResults()[0].getAttrs().getDisplay_name();
-				}
+				hostByIp = mapper.readValue(jsonString, JsonHostByIpResponse.class);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Error converting JSON to object", e);
 			}
-			catch (Exception e){
-				return "";
+			String hostname = "";
+			if (hostByIp != null){
+				try {
+					if (hostByIp.getResults() != null && hostByIp.getResults().length ==1){
+						return hostByIp.getResults()[0].getAttrs().getDisplay_name();
+					}
+				}
+				catch (Exception e){
+					return "";
+				}
 			}
 			return hostname;
 		}
 
 		public static JsonCreateServiceOkResult jsonServicesOkToObject(String jsonString) {
-			JsonCreateServiceOkResponse response =  gson.fromJson(jsonString, JsonCreateServiceOkResponse.class);
-			return response.getResults()[0];
+			JsonCreateServiceOkResponse response = null;
+			try {
+				response = mapper.readValue(jsonString, JsonCreateServiceOkResponse.class);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Error converting JSON to object", e);
+			}
+			if (response != null){
+				return response.getResults()[0];
+			}
+			else {
+				return null;
+			}
 		}
 
 		public static CheckCommandBean jsonCheckCommandToObject(String jsonString) {
-			JsonCheckCommandsResponse checkCommands =  gson.fromJson(jsonString, JsonCheckCommandsResponse.class);
-			if (checkCommands.getResults().length == 1){
-				return checkCommands.getResults()[0].getAttrs();
+			JsonCheckCommandsResponse checkCommands = null;
+			try {
+				checkCommands = mapper.readValue(jsonString, JsonCheckCommandsResponse.class);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Error converting JSON to object", e);
 			}
+			if (checkCommands != null){
+				if (checkCommands.getResults().length == 1){
+					return checkCommands.getResults()[0].getAttrs();
+				}
+			}		
+
 			return null;
 		}
 		
 		public static String jsonIpByHostToString(String jsonString){
-			JsonIpByHostResponse hostByIp =  gson.fromJson(jsonString, JsonIpByHostResponse.class);
+			JsonIpByHostResponse hostByIp = null;
+			try {
+				hostByIp = mapper.readValue(jsonString, JsonIpByHostResponse.class);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Error converting JSON to object", e);
+			}
 			String ipAddress = "";
 			try {
 				if (hostByIp.getResults() != null && hostByIp.getResults().length ==1){

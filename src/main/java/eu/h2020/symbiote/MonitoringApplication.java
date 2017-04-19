@@ -7,8 +7,9 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import feign.Feign;
-import feign.gson.GsonDecoder;
-import feign.gson.GsonEncoder;
+import feign.jackson.JacksonDecoder;
+import feign.jackson.JacksonEncoder;
+
 
 
 /**
@@ -37,9 +38,10 @@ public class MonitoringApplication {
 
     public static <T> T createFeignClient(Class<T> client, String baseUrl) {
         return Feign.builder().
-                encoder(new GsonEncoder()).decoder(new GsonDecoder()).
+                encoder(new JacksonEncoder()).decoder(new JacksonDecoder()).
                 target(client,baseUrl);
     }
+    
     
 
 

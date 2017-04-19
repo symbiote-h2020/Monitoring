@@ -1,20 +1,15 @@
 package eu.h2020.symbiote.rabbitmq;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.google.gson.Gson;
-import com.rabbitmq.client.AMQP;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
 
 
 /**
@@ -49,8 +44,8 @@ public class GenericRabbitMQFanoutMessageHandler <T>{
      */
     public void sendMessage(T object) throws Exception {
         logger.info("START OF sendMessage to queue: "+queueName);
-        Gson gson = new Gson();
-        String objectInJson = gson.toJson(object);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String objectInJson = objectMapper.writeValueAsString(object);
 
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(rabbitMQHostIP);
