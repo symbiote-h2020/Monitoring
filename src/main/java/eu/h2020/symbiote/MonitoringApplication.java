@@ -12,7 +12,10 @@ import feign.gson.GsonEncoder;
 
 
 /**
+ * Monitor Application main class 
  * Created by mateuszl on 22.09.2016.
+ * @author: David Rojo, Fernando Campos
+ * @version: 19/04/2017
  */
 //@EnableDiscoveryClient    //when Eureka available
 @EnableAutoConfiguration

@@ -45,6 +45,12 @@ import org.apache.http.ssl.SSLContexts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Icigna2 Rest operation methods
+ * MongoDB operation methods
+ * @author: David Rojo, Fernando Campos
+ * @version: 19/04/2017
+ */
 public class RestProxy {
 	
    protected static final Logger LOGGER = LoggerFactory.getLogger(RestProxy.class);
@@ -340,7 +346,11 @@ public class RestProxy {
 		return result;
 	}
 	
-	
+	/**
+	 * Icigna2 Rest call operation method
+	 * @author: David Rojo, Fernando Campos
+	 * @version: 19/04/2017
+	 */
 	public void execute() throws Exception {
 		
 
@@ -445,6 +455,12 @@ public class RestProxy {
 	public void setStatusMessage(String statusMessage) {
 		this.statusMessage = statusMessage;
 	}
+	
+	/**
+	 * show Info of content of RestProxy object
+	 * @author: David Rojo, Fernando Campos
+	 * @version: 19/04/2017
+	 */
 	public void print(){
 	
 		LOGGER.info("RestProxy():uriParameterNames: "+ this.uriParameterNames);
