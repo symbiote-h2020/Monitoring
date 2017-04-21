@@ -26,18 +26,15 @@ import eu.h2020.symbiotelibraries.cloud.model.current.CloudResourceParams;
 
 
 
-@RunWith(SpringRunner.class)
-@SpringBootTest({"eureka.client.enabled=false"})
+//@RunWith(SpringRunner.class)
+//@SpringBootTest({"eureka.client.enabled=false"})
 public class MonitoringApplicationTests {
 
 	protected static final Logger LOGGER = LoggerFactory.getLogger(MonitoringApplicationTests.class);
-	//symbiote.rabbitmq.host.ip
-	//urlformcram localhost
-	//@Autowired Icinga2Manager icinga2Manager;
 
-	 @Autowired
+//	 @Autowired
 	 private  RHResourceMessageHandler rhResourceRegistrationMessageHandler;
-	 @Autowired
+//	 @Autowired
 	 private ResourceRepository resourceRepo;
 	 
 	 private  CloudResource cre_resource;
@@ -46,7 +43,7 @@ public class MonitoringApplicationTests {
 	 
 	 private int tdelaym = 10000;
 	 
-	 //@Test
+//	 @Test
 	public void createResource(){
 	    	
 	    	// CREATE TEST
@@ -80,7 +77,7 @@ public class MonitoringApplicationTests {
 			delay(tdelaym);
 	}
 
-	//@Test
+//	@Test
 	public void updateResource(){
 		
 		//BEFORE UPDATE
@@ -167,7 +164,7 @@ public class MonitoringApplicationTests {
 	
 
 	
-	//@Test
+//	@Test
 	public void deleteResource(){
 
 		//BEFORE DELETE
