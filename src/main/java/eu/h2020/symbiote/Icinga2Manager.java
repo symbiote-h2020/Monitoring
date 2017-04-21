@@ -20,6 +20,7 @@ import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
 import eu.h2020.symbiote.beans.ServiceBean;
 import eu.h2020.symbiote.commons.security.SecurityHandler;
+import eu.h2020.symbiote.commons.security.exception.DisabledException;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.icinga2.datamodel.JsonCreateServiceOkResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
@@ -84,7 +85,7 @@ public class Icinga2Manager {
 		 icinga2client.setEnableSSL(true);
 		 icinga2client.setDisableSSLValidation(true);
 		 
-		 securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP);
+		 securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP, false);
 
 	 }
 	 
@@ -833,7 +834,13 @@ public class Icinga2Manager {
 				devices[i] = device;
 			}
 			platform.setInternalId(platformId);	
-			platform.setCoreToken(securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw));
+			try {
+				platform.setCoreToken(securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw));
+			} catch (SecurityException | DisabledException e) {
+				logger.error(e.getMessage());
+				logger.error(e.getLocalizedMessage());
+				e.printStackTrace();
+			}
 			platform.setDevices(devices);			 
 		}
 		return platform;
