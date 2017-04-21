@@ -1,4 +1,4 @@
-package eu.h2020.symbiote.rest.cram;
+package eu.h2020.symbiote.rest.crm;
 
 
 import org.apache.commons.logging.Log;
@@ -14,15 +14,15 @@ import eu.h2020.symbiote.constants.MonitoringConstants;
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 
 
-/*
- * @author: Elena Garrido
+/**
+ * @author: Elena Garrido, David Rojo
  * @version: 12/02/2017
  */
 @RestController
 //@WebAppConfiguration
 @RequestMapping("/")
-public class CRAMRestDummyServer {
-  private static final Log logger = LogFactory.getLog(CRAMRestDummyServer.class);
+public class CRMRestDummyServer {
+  private static final Log logger = LogFactory.getLog(CRMRestDummyServer.class);
   
   
   @RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.PUBLISH_MONITORING_DATA,  produces = "application/json", consumes = "application/json")

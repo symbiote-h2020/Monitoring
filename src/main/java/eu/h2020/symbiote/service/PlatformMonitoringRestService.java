@@ -17,7 +17,7 @@ import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
-import eu.h2020.symbiote.rest.cram.CRAMMessageHandler;
+import eu.h2020.symbiote.rest.crm.CRMMessageHandler;
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 
 /**
@@ -31,7 +31,7 @@ public class PlatformMonitoringRestService {
   private static final Log logger = LogFactory.getLog(PlatformMonitoringRestService.class);
   
   @Autowired
-  private CRAMMessageHandler cramMessageHandler;
+  private CRMMessageHandler crmMessageHandler;
   
   @Autowired
   private Icinga2Manager icinga2Manager;
@@ -96,7 +96,7 @@ public class PlatformMonitoringRestService {
   
   
 //  @Scheduled(cron = "${symbiote.crm.publish.period}")
-  public void publishMonitoringData2Cram(){
+  public void publishMonitoringData2Crm(){
 	  CloudMonitoringPlatform platform = icinga2Manager.getMonitoringInfo();
 	  if (platform != null){
 		  logger.info("Publishing monitoring info to CRM");
@@ -104,8 +104,8 @@ public class PlatformMonitoringRestService {
 		  for (int i = 0; i<platform.getDevices().length; i++){
 			  logger.info("Device " + platform.getDevices()[i].getId());
 		  }
-		  //Send data to POST endpoint in CRAM
-		  String result = cramMessageHandler.doPostAlCram(platform);
+		  //Send data to POST endpoint in CRM
+		  String result = crmMessageHandler.doPost2Crm(platform);
 		  logger.info("************** Result of post to crm = " + result);
 		  logger.info("Publishing monitoring data for platform " + platform.getInternalId());
 		  logger.info("Platform " + platform.getInternalId() + " has " + platform.getDevices().length + " devices");

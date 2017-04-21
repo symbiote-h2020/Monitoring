@@ -5,30 +5,30 @@ import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 
-import eu.h2020.symbiote.rest.cram.CRAMMessageHandler;
-import eu.h2020.symbiote.rest.cram.CRAMRestService;
+import eu.h2020.symbiote.rest.crm.CRMMessageHandler;
+import eu.h2020.symbiote.rest.crm.CRMRestService;
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringDevice;
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 
 public class MonitoringPublishTests {
 
-	private CRAMRestService endpoint = Mockito.mock(CRAMRestService.class);
+	private CRMRestService endpoint = Mockito.mock(CRMRestService.class);
 
 	@Before
 	public void prepare() {
-		Mockito.when(endpoint.doPostAlCram(Matchers.anyString(), Mockito.any(CloudMonitoringPlatform.class)))
-		.thenReturn("Monitoring message received in CRAM");
+		Mockito.when(endpoint.doPost2Crm(Matchers.anyString(), Mockito.any(CloudMonitoringPlatform.class)))
+		.thenReturn("Monitoring message received in CRM");
 	}
 
 	@Test
-	public void testPost2Cram() {
-		CRAMMessageHandler client = new CRAMMessageHandler();
+	public void testPost2Crm() {
+		CRMMessageHandler client = new CRMMessageHandler();
 		client.setService(endpoint);
 		
-		String message = client.doPostAlCram(getTestPlatform());
-		System.out.println("TEST RESULT --> Message from CRAM: " + message);
+		String message = client.doPost2Crm(getTestPlatform());
+		System.out.println("TEST RESULT --> Message from CRM: " + message);
 		assert message != null;
-		assert message.equalsIgnoreCase("Monitoring message received in CRAM");
+		assert message.equalsIgnoreCase("Monitoring message received in CRM");
 	}
 	
 	public CloudMonitoringPlatform getTestPlatform(){
