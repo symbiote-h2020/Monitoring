@@ -836,7 +836,15 @@ public class Icinga2Manager {
 			platform.setInternalId(platformId);	
 			try {
 				platform.setCoreToken(securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw));
-			} catch (SecurityException | DisabledException e) {
+			} catch (DisabledException e) {
+				logger.error(e.getMessage());
+				logger.error(e.getLocalizedMessage());
+				
+				// Temporary set token to null
+				platform.setCoreToken(null);
+				
+				
+			} catch (SecurityException e) {
 				logger.error(e.getMessage());
 				logger.error(e.getLocalizedMessage());
 				e.printStackTrace();
@@ -902,7 +910,11 @@ public class Icinga2Manager {
 	}
 	
 	
-	
+	 /**
+	  * Get Monitoring informationn from checkcommand to Icinga2
+	  * @author: David Rojo, Fernando Campos
+	  * @version: 24/04/2017
+	  */
 	 private CheckCommandBean getCheckCommand(String checkCommandName){
 		 CheckCommandBean checkCmd  = null;
 			Boolean exception = false;

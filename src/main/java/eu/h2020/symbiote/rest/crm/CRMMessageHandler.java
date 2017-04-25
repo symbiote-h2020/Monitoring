@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
 import feign.Feign;
+import feign.FeignException;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 @Component
@@ -33,14 +34,24 @@ public  class CRMMessageHandler {
 		jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).target(CRMRestService.class, url);
 	}
 		
-	
+	 
+    /**
+	  * Send Monitoring information to CRM
+	  * @author: David Rojo, Fernando Campos
+	  * @version: 25/04/2017
+	  */
     public String doPost2Crm(CloudMonitoringPlatform platform)  {
 		String result = "not send";
     	try{
 			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
 					platform.getDevices().length + " devices");
 			result = jsonclient.doPost2Crm(platform.getInternalId(), platform);
-		}catch(Throwable t){
+    	}catch(FeignException t)
+    	{
+    		logger.error("Error accessing to CRM server at " + url);
+    		//logger.error("LocalizedMessage: " + t.getLocalizedMessage());
+    		logger.error("Message: " + t.getMessage());
+    	}catch(Throwable t){
 			logger.error("Error accessing to CRM server at " + url, t);
 		}
     	return result;
