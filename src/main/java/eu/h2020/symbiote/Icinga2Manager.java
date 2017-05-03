@@ -843,11 +843,14 @@ public class Icinga2Manager {
 				// Temporary set token to null
 				platform.setCoreToken(null);
 				
+				return null;
 				
 			} catch (SecurityException e) {
 				logger.error(e.getMessage());
 				logger.error(e.getLocalizedMessage());
 				e.printStackTrace();
+				
+				return null;
 			}
 			platform.setDevices(devices);			 
 		}
