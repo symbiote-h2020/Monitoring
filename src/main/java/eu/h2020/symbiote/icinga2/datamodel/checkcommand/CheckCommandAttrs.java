@@ -1,6 +1,7 @@
 package eu.h2020.symbiote.icinga2.datamodel.checkcommand;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 public class CheckCommandAttrs {
 	

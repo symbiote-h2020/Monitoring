@@ -15,12 +15,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import eu.h2020.symbiote.beans.CheckCommandBean;
+import eu.h2020.symbiote.icinga2.datamodel.checkcommand.CheckCommandAttrs;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
 import eu.h2020.symbiote.beans.ServiceBean;
-import eu.h2020.symbiote.commons.security.SecurityHandler;
-import eu.h2020.symbiote.commons.security.exception.DisabledException;
+import eu.h2020.symbiote.security.SecurityHandler;
+import eu.h2020.symbiote.security.token.SymbIoTeToken;
+import eu.h2020.symbiote.security.exceptions.sh.SecurityHandlerDisabledException;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.icinga2.datamodel.JsonCreateServiceOkResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
@@ -28,9 +29,9 @@ import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
 import eu.h2020.symbiote.icinga2.datamodel.ModelConverter;
 import eu.h2020.symbiote.icinga2.utils.Icinga2Utils;
 import eu.h2020.symbiote.rest.RestProxy;
-import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
-import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringDevice;
-import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 
 /**
  * Manage the REST operations from Icinga2 using MongoDB 
@@ -114,7 +115,7 @@ public class Icinga2Manager {
 				icinga2client.execute();
 				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 					String response = icinga2client.getContentResponse();
-					logger.info("PAYLOAD: " + response);		
+					logger.info("getHosts PAYLOAD: " + response);		
 					System.out.println();
 					collection = ModelConverter.jsonHostsToObject(response);
 				}
@@ -149,7 +150,7 @@ public class Icinga2Manager {
 				icinga2client.execute();
 				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 					String response = icinga2client.getContentResponse();
-					logger.info("PAYLOAD: " + response);		
+					logger.info("getHost PAYLOAD: " + response);		
 					System.out.println();
 					host = ModelConverter.jsonHostToObject(response);
 				}
@@ -189,7 +190,7 @@ public class Icinga2Manager {
 				icinga2client.execute();
 				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 					String response = icinga2client.getContentResponse();
-					logger.info("PAYLOAD: " + response);		
+					logger.info("getServicesFromHost PAYLOAD: " + response);		
 					System.out.println();
 					collection = ModelConverter.jsonServicesToObject(response);
 				}
@@ -229,7 +230,7 @@ public class Icinga2Manager {
 				icinga2client.execute();
 				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 					String response = icinga2client.getContentResponse();
-					logger.info("PAYLOAD: " + response);		
+					logger.info("getServiceFromHost PAYLOAD: " + response);		
 					System.out.println();
 					service = ModelConverter.jsonServiceToObject(response);
 				}
@@ -270,7 +271,7 @@ public class Icinga2Manager {
 				icinga2client.execute();
 				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 					String response = icinga2client.getContentResponse();
-					logger.info("PAYLOAD: " + response);		
+					logger.info("getHostGroup PAYLOAD: " + response);		
 					System.out.println();
 //					hostgroup = ModelConverter.jsonServiceToObject(response);
 				}
@@ -310,7 +311,7 @@ public class Icinga2Manager {
 				icinga2client.execute();
 				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 					String response = icinga2client.getContentResponse();
-					logger.info("PAYLOAD: " + response);		
+					logger.info("deleteHost PAYLOAD: " + response);		
 					System.out.println();
 					jsonMessage = ModelConverter.jsonDeleteMessageToObject(response);
 				}
@@ -359,7 +360,7 @@ public class Icinga2Manager {
 			 icinga2client.execute();		 
 			 if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 				 String response = icinga2client.getContentResponse();
-				 logger.info("PAYLOAD: " + response);		
+				 logger.info("deleteServiceFromHost PAYLOAD: " + response);		
 				 System.out.println();
 				 jsonMessage = ModelConverter.jsonDeleteMessageToObject(response);
 			 }
@@ -367,7 +368,7 @@ public class Icinga2Manager {
 				 
 				 List<CloudResource> services = getDevicesFromHostFromDB(hostname);	
 				 String response = icinga2client.getContentResponse();
-				 logger.info("PAYLOAD: " + response);		
+				 logger.info("deleteServiceFromHost PAYLOAD: " + response);		
 				 System.out.println();
 				 jsonMessage = ModelConverter.jsonDeleteMessageToObject(response);
 				 
@@ -418,7 +419,7 @@ public class Icinga2Manager {
 			icinga2client.execute();
 			if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 				String response = icinga2client.getContentResponse();
-				logger.info("PAYLOAD: " + response);		
+				logger.info("updateHostAddress PAYLOAD: " + response);		
 				System.out.println();
 				jsonMessage = ModelConverter.jsonUpdateMessageToObject(response);
 			}
@@ -517,7 +518,7 @@ public class Icinga2Manager {
 				icinga2client.execute();
 				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 					String response = icinga2client.getContentResponse();
-					logger.info("PAYLOAD: " + response);		
+					logger.info("getHostnameByIpAddress PAYLOAD: " + response);		
 					System.out.println();
 					hostname = ModelConverter.jsonHostByIpToString(response);
 				}
@@ -781,9 +782,24 @@ public class Icinga2Manager {
 				String targetUrl = url + "/objects/services/" + hostname + "!" + resource.getInternalId();
 				logger.info("URL build: " + targetUrl);
 				try {
-					icinga2client.setUrl(targetUrl);
-					icinga2client.setMethod("PUT");
+					logger.info("1");
+					icinga2client.setUrl(targetUrl);logger.info("2");
+					icinga2client.setMethod("PUT");logger.info("3");
 					icinga2client.setCustomHeaders("Accept: application/json");
+					logger.info("resource.getInternalId() " + resource.getInternalId());
+					logger.info("hostname " + hostname);
+					logger.info("resource.getParams() " + resource.getParams());
+					logger.info("resource.getParams().getInternalId() " + resource.getParams().getInternalId());
+					logger.info("resource.getParams().getDevice_name() " + resource.getParams().getDevice_name());
+					logger.info("resource.getParams().getIp_address() " + resource.getParams().getIp_address());
+
+					logger.info("{ \"templates\": [ \"generic-service\" ], \"attrs\": "
+							+ "{ \"display_name\": \"" + resource.getInternalId() + "\","
+							+ " \"check_command\" : \"checkIot_" + hostname + "\","
+							+ " \"vars.IOT_INTERNAL_ID\": \"" + resource.getParams().getInternalId() + "\","
+							+ " \"vars.IOT_DEVICE_NAME\": \"" + resource.getParams().getDevice_name() + "\","
+							+ " \"vars.IOT_IPADDRESS\": \"" + resource.getParams().getIp_address() +"\","
+							+ " \"command_endpoint\": \"" + hostname + "\" } }");
 					//{ "templates": [ "generic-service" ], "attrs": { "display_name": "check_iot", "check_command" : "checkIot", "vars.IOT_SYMBIOTEID": "symbioteID_1", "vars.IOT_DEVICE_NAME": "device_name1", "vars.IOT_IPADDRESS": "X.X.X.X", "host_name": "api_dummy_host_2" } }'
 					icinga2client.setContent("{ \"templates\": [ \"generic-service\" ], \"attrs\": "
 							+ "{ \"display_name\": \"" + resource.getInternalId() + "\","
@@ -792,11 +808,12 @@ public class Icinga2Manager {
 							+ " \"vars.IOT_DEVICE_NAME\": \"" + resource.getParams().getDevice_name() + "\","
 							+ " \"vars.IOT_IPADDRESS\": \"" + resource.getParams().getIp_address() +"\","
 							+ " \"command_endpoint\": \"" + hostname + "\" } }");
-					System.out.println("BODY REQUEST: " + icinga2client.getContent());
+					logger.info("BODY REQUEST: " + icinga2client.getContent());
 					icinga2client.execute();
+					logger.info("createService HTTP Status Response: " + icinga2client.getStatusResponse());
 					if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 						String response = icinga2client.getContentResponse();
-						logger.info("PAYLOAD: " + response);		
+						logger.info("createService PAYLOAD: " + response);		
 						System.out.println();
 						okResponse = ModelConverter.jsonServicesOkToObject(response);
 					}
@@ -835,13 +852,14 @@ public class Icinga2Manager {
 			}
 			platform.setInternalId(platformId);	
 			try {
-				platform.setCoreToken(securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw));
-			} catch (DisabledException e) {
+				SymbIoTeToken token = securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw);
+				// platform.setCoreToken(token);
+			} catch (SecurityHandlerDisabledException e) {
 				logger.error(e.getMessage());
 				logger.error(e.getLocalizedMessage());
 				
 				// Temporary set token to null
-				platform.setCoreToken(null);
+				//platform.setCoreToken(null);
 				
 				return null;
 				
@@ -886,7 +904,7 @@ public class Icinga2Manager {
 					icinga2client.execute();
 					if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 						String response = icinga2client.getContentResponse();
-						logger.info("PAYLOAD: " + response);		
+						logger.info("getMonitoringInfoFromDevice PAYLOAD: " + response);		
 						System.out.println();
 						service = ModelConverter.jsonServiceToObject(response);
 						monitoringDevice = new CloudMonitoringDevice();
@@ -918,8 +936,8 @@ public class Icinga2Manager {
 	  * @author: David Rojo, Fernando Campos
 	  * @version: 24/04/2017
 	  */
-	 private CheckCommandBean getCheckCommand(String checkCommandName){
-		 CheckCommandBean checkCmd  = null;
+	 private CheckCommandAttrs getCheckCommand(String checkCommandName){
+		 CheckCommandAttrs checkCmd  = null;
 			Boolean exception = false;
 			String targetUrl = url + "/objects/checkcommands/" + checkCommandName;
 			logger.info("URL build: " + targetUrl);
@@ -929,7 +947,7 @@ public class Icinga2Manager {
 				icinga2client.execute();
 				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 					String response = icinga2client.getContentResponse();
-					logger.info("PAYLOAD: " + response);		
+					logger.info("getCheckCommand PAYLOAD: " + response);		
 					System.out.println();
 					checkCmd = ModelConverter.jsonCheckCommandToObject(response);
 				}
@@ -951,7 +969,7 @@ public class Icinga2Manager {
 	
 	
 	 private boolean existCheckCommandForHost(String hostname){
-		 CheckCommandBean checkCmd = getCheckCommand("checkIot_" + hostname);
+		 CheckCommandAttrs checkCmd = getCheckCommand("checkIot_" + hostname);
 		 if (checkCmd == null){
 			 return false;
 		 }
@@ -984,7 +1002,7 @@ public class Icinga2Manager {
 					icinga2client.execute();
 					if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 						String response = icinga2client.getContentResponse();
-						logger.info("PAYLOAD: " + response);		
+						logger.info("createCheckCommand PAYLOAD: " + response);		
 						System.out.println();
 						//the OK response is the same for CheckCommand class, so I use the same code
 						okResponse = ModelConverter.jsonServicesOkToObject(response);
@@ -1026,7 +1044,7 @@ public class Icinga2Manager {
 				icinga2client.execute();
 				if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
 					String response = icinga2client.getContentResponse();
-					logger.info("PAYLOAD: " + response);		
+					logger.info("getIpAddressByHostname PAYLOAD: " + response);		
 					ipAddress = ModelConverter.jsonIpByHostToString(response);
 				}
 				else {

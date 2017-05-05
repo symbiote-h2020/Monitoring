@@ -18,7 +18,7 @@ import eu.h2020.symbiote.beans.ServiceBean;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonUpdatedObjectMessageResult;
 import eu.h2020.symbiote.rest.crm.CRMMessageHandler;
-import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
+import  eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 
 /**
  * This class implements the rest interfaces. Initially created by jose

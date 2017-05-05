@@ -1,5 +1,8 @@
 package eu.h2020.symbiote.service;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,12 +22,13 @@ import com.google.gson.Gson;
 
 import eu.h2020.symbiote.Icinga2Manager;
 import eu.h2020.symbiote.constants.MonitoringConstants;
-import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 
 
 @Service
 public class PlatformMonitoringRabbitServerService {
 
+    private static Log log = LogFactory.getLog(PlatformMonitoringRabbitServerService.class);
 
 	@Autowired Icinga2Manager icinga2Manager;
 	/**
@@ -37,27 +41,26 @@ public class PlatformMonitoringRabbitServerService {
 	 * @param headers The AMQP headers
 	 */
 	@RabbitListener(bindings = @QueueBinding(
-			value = @Queue(value = MonitoringConstants.RESOURCE_REGISTRATION_QUEUE_NAME, durable = "true", autoDelete = "false", exclusive = "false"),
-			exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_REGISTRATION, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
-			key = MonitoringConstants.RESOURCE_REGISTRATION_QUEUE_NAME)
+			value = @Queue(value = MonitoringConstants.RESOURCE_REGISTRATION_QUEUE_NAME, durable = "false", autoDelete = "false", exclusive = "false"),
+			exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_REGISTRATION, ignoreDeclarationExceptions = "true", type = ExchangeTypes.DIRECT),
+			key = MonitoringConstants.RESOURCE_REGISTRATION_ROUTING_KEY)
 			)
 	public void resourceRegistration(Message message, @Headers() Map<String, String> headers) {
 		          Gson gson = new Gson();
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
-//		          System.out.println("resourceBean "+resourceBean + " - "+ message.getBody());
+		          log.info("Received Resource Registration message");
 		          if (resources != null){
 		        	  icinga2Manager.addResources(resources);
 		          }
 	}
 
 	@RabbitListener(bindings = @QueueBinding(
-			value = @Queue(value = MonitoringConstants.RESOURCE_UNREGISTRATION_QUEUE_NAME, durable = "true", autoDelete = "false", exclusive = "false"),
-			exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_UNREGISTRATION, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
-			key = MonitoringConstants.RESOURCE_UNREGISTRATION_QUEUE_NAME)
+			value = @Queue(value = MonitoringConstants.RESOURCE_UNREGISTRATION_QUEUE_NAME, durable = "false", autoDelete = "false", exclusive = "false"),
+			exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_UNREGISTRATION, ignoreDeclarationExceptions = "true", type = ExchangeTypes.DIRECT),
+			key = MonitoringConstants.RESOURCE_UNREGISTRATION_ROUTING_KEY)
 			)
 	public void resourceUnregistration(Message message, @Headers() Map<String, String> headers) {
-		          System.out.println(message.getBody());
-		          
+		          log.info("Received Resource Unregistration message");
 		          Gson gson = new Gson();
 		          ArrayList<String> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<String>>() {}.getType());
 		          icinga2Manager.deleteResources(resources);
@@ -65,11 +68,12 @@ public class PlatformMonitoringRabbitServerService {
 	}
 
 	@RabbitListener(bindings = @QueueBinding(
-			value = @Queue(value = MonitoringConstants.RESOURCE_UPDATED_QUEUE_NAME, durable = "true", autoDelete = "false", exclusive = "false"),
-			exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_UPDATED, ignoreDeclarationExceptions = "true", type = ExchangeTypes.FANOUT),
-			key = MonitoringConstants.RESOURCE_UPDATED_QUEUE_NAME)
+			value = @Queue(value = MonitoringConstants.RESOURCE_UPDATED_QUEUE_NAME, durable = "false", autoDelete = "false", exclusive = "false"),
+			exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_UPDATED, ignoreDeclarationExceptions = "true", type = ExchangeTypes.DIRECT),
+			key = MonitoringConstants.RESOURCE_UPDATED_ROUTING_KEY)
 			)
 	public void resourceUpdate(Message message, @Headers() Map<String, String> headers) {
+		          log.info("Received Resource Update message");
 		          Gson gson = new Gson();
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
 		          icinga2Manager.updateResources(resources);

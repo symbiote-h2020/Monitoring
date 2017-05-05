@@ -2,7 +2,7 @@ package eu.h2020.symbiote.db;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 
 
 

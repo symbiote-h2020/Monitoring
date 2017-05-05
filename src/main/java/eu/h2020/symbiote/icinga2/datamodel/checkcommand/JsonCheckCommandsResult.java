@@ -1,11 +1,10 @@
 package eu.h2020.symbiote.icinga2.datamodel.checkcommand;
 
-import eu.h2020.symbiote.beans.CheckCommandBean;
 import eu.h2020.symbiote.icinga2.datamodel.service.JsonServiceJoins;
 
 public class JsonCheckCommandsResult {
 
-	private CheckCommandBean attrs;
+	private CheckCommandAttrs attrs;
 	private Object joins;
 	private Object meta;
 	private String name;
@@ -15,11 +14,11 @@ public class JsonCheckCommandsResult {
 		
 	}
 
-	public CheckCommandBean getAttrs() {
+	public CheckCommandAttrs getAttrs() {
 		return attrs;
 	}
 
-	public void setAttrs(CheckCommandBean attrs) {
+	public void setAttrs(CheckCommandAttrs attrs) {
 		this.attrs = attrs;
 	}
 

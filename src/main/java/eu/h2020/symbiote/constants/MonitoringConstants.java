@@ -9,14 +9,22 @@ public class MonitoringConstants {
 //	public static final String DO_REMOVE_RESOURCES = "/platforms/{platformId}/resources";
 	public static final String PUBLISH_MONITORING_DATA = "crm/monitoring/{platformId}/devices/status";
 	
-	public static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rh.reg";
-	public static final String EXCHANGE_NAME_UNREGISTRATION = "symbIoTe.rh.unreg";
-	public static final String EXCHANGE_NAME_UPDATED = "symbIoTe.rh.update";
+	// public static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rh.reg";
+	// public static final String EXCHANGE_NAME_UNREGISTRATION = "symbIoTe.rh.unreg";
+	// public static final String EXCHANGE_NAME_UPDATED = "symbIoTe.rh.update";
 	
+	public static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rap";
+	public static final String EXCHANGE_NAME_UNREGISTRATION = "symbIoTe.rap";
+	public static final String EXCHANGE_NAME_UPDATED = "symbIoTe.rap";
+
 	public static final String RESOURCE_REGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.register_resources";
 	public static final String RESOURCE_UNREGISTRATION_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.unregister_resources";
 	public static final String RESOURCE_UPDATED_QUEUE_NAME = "symbIoTe.monitoring.registrationHandler.update_resources";
-	
+
+	public static final String RESOURCE_REGISTRATION_ROUTING_KEY = "symbIoTe.rap.registrationHandler.register_resources";
+	public static final String RESOURCE_UNREGISTRATION_ROUTING_KEY = "symbIoTe.rap.registrationHandler.unregister_resources";
+	public static final String RESOURCE_UPDATED_ROUTING_KEY = "symbIoTe.rap.registrationHandler.update_resources";
+		
 	public static final String EXCHANGE_NAME_REGISTRATION_TEST = "symbIoTe_test.rh.reg";
 	public static final String EXCHANGE_NAME_UNREGISTRATION_TEST = "symbIoTe_test.rh.unreg";
 	public static final String EXCHANGE_NAME_UPDATED_TEST = "symbIoTe_test.rh.update";

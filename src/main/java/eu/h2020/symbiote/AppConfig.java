@@ -12,7 +12,7 @@ class AppConfig extends AbstractMongoConfiguration {
 
     @Override
     protected String getDatabaseName() {
-        return "symbiote-monitoring-database";
+        return "symbiote-cloud-monitoring-database";
     }
 
     @Override

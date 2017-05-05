@@ -19,7 +19,7 @@ import org.eclipse.persistence.jaxb.UnmarshallerProperties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eu.h2020.symbiote.beans.CheckCommandBean;
+import eu.h2020.symbiote.icinga2.datamodel.checkcommand.CheckCommandAttrs;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.ServiceBean;
 import eu.h2020.symbiote.icinga2.datamodel.host.ip.JsonHostByIpResponse;
@@ -298,7 +298,7 @@ public class ModelConverter {
 			}
 		}
 
-		public static CheckCommandBean jsonCheckCommandToObject(String jsonString) {
+		public static CheckCommandAttrs jsonCheckCommandToObject(String jsonString) {
 			JsonCheckCommandsResponse checkCommands = null;
 			try {
 				checkCommands = mapper.readValue(jsonString, JsonCheckCommandsResponse.class);

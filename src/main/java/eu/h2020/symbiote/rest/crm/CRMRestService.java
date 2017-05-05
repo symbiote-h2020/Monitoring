@@ -3,7 +3,7 @@ package eu.h2020.symbiote.rest.crm;
 
 
 
-import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
