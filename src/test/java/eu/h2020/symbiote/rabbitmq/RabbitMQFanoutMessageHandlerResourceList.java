@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.google.gson.reflect.TypeToken;
 
-import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 
 
 

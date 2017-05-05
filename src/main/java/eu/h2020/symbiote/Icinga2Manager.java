@@ -19,9 +19,6 @@ import eu.h2020.symbiote.icinga2.datamodel.checkcommand.CheckCommandAttrs;
 import eu.h2020.symbiote.beans.HostBean;
 import eu.h2020.symbiote.beans.HostGroupBean;
 import eu.h2020.symbiote.beans.ServiceBean;
-import eu.h2020.symbiote.security.SecurityHandler;
-import eu.h2020.symbiote.security.token.SymbIoTeToken;
-import eu.h2020.symbiote.security.exceptions.sh.SecurityHandlerDisabledException;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.icinga2.datamodel.JsonCreateServiceOkResult;
 import eu.h2020.symbiote.icinga2.datamodel.JsonDeleteMessageIcingaResult;
@@ -56,28 +53,13 @@ public class Icinga2Manager {
 	 
 	 @Value("${platform.id}")
 	 private String platformId;
-	 
-	 @Value("${symbiote.sh.password}")
-	 private String secHandlerPsw;
-	 
-	 @Value("${symbiote.sh.user}")
-	 private String secHandlerUser;
-	 
-	 @Value("${symbiote.rabbitmq.host.ip}")
-	 private String rabbitMQHostIP;
-	 
-	 @Value("${symbiote.coreaam.url}")
-	 private String coreAAMUrl;
 
 	 @Autowired
 	  private ResourceRepository resourceRepository;
 
-	 private SecurityHandler securityHandler;
 	 
 	 /**
 	  * Initialization Icinga2 Rest client
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	 @PostConstruct
 	 private void init() {
@@ -85,9 +67,6 @@ public class Icinga2Manager {
 		 icinga2client.setBasicAuthenticationPassword(password);
 		 icinga2client.setEnableSSL(true);
 		 icinga2client.setDisableSSLValidation(true);
-		 
-		 securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP, false);
-
 	 }
 	 
 	 public String getURL() {
@@ -100,8 +79,6 @@ public class Icinga2Manager {
 	 
 	 /**
 	  * Return an Array whith active Icinga2 Host
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	 public Collection<HostBean> getHosts(){
 		Collection<HostBean> collection  = null;
@@ -135,8 +112,6 @@ public class Icinga2Manager {
 	 
 	 /**
 	  * Return one Icinga2 Host bean
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	 public HostBean getHost(String hostname){
 			HostBean host  = null;
@@ -172,8 +147,6 @@ public class Icinga2Manager {
 	 
 	 /**
 	  * Return an Array whith active Service in Icinga2 by Host
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	 public Collection<ServiceBean> getServicesFromHost(String hostname){
 		 Collection<ServiceBean> collection  = null;
@@ -212,8 +185,6 @@ public class Icinga2Manager {
 	 
 	 /**
 	  * Return one active Service in Icinga2 by Host
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */ 
 	 public ServiceBean getServiceFromHost(String hostname, String servicename){
 		 ServiceBean service  = null;
@@ -252,8 +223,6 @@ public class Icinga2Manager {
 	 
 	 /**
 	  * Return HostGropup info from Icinga2
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */	 
 	 private HostGroupBean getHostGroup(String hostgroupname){
 		 //TODO pending to revise
@@ -293,8 +262,6 @@ public class Icinga2Manager {
 	 
 	 /**
 	  * Delete Host from Icinga2.
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	 public JsonDeleteMessageIcingaResult deleteHost(String hostname){
 		 JsonDeleteMessageIcingaResult jsonMessage  = null;
@@ -334,8 +301,6 @@ public class Icinga2Manager {
 	 /**
 	  * Delete Service from Icinga2.
 	  * If delete in Icinga2 its OK, also delete document from DataBase
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */	 
 	 public JsonDeleteMessageIcingaResult deleteServiceFromHost(String hostname, String servicename){
 		 JsonDeleteMessageIcingaResult jsonMessage  = null;
@@ -401,8 +366,6 @@ public class Icinga2Manager {
 
 	 /**
 	  * Update Host address from Icinga2.
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	public JsonUpdatedObjectMessageResult updateHostAddress(String hostname, String address) {
 		
@@ -441,8 +404,6 @@ public class Icinga2Manager {
 	 
 	/**
 	  * Add or Update CloudResource document from MongoDB.
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */	 
 	 public List<CloudResource>  addOrUpdateInInternalRepository(List<CloudResource>  resources){
 		 return resources.stream().map(resource -> {
@@ -457,8 +418,6 @@ public class Icinga2Manager {
 	 
 	/**
 	  * Delete CloudResource document from MongoDB.
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */	
 	  public List<CloudResource> deleteInInternalRepository(List<String> resourceIds){
 		  List<CloudResource>  result = new ArrayList<CloudResource>();
@@ -474,8 +433,6 @@ public class Icinga2Manager {
 	
 	/**
 	  * Get all CloudResource document from MongoDB.
-      * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */		  
 	  public List<CloudResource> getResources() {
 		  return resourceRepository.findAll();
@@ -499,8 +456,6 @@ public class Icinga2Manager {
 	
 	 /**
 	  * Get HostName from Icinga2 with the ipAddress
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	 private String getHostnameByIpAddress(String ipAddress){
 		 String hostname = "";
@@ -543,8 +498,6 @@ public class Icinga2Manager {
 	 /**
 	  * Add list of Service to Icinga2.
 	  * If add in Icinga2 its OK, also insert CloudResource document in to DataBase
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	public List<CloudResource> addResources(List<CloudResource> resources) {
 		return addResources(resources, true);
@@ -554,8 +507,6 @@ public class Icinga2Manager {
 	  * Add list of Service to Icinga2.
 	  * If add in Icinga2 its OK, also insert CloudResource document in to DataBase
 	  * In this class is possible turnOff the database insert with mongodb parameter
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	private  List<CloudResource> addResources(List<CloudResource> resources, boolean addMongoDB) {
 		
@@ -576,8 +527,6 @@ public class Icinga2Manager {
 	 /**
 	  * Update list of Service to Icinga2.
 	  * If update in Icinga2 its OK, also update CloudResource document in to DataBase
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	public List<CloudResource> updateResources(List<CloudResource> resources) {
 		return updateResources(resources, true);
@@ -587,8 +536,6 @@ public class Icinga2Manager {
 	  * Update list of Service to Icinga2.
 	  * If add in Icinga2 its OK, also update CloudResource document in to DataBase
 	  * In this class is possible turnOff the database updated with mongodb parameter
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	private  List<CloudResource> updateResources(List<CloudResource> resources, boolean updateMongoDB) {
 		
@@ -608,8 +555,6 @@ public class Icinga2Manager {
 	
 	 /**
 	  * Delete list of Service to Icinga2.
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	public boolean deleteServices(List<String> resources) {
 		return deleteResources(resources, false);
@@ -618,8 +563,6 @@ public class Icinga2Manager {
 	 /**
 	  * Delete list of Service to Icinga2.
 	  * If update in Icinga2 its OK, also update CloudResource document in to DataBase
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	public boolean deleteResources(List<String> resources) {
 		return deleteResources(resources, true);
@@ -629,8 +572,6 @@ public class Icinga2Manager {
 	  * Delete list of Service to Icinga2.
 	  * If delete in Icinga2 its OK, also delete CloudResource document in to DataBase
 	  * In this class is possible turnOff the database deleted with mongodb parameter
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	public boolean deleteResources(List<String> resources, boolean mongodb) {
 		logger.info("Deleting " + resources.size() + " devices to icinga2");
@@ -696,8 +637,6 @@ public class Icinga2Manager {
 	 /**
 	  * Update list of Service to Icinga2.
 	  * If update in Icinga2 its OK, also update CloudResource document in to DataBase
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	private List<CloudResource> updateServices(List<CloudResource> resources){
 		List <CloudResource> result = new ArrayList<CloudResource>();
@@ -715,8 +654,6 @@ public class Icinga2Manager {
 	 /**
 	  * Update One Service to Icinga2.
 	  * To update delete and create the Service
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	private JsonCreateServiceOkResult updateService(CloudResource resource){
 		
@@ -736,8 +673,6 @@ public class Icinga2Manager {
 	 /**
 	  * Create list of Service to Icinga2.
 	  * If create in Icinga2 its OK, also insert CloudResource document in to DataBase
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	private List<CloudResource> createServices(List<CloudResource> resources){
 		List <CloudResource> result = new ArrayList<CloudResource>();
@@ -755,8 +690,6 @@ public class Icinga2Manager {
 	 /**
 	  * Create One Service to Icinga2.
 	  * If create in Icinga2 its OK, also insert CloudResource document in to DataBase
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	private JsonCreateServiceOkResult createService(CloudResource resource){
 		 JsonCreateServiceOkResult okResponse  = null;
@@ -837,8 +770,6 @@ public class Icinga2Manager {
 	
 	 /**
 	  * Get Monitoring information
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 	public CloudMonitoringPlatform getMonitoringInfo(){
 		List<CloudResource> resources = resourceRepository.findAll();
@@ -851,34 +782,13 @@ public class Icinga2Manager {
 				devices[i] = device;
 			}
 			platform.setInternalId(platformId);	
-			try {
-				SymbIoTeToken token = securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw);
-				// platform.setCoreToken(token);
-			} catch (SecurityHandlerDisabledException e) {
-				logger.error(e.getMessage());
-				logger.error(e.getLocalizedMessage());
-				
-				// Temporary set token to null
-				//platform.setCoreToken(null);
-				
-				return null;
-				
-			} catch (SecurityException e) {
-				logger.error(e.getMessage());
-				logger.error(e.getLocalizedMessage());
-				e.printStackTrace();
-				
-				return null;
-			}
 			platform.setDevices(devices);			 
 		}
 		return platform;
 	}
 	
 	 /**
-	  * Get Monitoring informationn from device
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
+	  * Get Monitoring information from device
 	  */
 	private CloudMonitoringDevice getMonitoringInfoFromDevice(CloudResource resource){
 		CloudMonitoringDevice monitoringDevice = null;
@@ -933,8 +843,6 @@ public class Icinga2Manager {
 	
 	 /**
 	  * Get Monitoring informationn from checkcommand to Icinga2
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 24/04/2017
 	  */
 	 private CheckCommandAttrs getCheckCommand(String checkCommandName){
 		 CheckCommandAttrs checkCmd  = null;
@@ -1025,8 +933,6 @@ public class Icinga2Manager {
 	
 	 /**
 	  * Get IpAddress from the Host in the parameter
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */ 
 	 public String getIpAddressByHostname(String hostname){
 		 String ipAddress = "";
@@ -1067,8 +973,6 @@ public class Icinga2Manager {
 	 
 	 /**
 	  * Get an Array from devices in Host from Icigna2
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 19/04/2017
 	  */
 		private List<CloudResource> getDevicesFromHostFromDB(String hostname) {
 			String ipAddress = this.getIpAddressByHostname(hostname);

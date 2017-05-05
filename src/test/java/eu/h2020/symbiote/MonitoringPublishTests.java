@@ -1,5 +1,8 @@
 package eu.h2020.symbiote;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
@@ -7,26 +10,28 @@ import org.mockito.Mockito;
 
 import eu.h2020.symbiote.rest.crm.CRMMessageHandler;
 import eu.h2020.symbiote.rest.crm.CRMRestService;
-import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringDevice;
-import eu.h2020.symbiotelibraries.cloud.monitoring.model.CloudMonitoringPlatform;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 
 public class MonitoringPublishTests {
 
 	private CRMRestService endpoint = Mockito.mock(CRMRestService.class);
+	private static final Log logger = LogFactory.getLog(MonitoringPublishTests.class);
 
 	@Before
 	public void prepare() {
-		Mockito.when(endpoint.doPost2Crm(Matchers.anyString(), Mockito.any(CloudMonitoringPlatform.class)))
+		Mockito.when(endpoint.doPost2Crm(Matchers.anyString(), Mockito.any(CloudMonitoringPlatform.class), Matchers.anyString()))
 		.thenReturn("Monitoring message received in CRM");
 	}
 
 	@Test
 	public void testPost2Crm() {
+		logger.info("testPost2Crm starts");
 		CRMMessageHandler client = new CRMMessageHandler();
 		client.setService(endpoint);
 		
 		String message = client.doPost2Crm(getTestPlatform());
-		System.out.println("TEST RESULT --> Message from CRM: " + message);
+		logger.info("TEST RESULT --> Message from CRM: " + message);
 		assert message != null;
 		assert message.equalsIgnoreCase("Monitoring message received in CRM");
 	}

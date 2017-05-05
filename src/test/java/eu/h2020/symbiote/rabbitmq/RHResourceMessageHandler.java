@@ -9,7 +9,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.constants.MonitoringConstants;
-import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 
 
 

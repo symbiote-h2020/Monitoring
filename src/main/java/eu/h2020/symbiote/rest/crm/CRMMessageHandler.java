@@ -8,6 +8,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
+import eu.h2020.symbiote.security.SecurityHandler;
+import eu.h2020.symbiote.security.exceptions.sh.SecurityHandlerDisabledException;
+import eu.h2020.symbiote.security.token.Token;
+
 import feign.Feign;
 import feign.FeignException;
 import feign.jackson.JacksonDecoder;
@@ -23,6 +27,19 @@ public  class CRMMessageHandler {
 	@Value("${symbiote.crm.url}")
 	private String url;
 
+	 @Value("${symbiote.sh.password}")
+	 private String secHandlerPsw;
+	 
+	 @Value("${symbiote.sh.user}")
+	 private String secHandlerUser;
+	 
+	 @Value("${symbiote.rabbitmq.host.ip}")
+	 private String rabbitMQHostIP;
+	 
+	 @Value("${symbiote.coreaam.url}")
+	 private String coreAAMUrl;
+	 
+	 private SecurityHandler securityHandler;
     
 	public void setService(CRMRestService service){
 		jsonclient = service;
@@ -32,26 +49,30 @@ public  class CRMMessageHandler {
 	public void createClient() {
 		logger.info("Will use "+ url +" to access to CRM");
 		jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).target(CRMRestService.class, url);
+		securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP, false);
 	}
 		
 	 
     /**
 	  * Send Monitoring information to CRM
-	  * @author: David Rojo, Fernando Campos
-	  * @version: 25/04/2017
 	  */
     public String doPost2Crm(CloudMonitoringPlatform platform)  {
 		String result = "not send";
     	try{
 			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
 					platform.getDevices().length + " devices");
-			result = jsonclient.doPost2Crm(platform.getInternalId(), platform);
-    	}catch(FeignException t)
-    	{
+			Token token = securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw);
+			result = jsonclient.doPost2Crm(platform.getInternalId(), platform, token.getToken());
+    	}
+    	catch (SecurityHandlerDisabledException e){
+    		logger.error("Message: " + e.getMessage());
+    	}
+    	catch(FeignException t) {
     		logger.error("Error accessing to CRM server at " + url);
     		//logger.error("LocalizedMessage: " + t.getLocalizedMessage());
     		logger.error("Message: " + t.getMessage());
-    	}catch(Throwable t){
+    	}
+    	catch(Throwable t){
 			logger.error("Error accessing to CRM server at " + url, t);
 		}
     	return result;

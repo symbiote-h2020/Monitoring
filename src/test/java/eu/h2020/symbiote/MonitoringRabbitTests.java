@@ -26,8 +26,8 @@ import eu.h2020.symbiote.constants.MonitoringConstants;
 import eu.h2020.symbiote.core.model.resources.Resource;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
-import eu.h2020.symbiotelibraries.cloud.model.current.CloudResource;
-import eu.h2020.symbiotelibraries.cloud.model.current.CloudResourceParams;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
+import eu.h2020.symbiote.cloud.model.CloudResourceParams;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest({"eureka.client.enabled=false"})
