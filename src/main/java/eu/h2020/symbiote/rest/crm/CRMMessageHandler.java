@@ -77,6 +77,31 @@ public  class CRMMessageHandler {
 		}
     	return result;
 	}
+    
+    /**
+     * METHOD FOR TESTING PURPOSES, the method receive dummy token and send the monitoring information
+     * using this dummy token
+     * 
+     * @param platform
+     * @return
+     */
+    public String doPost2CrmTest(CloudMonitoringPlatform platform, String token)  {
+		String result = "not send";
+    	try{
+			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
+					platform.getDevices().length + " devices");
+			result = jsonclient.doPost2Crm(platform.getInternalId(), platform, token);
+    	}
+    	catch(FeignException t) {
+    		logger.error("Error accessing to CRM server at " + url);
+    		//logger.error("LocalizedMessage: " + t.getLocalizedMessage());
+    		logger.error("Message: " + t.getMessage());
+    	}
+    	catch(Throwable t){
+			logger.error("Error accessing to CRM server at " + url, t);
+		}
+    	return result;
+	}
 
 }
 
