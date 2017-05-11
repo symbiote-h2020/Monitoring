@@ -729,14 +729,14 @@ public class Icinga2Manager {
 							+ "{ \"display_name\": \"" + resource.getInternalId() + "\","
 							+ " \"check_command\" : \"checkIot_" + hostname + "\","
 							+ " \"vars.IOT_INTERNAL_ID\": \"" + resource.getInternalId() + "\","
-							+ " \"vars.IOT_TYPE\": \"" + resource.getParams().getType() + "\","
+							+ " \"vars.IOT_DEVICE_TYPE\": \"" + resource.getParams().getType() + "\","
 							+ " \"command_endpoint\": \"" + hostname + "\" } }");
 					//{ "templates": [ "generic-service" ], "attrs": { "display_name": "check_iot", "check_command" : "checkIot", "vars.IOT_SYMBIOTEID": "symbioteID_1", "vars.IOT_DEVICE_NAME": "device_name1", "vars.IOT_IPADDRESS": "X.X.X.X", "host_name": "api_dummy_host_2" } }'
 					icinga2client.setContent("{ \"templates\": [ \"generic-service\" ], \"attrs\": "
 							+ "{ \"display_name\": \"" + resource.getInternalId() + "\","
 							+ " \"check_command\" : \"checkIot_" + hostname + "\","
 							+ " \"vars.IOT_INTERNAL_ID\": \"" + resource.getInternalId() + "\","
-							+ " \"vars.IOT_TYPE\": \"" + resource.getParams().getType() + "\","
+							+ " \"vars.IOT_DEVICE_TYPE\": \"" + resource.getParams().getType() + "\","
 							+ " \"command_endpoint\": \"" + hostname + "\" } }");
 					logger.info("BODY REQUEST: " + icinga2client.getContent());
 					icinga2client.execute();
@@ -897,12 +897,12 @@ public class Icinga2Manager {
 					icinga2client.setUrl(targetUrl);
 					icinga2client.setMethod("PUT");
 					icinga2client.setCustomHeaders("Accept: application/json");
-					// { "templates": [ "plugin-check-command" ], "attrs": { "command": [ "/usr/lib/nagios/plugins/check_symbiote_iot.sh"], "zone": "zabbix.atos.net", "arguments": { "-s": "$IOT_INTERNALID$", "-d": "$IOT_DEVICE_NAME$", "-i": "$IOT_IPADDRESS$" } } }
+					// { "templates": [ "plugin-check-command" ], "attrs": { "command": [ "/usr/lib/nagios/plugins/check_symbiote_iot.sh"], "zone": "zabbix.atos.net", "arguments": { "-s": "$IOT_INTERNAL_ID$", "-t": "$IOT_DEVICE_TYPE$" } } }
 					icinga2client.setContent(
 							"{ \"templates\": [ \"plugin-check-command\" ], \"attrs\": { "
 							+ "\"command\": [ \"/usr/lib/nagios/plugins/check_symbiote_iot.sh\"], "
 							+ "\"zone\": \"" + hostname + "\", "
-							+ "\"arguments\": { \"-s\": \"$IOT_INTERNALID$\", \"-d\": \"$IOT_DEVICE_NAME$\", \"-i\": \"$IOT_IPADDRESS$\" } } }");
+							+ "\"arguments\": { \"-s\": \"$IOT_INTERNAL_ID$\", \"-t\": \"$IOT_DEVICE_TYPE$\" } } }");
 					System.out.println("BODY REQUEST: " + icinga2client.getContent());
 					icinga2client.execute();
 					if (icinga2client.getStatusResponse() == HttpStatus.SC_OK){
