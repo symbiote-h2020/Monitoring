@@ -219,12 +219,10 @@ public class MonitoringApplicationTests {
 		   String id = prefix+"-"+java.util.UUID.randomUUID().toString();
 		   resource.setInternalId(id);
 		   //resource.setHost("127.0.0.1");
-		   resource.setHost("62.14.219.137");
+		   resource.setCloudMonitoringHost("62.14.219.137");
 		   		   
 		   CloudResourceParams params = new CloudResourceParams();
-		   params.setIp_address(resource.getHost());
-		   params.setInternalId(resource.getInternalId());
-		   params.setDevice_name(resource.getInternalId());
+		   params.setType("resourceType");
 		   resource.setParams(params);
 		   
 		   Resource r = new Resource();

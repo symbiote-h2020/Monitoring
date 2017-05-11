@@ -583,7 +583,7 @@ public class Icinga2Manager {
 			String internalId = (String) it.next();
 			CloudResource c = this.resourceRepository.getByInternalId(internalId);
 			if (c!=null){
-				String host = this.getHostnameByIpAddress(c.getHost());
+				String host = this.getHostnameByIpAddress(c.getCloudMonitoringHost());
 				String service  = c.getInternalId();
 				if (host != null){
 					JsonDeleteMessageIcingaResult res = this.deleteServiceFromHost(host, service);
@@ -612,7 +612,7 @@ public class Icinga2Manager {
 					System.out.println("****************************listIdDeleted:"+listIdDeleted);					
 				}
 				else {
-					logger.warn("Host with IP address " + c.getHost() + " not found in icinga2");
+					logger.warn("Host with IP address " + c.getCloudMonitoringHost() + " not found in icinga2");
 				}
 				
 			}
@@ -693,10 +693,10 @@ public class Icinga2Manager {
 	  */
 	private JsonCreateServiceOkResult createService(CloudResource resource){
 		 JsonCreateServiceOkResult okResponse  = null;
-		 String hostname = this.getHostnameByIpAddress(resource.getHost());
+		 String hostname = this.getHostnameByIpAddress(resource.getCloudMonitoringHost());
 		 if (hostname == null || hostname.equalsIgnoreCase("")){
 			 //Verify that the host is registered in Icinga2 server
-			 logger.warn("The platform with ip address " + resource.getHost() + " is not registered in Monitoring environment. Icinga agent must be installed");
+			 logger.warn("The platform with ip address " + resource.getCloudMonitoringHost() + " is not registered in Monitoring environment. Icinga agent must be installed");
 			 return null;
 		 }
 		 else {
@@ -722,24 +722,21 @@ public class Icinga2Manager {
 					logger.info("resource.getInternalId() " + resource.getInternalId());
 					logger.info("hostname " + hostname);
 					logger.info("resource.getParams() " + resource.getParams());
-					logger.info("resource.getParams().getInternalId() " + resource.getParams().getInternalId());
-					logger.info("resource.getParams().getDevice_name() " + resource.getParams().getDevice_name());
-					logger.info("resource.getParams().getIp_address() " + resource.getParams().getIp_address());
+					logger.info("resource.getInternalId() " + resource.getInternalId());
+					logger.info("resource.getParams().getType() " + resource.getParams().getType());
 
 					logger.info("{ \"templates\": [ \"generic-service\" ], \"attrs\": "
 							+ "{ \"display_name\": \"" + resource.getInternalId() + "\","
 							+ " \"check_command\" : \"checkIot_" + hostname + "\","
-							+ " \"vars.IOT_INTERNAL_ID\": \"" + resource.getParams().getInternalId() + "\","
-							+ " \"vars.IOT_DEVICE_NAME\": \"" + resource.getParams().getDevice_name() + "\","
-							+ " \"vars.IOT_IPADDRESS\": \"" + resource.getParams().getIp_address() +"\","
+							+ " \"vars.IOT_INTERNAL_ID\": \"" + resource.getInternalId() + "\","
+							+ " \"vars.IOT_TYPE\": \"" + resource.getParams().getType() + "\","
 							+ " \"command_endpoint\": \"" + hostname + "\" } }");
 					//{ "templates": [ "generic-service" ], "attrs": { "display_name": "check_iot", "check_command" : "checkIot", "vars.IOT_SYMBIOTEID": "symbioteID_1", "vars.IOT_DEVICE_NAME": "device_name1", "vars.IOT_IPADDRESS": "X.X.X.X", "host_name": "api_dummy_host_2" } }'
 					icinga2client.setContent("{ \"templates\": [ \"generic-service\" ], \"attrs\": "
 							+ "{ \"display_name\": \"" + resource.getInternalId() + "\","
 							+ " \"check_command\" : \"checkIot_" + hostname + "\","
-							+ " \"vars.IOT_INTERNAL_ID\": \"" + resource.getParams().getInternalId() + "\","
-							+ " \"vars.IOT_DEVICE_NAME\": \"" + resource.getParams().getDevice_name() + "\","
-							+ " \"vars.IOT_IPADDRESS\": \"" + resource.getParams().getIp_address() +"\","
+							+ " \"vars.IOT_INTERNAL_ID\": \"" + resource.getInternalId() + "\","
+							+ " \"vars.IOT_TYPE\": \"" + resource.getParams().getType() + "\","
 							+ " \"command_endpoint\": \"" + hostname + "\" } }");
 					logger.info("BODY REQUEST: " + icinga2client.getContent());
 					icinga2client.execute();
@@ -793,10 +790,10 @@ public class Icinga2Manager {
 	private CloudMonitoringDevice getMonitoringInfoFromDevice(CloudResource resource){
 		CloudMonitoringDevice monitoringDevice = null;
 		
-		String hostname = this.getHostnameByIpAddress(resource.getHost());
+		String hostname = this.getHostnameByIpAddress(resource.getCloudMonitoringHost());
 		if (hostname == null || hostname.equalsIgnoreCase("")){
 			 //Verify that the host is registered in Icinga2 server
-			 logger.warn("The platform with ip address " + resource.getHost() + " is not registered in Monitoring environment. Icinga agent must be installed");
+			 logger.warn("The platform with ip address " + resource.getCloudMonitoringHost() + " is not registered in Monitoring environment. Icinga agent must be installed");
 			 return null;
 		 }
 		 else {
@@ -980,7 +977,7 @@ public class Icinga2Manager {
 			if (ipAddress != null){
 				List<CloudResource> allServices = resourceRepository.findAll();
 				for (CloudResource c : allServices){
-					if (c.getHost().equalsIgnoreCase(ipAddress)){
+					if (c.getCloudMonitoringHost().equalsIgnoreCase(ipAddress)){
 						if (devices == null){
 							devices = new ArrayList<CloudResource>();
 						}
