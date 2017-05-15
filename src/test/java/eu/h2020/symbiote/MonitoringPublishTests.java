@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 
@@ -13,6 +14,11 @@ import eu.h2020.symbiote.rest.crm.CRMRestService;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest({"eureka.client.enabled=false"})
 public class MonitoringPublishTests {
 
 	private CRMRestService endpoint = Mockito.mock(CRMRestService.class);
