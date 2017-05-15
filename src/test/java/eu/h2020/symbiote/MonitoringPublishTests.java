@@ -36,7 +36,7 @@ public class MonitoringPublishTests {
 		CRMMessageHandler client = new CRMMessageHandler();
 		client.setService(endpoint);
 		
-		String message = client.doPost2Crm(getTestPlatform());
+		String message = client.doPost2CrmTest(getTestPlatform(), "myTestToken");
 		logger.info("TEST RESULT --> Message from CRM: " + message);
 		assert message != null;
 		assert message.equalsIgnoreCase("Monitoring message received in CRM");

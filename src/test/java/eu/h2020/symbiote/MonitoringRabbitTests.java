@@ -22,12 +22,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import eu.h2020.symbiote.cloud.model.CloudResourceParams;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.constants.MonitoringConstants;
 import eu.h2020.symbiote.core.model.resources.Resource;
 import eu.h2020.symbiote.db.ResourceRepository;
-import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
-import eu.h2020.symbiote.cloud.model.internal.CloudResource;
-import eu.h2020.symbiote.cloud.model.CloudResourceParams;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest({"eureka.client.enabled=false"})
@@ -158,12 +157,10 @@ public class MonitoringRabbitTests {
 		CloudResource resource = new CloudResource();
 
 		resource.setInternalId(INTERNAL_ID_ADD);
-		resource.setHost("62.14.219.137");
+		resource.setCloudMonitoringHost("62.14.219.137");
 
 		CloudResourceParams params = new CloudResourceParams();
-		params.setIp_address(resource.getHost());
-		params.setInternalId(resource.getInternalId());
-		params.setDevice_name(resource.getInternalId());
+		params.setType("resourceType");
 		resource.setParams(params);
 
 		Resource r = new Resource();
