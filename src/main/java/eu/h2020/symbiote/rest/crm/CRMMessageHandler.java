@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 import eu.h2020.symbiote.security.SecurityHandler;
-import eu.h2020.symbiote.security.exceptions.sh.SecurityHandlerDisabledException;
 import eu.h2020.symbiote.security.token.Token;
 
 import feign.Feign;
@@ -24,22 +23,28 @@ public  class CRMMessageHandler {
 
 	private CRMRestService jsonclient;
 
-	@Value("${symbiote.crm.url}")
+    @Value("${symbiote.crm.url}")
 	private String url;
 
-	 @Value("${symbiote.sh.password}")
-	 private String secHandlerPsw;
+	@Value("${security.user}")
+	private String secHandlerUser;
+
+	@Value("${security.password}")
+	private String secHandlerPsw;
 	 
-	 @Value("${symbiote.sh.user}")
-	 private String secHandlerUser;
+    @Value("${rabbit.host}")
+    private String rabbitMQHostIP;
+
+    @Value("${rabbit.username}")
+    private String rabbitMQUsername;  
+
+    @Value("${rabbit.password}")
+    private String rabbitMQPassword;
 	 
-	 @Value("${symbiote.rabbitmq.host.ip}")
-	 private String rabbitMQHostIP;
+	@Value("${symbiote.coreaam.url}")
+	private String coreAAMUrl;
 	 
-	 @Value("${symbiote.coreaam.url}")
-	 private String coreAAMUrl;
-	 
-	 private SecurityHandler securityHandler;
+	private SecurityHandler securityHandler;
     
 	public void setService(CRMRestService service){
 		jsonclient = service;
@@ -49,7 +54,7 @@ public  class CRMMessageHandler {
 	public void createClient() {
 		logger.info("Will use "+ url +" to access to CRM");
 		jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).target(CRMRestService.class, url);
-		securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP, false);
+		securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP, rabbitMQUsername, rabbitMQPassword);
 	}
 		
 	 
@@ -64,9 +69,7 @@ public  class CRMMessageHandler {
 			Token token = securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw);
 			result = jsonclient.doPost2Crm(platform.getInternalId(), platform, token.getToken());
     	}
-    	catch (SecurityHandlerDisabledException e){
-    		logger.error("Message: " + e.getMessage());
-    	}
+
     	catch(FeignException t) {
     		logger.error("Error accessing to CRM server at " + url);
     		//logger.error("LocalizedMessage: " + t.getLocalizedMessage());

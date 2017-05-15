@@ -23,8 +23,14 @@ public class GenericRabbitMQFanoutMessageHandler <T>{
 
     private static Log logger = LogFactory.getLog( GenericRabbitMQFanoutMessageHandler.class );
 
-    @Value("${symbiote.rabbitmq.host.ip}")
+    @Value("${rabbit.host}")
     String rabbitMQHostIP;
+
+    @Value("${rabbit.username}")
+    String rabbitMQUsername;  
+
+    @Value("${rabbit.password}")
+    String rabbitMQPassword;
 
  	Type type;
     String exchangeName;
@@ -49,6 +55,8 @@ public class GenericRabbitMQFanoutMessageHandler <T>{
 
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(rabbitMQHostIP);
+        factory.setUsername(rabbitMQUsername);
+        factory.setPassword(rabbitMQPassword);
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
    	 	channel.exchangeDeclare(exchangeName,"fanout",false,false, false, null);
