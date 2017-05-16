@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
-import eu.h2020.symbiote.security.SecurityHandler;
+import eu.h2020.symbiote.security.InternalSecurityHandler;
 import eu.h2020.symbiote.security.token.Token;
 
 import feign.Feign;
@@ -44,7 +44,7 @@ public  class CRMMessageHandler {
 	@Value("${symbiote.coreaam.url}")
 	private String coreAAMUrl;
 	 
-	private SecurityHandler securityHandler;
+	private InternalSecurityHandler securityHandler;
     
 	public void setService(CRMRestService service){
 		jsonclient = service;
@@ -54,7 +54,7 @@ public  class CRMMessageHandler {
 	public void createClient() {
 		logger.info("Will use "+ url +" to access to CRM");
 		jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).target(CRMRestService.class, url);
-		securityHandler = new SecurityHandler(coreAAMUrl, rabbitMQHostIP, rabbitMQUsername, rabbitMQPassword);
+		securityHandler = new InternalSecurityHandler(coreAAMUrl, rabbitMQHostIP, rabbitMQUsername, rabbitMQPassword);
 	}
 		
 	 
