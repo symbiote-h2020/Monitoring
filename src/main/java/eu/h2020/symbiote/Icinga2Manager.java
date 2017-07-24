@@ -996,5 +996,10 @@ public class Icinga2Manager {
 			}
 			return devices;
 		}
-
+		 
+		public String getplatformId() {
+			 return platformId;
+		}
+	
+		
 }

@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -126,5 +127,23 @@ public class PlatformMonitoringRestService {
 	  return result;
   }
 
-
+  @RequestMapping(method = RequestMethod.POST, path = "/metrics")
+  //public String getMetrics(@PathVariable("data") String data ) {
+  public String getMetrics( @RequestParam(value = "date", required = true) String dateEvent,
+						  @RequestParam(value = "IOT_DEVICE_ID", required = true) String IOT_DEVICE_ID,
+						  @RequestParam(value = "AVAILABILITY", required = true) String AVAILABILITY,
+						  @RequestParam(value = "LOAD", required = true) String LOAD
+		  ) {
+      String platformId = icinga2Manager.getplatformId();
+      String result = "metricas results: platformId = " + platformId; 
+    	  result = result + " -" + dateEvent;
+	      result = result + " -" + IOT_DEVICE_ID;
+	      result = result + " -" + AVAILABILITY;
+	      result = result + " -" + LOAD;
+      
+      logger.info("metricas logger");
+      
+	  return result;
+  }
+  
 }
