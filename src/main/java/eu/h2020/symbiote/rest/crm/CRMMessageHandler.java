@@ -73,7 +73,8 @@ public  class CRMMessageHandler {
 	@Value("${symbiote.serviceplatformid}")
 	private String servicePlatformIdentifier;
 	
-	
+	@Value("${symbIoTe.aam.integration}")
+	private boolean useSecurity;
 	
 	
 	private InternalSecurityHandler securityHandler;
@@ -86,6 +87,10 @@ public  class CRMMessageHandler {
     @PostConstruct
 	public void createClient() throws SecurityHandlerException {
     	
+        Feign.Builder builder = Feign.builder()
+                .decoder(new JacksonDecoder())
+                .encoder(new JacksonEncoder());
+    	if (useSecurity) {
     	IComponentSecurityHandler secHandler = ComponentSecurityHandlerFactory
                 .getComponentSecurityHandler(
                 		coreAAMUrl, keystorePath, keystorePassword,
@@ -94,10 +99,13 @@ public  class CRMMessageHandler {
     	
     	Client client = new SymbioteAuthorizationClient(
     		    secHandler, serviceComponentIdentifier,servicePlatformIdentifier, new Client.Default(null, null));
-    	
+
 		logger.info("Will use "+ url +" to access to CRM");
-		jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).client(client).target(CRMRestService.class, url);
-		securityHandler = new InternalSecurityHandler(coreAAMUrl, rabbitMQHostIP, rabbitMQUsername, rabbitMQPassword);
+		builder = builder.client(client);
+		//jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).client(client).target(CRMRestService.class, url);
+        }
+    	jsonclient = builder.target(CRMRestService.class, url);
+    	securityHandler = new InternalSecurityHandler(coreAAMUrl, rabbitMQHostIP, rabbitMQUsername, rabbitMQPassword);
 	}
 		
 	 

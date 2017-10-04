@@ -29,7 +29,7 @@ import eu.h2020.symbiote.core.model.resources.Resource;
 import eu.h2020.symbiote.db.ResourceRepository;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest({"eureka.client.enabled=false", "security.enabled=false"})
+@SpringBootTest({"eureka.client.enabled=false", "symbIoTe.aam.integration=false"})
 public class MonitoringRabbitTests {
 	
 	private static Logger logger = LoggerFactory.getLogger(MonitoringRabbitTests.class);
