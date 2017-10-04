@@ -18,7 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest({"eureka.client.enabled=false"})
+@SpringBootTest({"eureka.client.enabled=false",  "security.enabled=false"})
 public class MonitoringPublishTests {
 
 	private CRMRestService endpoint = Mockito.mock(CRMRestService.class);

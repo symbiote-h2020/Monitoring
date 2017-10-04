@@ -8,9 +8,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
+import eu.h2020.symbiote.security.ComponentSecurityHandlerFactory;
 import eu.h2020.symbiote.security.InternalSecurityHandler;
+import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
+import eu.h2020.symbiote.security.communication.SymbioteAuthorizationClient;
+import eu.h2020.symbiote.security.handler.IComponentSecurityHandler;
 import eu.h2020.symbiote.security.token.Token;
-
+import feign.Client;
 import feign.Feign;
 import feign.FeignException;
 import feign.jackson.JacksonDecoder;
@@ -23,6 +27,8 @@ public  class CRMMessageHandler {
 
 	private CRMRestService jsonclient;
 
+	
+	//localAAMAddress
     @Value("${symbiote.crm.url}")
 	private String url;
 
@@ -40,20 +46,57 @@ public  class CRMMessageHandler {
 
     @Value("${rabbit.password}")
     private String rabbitMQPassword;
-	 
+	
+    //coreAAMAddress
 	@Value("${symbiote.coreaam.url}")
 	private String coreAAMUrl;
-	 
+
+	
+	@Value("${symbiote.keystorepath}")
+	private String keystorePath;
+
+	@Value("${symbiote.keystorepassword}")
+	private String keystorePassword;
+
+	@Value("${symbiote.clientid}")
+	private String clientId;
+
+	@Value("${symbiote.username}")
+	private String username;
+
+	@Value("${symbiote.password}")
+	private String password;
+
+	@Value("${symbiote.servicecomponentid}")
+	private String serviceComponentIdentifier;
+	
+	@Value("${symbiote.serviceplatformid}")
+	private String servicePlatformIdentifier;
+	
+	
+	
+	
 	private InternalSecurityHandler securityHandler;
     
+	
 	public void setService(CRMRestService service){
 		jsonclient = service;
 	}
 	
     @PostConstruct
-	public void createClient() {
+	public void createClient() throws SecurityHandlerException {
+    	
+    	IComponentSecurityHandler secHandler = ComponentSecurityHandlerFactory
+                .getComponentSecurityHandler(
+                		coreAAMUrl, keystorePath, keystorePassword,
+                    clientId, url, false,
+                    username, password  );
+    	
+    	Client client = new SymbioteAuthorizationClient(
+    		    secHandler, serviceComponentIdentifier,servicePlatformIdentifier, new Client.Default(null, null));
+    	
 		logger.info("Will use "+ url +" to access to CRM");
-		jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).target(CRMRestService.class, url);
+		jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).client(client).target(CRMRestService.class, url);
 		securityHandler = new InternalSecurityHandler(coreAAMUrl, rabbitMQHostIP, rabbitMQUsername, rabbitMQPassword);
 	}
 		
