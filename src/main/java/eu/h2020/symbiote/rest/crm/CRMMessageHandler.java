@@ -9,11 +9,10 @@ import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 import eu.h2020.symbiote.security.ComponentSecurityHandlerFactory;
-import eu.h2020.symbiote.security.InternalSecurityHandler;
+import eu.h2020.symbiote.security.commons.Token;
 import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import eu.h2020.symbiote.security.communication.SymbioteAuthorizationClient;
 import eu.h2020.symbiote.security.handler.IComponentSecurityHandler;
-import eu.h2020.symbiote.security.token.Token;
 import feign.Client;
 import feign.Feign;
 import feign.FeignException;
@@ -77,7 +76,6 @@ public  class CRMMessageHandler {
 	private boolean useSecurity;
 	
 	
-	private InternalSecurityHandler securityHandler;
     
 	
 	public void setService(CRMRestService service){
@@ -105,7 +103,6 @@ public  class CRMMessageHandler {
 		//jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).client(client).target(CRMRestService.class, url);
         }
     	jsonclient = builder.target(CRMRestService.class, url);
-    	securityHandler = new InternalSecurityHandler(coreAAMUrl, rabbitMQHostIP, rabbitMQUsername, rabbitMQPassword);
 	}
 		
 	 
@@ -117,8 +114,7 @@ public  class CRMMessageHandler {
     	try{
 			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
 					platform.getDevices().length + " devices");
-			Token token = securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw);
-			result = jsonclient.doPost2Crm(platform.getInternalId(), platform, token.getToken());
+			result = jsonclient.doPost2Crm(platform.getInternalId(), platform);
     	}
 
     	catch(FeignException t) {
@@ -144,7 +140,7 @@ public  class CRMMessageHandler {
     	try{
 			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
 					platform.getDevices().length + " devices");
-			result = jsonclient.doPost2Crm(platform.getInternalId(), platform, token);
+			result = jsonclient.doPost2Crm(platform.getInternalId(), platform);
     	}
     	catch(FeignException t) {
     		logger.error("Error accessing to CRM server at " + url);

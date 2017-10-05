@@ -26,7 +26,7 @@ public class MonitoringPublishTests {
 
 	@Before
 	public void prepare() {
-		Mockito.when(endpoint.doPost2Crm(Matchers.anyString(), Mockito.any(CloudMonitoringPlatform.class), Matchers.anyString()))
+		Mockito.when(endpoint.doPost2Crm(Matchers.anyString(), Mockito.any(CloudMonitoringPlatform.class)))
 		.thenReturn("Monitoring message received in CRM");
 	}
 
