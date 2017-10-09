@@ -8,30 +8,29 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
-import eu.h2020.symbiote.security.InternalSecurityHandler;
-import eu.h2020.symbiote.security.token.Token;
-
+import eu.h2020.symbiote.security.ComponentSecurityHandlerFactory;
+import eu.h2020.symbiote.security.commons.Token;
+import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
+import eu.h2020.symbiote.security.communication.SymbioteAuthorizationClient;
+import eu.h2020.symbiote.security.handler.IComponentSecurityHandler;
+import feign.Client;
 import feign.Feign;
 import feign.FeignException;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 @Component
-//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"symbiote.crm.url=http://localhost:8080"})
+//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"symbIoTe.core.cloud.interface.url=http://localhost:8080"})
 public  class CRMMessageHandler {
 	
 	private static final Log logger = LogFactory.getLog(CRMMessageHandler.class);
 
 	private CRMRestService jsonclient;
 
-    @Value("${symbiote.crm.url}")
+	
+	//localAAMAddress
+    @Value("${symbIoTe.core.cloud.interface.url}")
 	private String url;
 
-	@Value("${security.user}")
-	private String secHandlerUser;
-
-	@Value("${security.password}")
-	private String secHandlerPsw;
-	 
     @Value("${rabbit.host}")
     private String rabbitMQHostIP;
 
@@ -40,21 +39,64 @@ public  class CRMMessageHandler {
 
     @Value("${rabbit.password}")
     private String rabbitMQPassword;
-	 
-	@Value("${symbiote.coreaam.url}")
+	
+    //coreAAMAddress
+	@Value("${symbIoTe.coreaam.url}")
 	private String coreAAMUrl;
-	 
-	private InternalSecurityHandler securityHandler;
+
+	
+	@Value("${symbIoTe.keystorepath}")
+	private String keystorePath;
+
+	@Value("${symbIoTe.keystorepassword}")
+	private String keystorePassword;
+
+	@Value("${symbIoTe.clientId}")
+	private String clientId;
+
+	@Value("${symbIoTe.username}")
+	private String username;
+
+	@Value("${symbIoTe.password}")
+	private String password;
+
+	@Value("${symbIoTe.serviceComponentId}")
+	private String serviceComponentIdentifier;
+	
+	@Value("${platform.id}")
+	private String servicePlatformIdentifier;
+	
+	@Value("${symbIoTe.aam.integration}")
+	private boolean useSecurity;
+	
+	
     
+	
 	public void setService(CRMRestService service){
 		jsonclient = service;
 	}
 	
     @PostConstruct
-	public void createClient() {
+	public void createClient() throws SecurityHandlerException {
+    	
+        Feign.Builder builder = Feign.builder()
+                .decoder(new JacksonDecoder())
+                .encoder(new JacksonEncoder());
+    	if (useSecurity) {
+    	IComponentSecurityHandler secHandler = ComponentSecurityHandlerFactory
+                .getComponentSecurityHandler(
+                		coreAAMUrl, keystorePath, keystorePassword,
+                    clientId, url, false,
+                    username, password  );
+    	
+    	Client client = new SymbioteAuthorizationClient(
+    		    secHandler, serviceComponentIdentifier,servicePlatformIdentifier, new Client.Default(null, null));
+
 		logger.info("Will use "+ url +" to access to CRM");
-		jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).target(CRMRestService.class, url);
-		securityHandler = new InternalSecurityHandler(coreAAMUrl, rabbitMQHostIP, rabbitMQUsername, rabbitMQPassword);
+		builder = builder.client(client);
+		//jsonclient = Feign.builder().decoder(new JacksonDecoder()).encoder(new JacksonEncoder()).client(client).target(CRMRestService.class, url);
+        }
+    	jsonclient = builder.target(CRMRestService.class, url);
 	}
 		
 	 
@@ -66,8 +108,7 @@ public  class CRMMessageHandler {
     	try{
 			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
 					platform.getDevices().length + " devices");
-			Token token = securityHandler.requestCoreToken(secHandlerUser, secHandlerPsw);
-			result = jsonclient.doPost2Crm(platform.getInternalId(), platform, token.getToken());
+			result = jsonclient.doPost2Crm(platform.getInternalId(), platform);
     	}
 
     	catch(FeignException t) {
@@ -93,7 +134,7 @@ public  class CRMMessageHandler {
     	try{
 			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
 					platform.getDevices().length + " devices");
-			result = jsonclient.doPost2Crm(platform.getInternalId(), platform, token);
+			result = jsonclient.doPost2Crm(platform.getInternalId(), platform);
     	}
     	catch(FeignException t) {
     		logger.error("Error accessing to CRM server at " + url);

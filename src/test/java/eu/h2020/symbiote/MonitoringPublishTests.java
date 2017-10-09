@@ -18,7 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest({"eureka.client.enabled=false"})
+@SpringBootTest({"eureka.client.enabled=false",  "symbIoTe.aam.integration=false"})
 public class MonitoringPublishTests {
 
 	private CRMRestService endpoint = Mockito.mock(CRMRestService.class);
@@ -26,7 +26,7 @@ public class MonitoringPublishTests {
 
 	@Before
 	public void prepare() {
-		Mockito.when(endpoint.doPost2Crm(Matchers.anyString(), Mockito.any(CloudMonitoringPlatform.class), Matchers.anyString()))
+		Mockito.when(endpoint.doPost2Crm(Matchers.anyString(), Mockito.any(CloudMonitoringPlatform.class)))
 		.thenReturn("Monitoring message received in CRM");
 	}
 

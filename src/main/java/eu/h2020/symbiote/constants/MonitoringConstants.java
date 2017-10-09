@@ -8,6 +8,7 @@ public class MonitoringConstants {
 //	public static final String DO_UPDATE_RESOURCES = "/platforms/{platformId}/resources";
 //	public static final String DO_REMOVE_RESOURCES = "/platforms/{platformId}/resources";
 	public static final String PUBLISH_MONITORING_DATA = "crm/monitoring/{platformId}/devices/status";
+	public static final String SUBSCRIBE_MONITORING_DATA = "monitoring/{platformId}";
 	
 	// public static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rh.reg";
 	// public static final String EXCHANGE_NAME_UNREGISTRATION = "symbIoTe.rh.unreg";

@@ -42,13 +42,13 @@ public class Icinga2Manager {
 	 private RestProxy icinga2client = new RestProxy();
 	 
 	 
-	 @Value("${symbiote.icinga2.api.url}")
+	 @Value("${symbIoTe.icinga2.api.url}")
 	 private String url;
 
-	 @Value("${symbiote.icinga2.api.user}")
+	 @Value("${symbIoTe.icinga2.api.user}")
 	 private String user;
 
-	 @Value("${symbiote.icinga2.api.password}")
+	 @Value("${symbIoTe.icinga2.api.password}")
 	 private String password; 
 	 
 	 @Value("${platform.id}")
