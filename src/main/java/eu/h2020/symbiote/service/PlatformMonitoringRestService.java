@@ -95,7 +95,7 @@ public class PlatformMonitoringRestService {
   }
   
   
-  @Scheduled(cron = "${symbiote.crm.publish.period}")
+  @Scheduled(cron = "${symbIoTe.crm.publish.period}")
   public void publishMonitoringData2Crm(){
 	  CloudMonitoringPlatform platform = icinga2Manager.getMonitoringInfo();
 	  if (platform != null){

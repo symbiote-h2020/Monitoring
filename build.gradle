@@ -1,7 +1,7 @@
 // initial extensions to gradle
 buildscript {
     ext {
-        springBootVersion = '1.5.3.RELEASE'
+        springBootVersion = '1.5.7.RELEASE'
     }
     repositories {
         mavenCentral()
@@ -45,7 +45,7 @@ repositories {
 // Spring related configs
 dependencyManagement {
     imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:Dalston.RELEASE"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:Dalston.SR4"
     }
 }
 
@@ -73,8 +73,12 @@ dependencies {
             4) never commit build.gradle which has project dependencies active as it will break CI builds
     */
     compile('com.github.symbiote-h2020:SymbIoTeLibraries:develop-SNAPSHOT') { changing = true }
-    //compile('com.github.symbiote-h2020:SymbIoTeLibraries:0.2.0')
-    //compile project(':SymbIoTeLibraries') 
+
+    //Security
+    // usual dependency jar
+    compile('com.github.symbiote-h2020:SymbIoTeSecurity:21.+'){ changing = true }
+    // sources workaround that allows to select the downloaded matching sources jar in IntelliJ Idea as it fails to do so automatically from JITPack repository.
+    compile('com.github.symbiote-h2020:SymbIoTeSecurity:21.+:sources'){ changing = true }
 
 
     // Spring
@@ -90,12 +94,6 @@ dependencies {
     // http libraries to develop icinga2 REST client
     compile ('commons-httpclient:commons-httpclient:3.1')
     compile ('org.eclipse.persistence:org.eclipse.persistence.moxy:2.5.0')
-	
-	//Security
-	// usual dependency jar
-	compile('com.github.symbiote-h2020:SymbIoTeSecurity:21.+'){ changing = true }
-	// sources workaround that allows to select the downloaded matching sources jar in IntelliJ Idea as it fails to do so automatically from JITPack repository.
-	compile('com.github.symbiote-h2020:SymbIoTeSecurity:21.+:sources'){ changing = true }
 
 
     // Use JUnit4

@@ -19,7 +19,7 @@ import feign.FeignException;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 @Component
-//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"symbiote.crm.url=http://localhost:8080"})
+//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"symbIoTe.core.cloud.interface.url=http://localhost:8080"})
 public  class CRMMessageHandler {
 	
 	private static final Log logger = LogFactory.getLog(CRMMessageHandler.class);
@@ -28,15 +28,9 @@ public  class CRMMessageHandler {
 
 	
 	//localAAMAddress
-    @Value("${symbiote.crm.url}")
+    @Value("${symbIoTe.core.cloud.interface.url}")
 	private String url;
 
-	@Value("${security.user}")
-	private String secHandlerUser;
-
-	@Value("${security.password}")
-	private String secHandlerPsw;
-	 
     @Value("${rabbit.host}")
     private String rabbitMQHostIP;
 
@@ -47,29 +41,29 @@ public  class CRMMessageHandler {
     private String rabbitMQPassword;
 	
     //coreAAMAddress
-	@Value("${symbiote.coreaam.url}")
+	@Value("${symbIoTe.coreaam.url}")
 	private String coreAAMUrl;
 
 	
-	@Value("${symbiote.keystorepath}")
+	@Value("${symbIoTe.keystorepath}")
 	private String keystorePath;
 
-	@Value("${symbiote.keystorepassword}")
+	@Value("${symbIoTe.keystorepassword}")
 	private String keystorePassword;
 
-	@Value("${symbiote.clientid}")
+	@Value("${symbIoTe.clientId}")
 	private String clientId;
 
-	@Value("${symbiote.username}")
+	@Value("${symbIoTe.username}")
 	private String username;
 
-	@Value("${symbiote.password}")
+	@Value("${symbIoTe.password}")
 	private String password;
 
-	@Value("${symbiote.servicecomponentid}")
+	@Value("${symbIoTe.serviceComponentId}")
 	private String serviceComponentIdentifier;
 	
-	@Value("${symbiote.serviceplatformid}")
+	@Value("${platform.id}")
 	private String servicePlatformIdentifier;
 	
 	@Value("${symbIoTe.aam.integration}")
