@@ -14,7 +14,6 @@ import feign.RequestLine;
 public interface CRMRestService {
 	
 	@RequestLine("POST crm/monitoring/{platformId}/devices/status")
-	@Headers({"Content-Type: application/json", "X-Auth-Token: {token}"})	
     public String doPost2Crm(
     		@Param("platformId") String platformId, 
     		CloudMonitoringPlatform platform);
