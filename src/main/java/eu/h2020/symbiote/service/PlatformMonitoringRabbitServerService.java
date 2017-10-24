@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 
-import eu.h2020.symbiote.PlatformManager;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.constants.MonitoringConstants;
 
@@ -30,7 +29,7 @@ public class PlatformMonitoringRabbitServerService {
     private static Log log = LogFactory.getLog(PlatformMonitoringRabbitServerService.class);
 
 	@Autowired 
-	PlatformManager platformManager;
+	PlatformMonitoringRestService platformManager;
 	/**
 	 * Spring AMQP Listener for resource registration requests. This method is invoked when Registration
 	 * Handler sends a resource registration request and it is responsible for forwarding the message

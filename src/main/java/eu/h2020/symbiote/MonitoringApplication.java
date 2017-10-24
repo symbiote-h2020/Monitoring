@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import feign.Feign;
 import feign.jackson.JacksonDecoder;
@@ -19,8 +20,10 @@ import feign.jackson.JacksonEncoder;
  * @version: 19/04/2017
  */
 //@EnableDiscoveryClient    //when Eureka available
-@EnableAutoConfiguration
+
 @SpringBootApplication
+@EnableScheduling
+@EnableAutoConfiguration
 public class MonitoringApplication {
 
 	private static Log log = LogFactory.getLog(MonitoringApplication.class);

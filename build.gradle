@@ -30,6 +30,8 @@ apply plugin: 'idea'
 // publishing
 apply plugin: 'com.cinnober.gradle.semver-git'
 
+
+
 // XXX please change with your commits according to http://semver.org/
 project.version = '0.2.0'
 
@@ -86,6 +88,11 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-data-rest')
     compile('org.springframework.boot:spring-boot-starter-web')
     compile('org.springframework.boot:spring-boot-starter-data-mongodb')
+
+    // mongo
+    //compile('com.querydsl:querydsl-core')
+    //compile('com.querydsl:querydsl-apt')
+    
 
     // http libraries to develop icinga2 REST client
     compile ('commons-httpclient:commons-httpclient:3.1')
