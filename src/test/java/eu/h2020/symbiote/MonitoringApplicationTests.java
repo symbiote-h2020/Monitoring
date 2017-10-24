@@ -16,8 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import eu.h2020.symbiote.core.model.resources.Resource;
+
 import eu.h2020.symbiote.db.ResourceRepository;
+import eu.h2020.symbiote.model.cim.Resource;
 import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
 import eu.h2020.symbiote.rest.RestProxy;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
@@ -97,8 +98,8 @@ public class MonitoringApplicationTests {
 		String id= upd_resource.getInternalId();
 		System.out.println("Updating resource with InternalId=" + id);
 		
-		LOGGER.info("ORIGINAL: "+ upd_resource.getResource().getComments().get(0));
-		LOGGER.info("ORIGINAL: "+ upd_resource.getResource().getComments().get(1));
+//		LOGGER.info("ORIGINAL: "+ upd_resource.getResource().getComments().get(0));
+//		LOGGER.info("ORIGINAL: "+ upd_resource.getResource().getComments().get(1));
 		LOGGER.info("ORIGINAL: "+ upd_resource.getResource().getInterworkingServiceURL());
 	  // data to update 
 		Resource r = new Resource();
@@ -107,11 +108,11 @@ public class MonitoringApplicationTests {
 		List<String> comments = new ArrayList<String>();
 			comments.add("UPDATED-comment1");
 			comments.add("UPDATED-comment2");
-		r.setComments(comments);
+//		r.setComments(comments);
 		List<String> labels = new ArrayList<String>();
 			labels.add("label1");
 			labels.add("label2");
-		r.setLabels(labels);
+//		r.setLabels(labels);
 		
 		// Update
 		CloudResource upd_res = getTestResource();
@@ -119,8 +120,8 @@ public class MonitoringApplicationTests {
 		upd_res.setResource(r);
 		upd_res.setInternalId(id);
 		resources_upd.add(upd_res);	
-		LOGGER.info("UPDATED: "+ upd_res.getResource().getComments().get(0));
-		LOGGER.info("UPDATED: "+ upd_res.getResource().getComments().get(1));
+//		LOGGER.info("UPDATED: "+ upd_res.getResource().getComments().get(0));
+//		LOGGER.info("UPDATED: "+ upd_res.getResource().getComments().get(1));
 		LOGGER.info("UPDATED: "+ upd_res.getResource().getInterworkingServiceURL());
 		//send the message using RabbitMQ
 		rhResourceRegistrationMessageHandler.sendResourcesUpdateMessage(resources_upd);
@@ -231,11 +232,11 @@ public class MonitoringApplicationTests {
 		   List<String> comments = new ArrayList<String>();
 		   comments.add("comment1");
 		   comments.add("comment2");
-		   r.setComments(comments);
+//		   r.setComments(comments);
 		   List<String> labels = new ArrayList<String>();
 		   labels.add("label1");
 		   labels.add("label2");
-		   r.setLabels(labels);
+//		   r.setLabels(labels);
 		   resource.setResource(r);			
 
 		   return resource; 
