@@ -55,7 +55,7 @@ public class MonitoringApplicationTests {
 			//send the message using RabbitMQ
 			rhResourceRegistrationMessageHandler.sendResourcesRegistrationMessage(resources);
 			LOGGER.info("********************************************************************");
-			LOGGER.info("***** Verify CREATE:" + cre_resource.getInternalId() +"************");
+			LOGGER.info("****** Verify CREATE:" + cre_resource.getInternalId() +"************");
 			LOGGER.info("********************************************************************");
 			delay(tdelaym);
 			

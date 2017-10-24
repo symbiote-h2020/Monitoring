@@ -97,7 +97,7 @@ public class MonitoringRabbitTests {
 		sendResourceMessage(MonitoringConstants.EXCHANGE_NAME_REGISTRATION_TEST, 
 				MonitoringConstants.RESOURCE_REGISTRATION_QUEUE_NAME_TEST, message.getBytes("UTF-8"));
 
-		// Sleep to make sure that the platform has been saved to the repo before querying
+		// Sleep to make sure  that the platform has been saved to the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 
 		CloudResource result = resourceRepo.findOne(add_item.getInternalId());
