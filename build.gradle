@@ -72,17 +72,16 @@ dependencies {
             3) project dependency requires changes in settings.gradle file in this project
             4) never commit build.gradle which has project dependencies active as it will break CI builds
     */
-    compile('com.github.symbiote-h2020:SymbIoTeLibraries:1.+') { changing = true }
+    compile('com.github.symbiote-h2020:SymbIoTeLibraries:3.+') { changing = true }
 
     //Security
     // usual dependency jar
-    compile('com.github.symbiote-h2020:SymbIoTeSecurity:21.+'){ changing = true }
+    compile('com.github.symbiote-h2020:SymbIoTeSecurity:22.+'){ changing = true }
     // sources workaround that allows to select the downloaded matching sources jar in IntelliJ Idea as it fails to do so automatically from JITPack repository.
-    compile('com.github.symbiote-h2020:SymbIoTeSecurity:21.+:sources'){ changing = true }
-
+    compile('com.github.symbiote-h2020:SymbIoTeSecurity:22.+:sources'){ changing = true }
+    
 
     // Spring
-    compile('org.springframework.cloud:spring-cloud-starter')
     compile('org.springframework.cloud:spring-cloud-starter-config')
     compile('org.springframework.cloud:spring-cloud-starter-eureka')
     compile('org.springframework.cloud:spring-cloud-starter-zipkin')
