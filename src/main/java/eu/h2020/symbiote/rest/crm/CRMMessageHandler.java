@@ -45,19 +45,19 @@ public  class CRMMessageHandler {
 	private String coreAAMUrl;
 
 	
-	@Value("${symbIoTe.keystorepath}")
+	@Value("${symbIoTe.component.keystore.path}")
 	private String keystorePath;
 
-	@Value("${symbIoTe.keystorepassword}")
+	@Value("${symbIoTe.component.keystore.password}")
 	private String keystorePassword;
 
 	@Value("${symbIoTe.clientId}")
 	private String clientId;
 
-	@Value("${symbIoTe.username}")
+	@Value("${symbIoTe.component.username}")
 	private String username;
 
-	@Value("${symbIoTe.password}")
+	@Value("${symbIoTe.component.password}")
 	private String password;
 
 	@Value("${symbIoTe.serviceComponentId}")
