@@ -41,7 +41,7 @@ public  class CRMMessageHandler {
     private String rabbitMQPassword;
 	
     //coreAAMAddress
-	@Value("${symbIoTe.coreaam.url}")
+	@Value("${symbIoTe.core.interface.url}")
 	private String coreAAMUrl;
 
 	
