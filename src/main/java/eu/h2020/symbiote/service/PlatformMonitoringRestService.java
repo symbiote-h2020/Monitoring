@@ -1,17 +1,18 @@
 package eu.h2020.symbiote.service;
 
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.match;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.stream.Collectors;
+import eu.h2020.symbiote.AppConfig;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringMetrics;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
+import eu.h2020.symbiote.constants.MonitoringConstants;
+import eu.h2020.symbiote.datamodel.MonitoringDevice;
+import eu.h2020.symbiote.datamodel.MonitoringDeviceStats;
+import eu.h2020.symbiote.datamodel.MonitoringRequest;
+import eu.h2020.symbiote.db.MonitoringDeviceRepository;
+import eu.h2020.symbiote.db.MonitoringRepository;
+import eu.h2020.symbiote.db.MonitoringRequestRepository;
+import eu.h2020.symbiote.db.ResourceRepository;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,19 +36,20 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import eu.h2020.symbiote.AppConfig;
-import eu.h2020.symbiote.cloud.model.internal.CloudResource;
-import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
-import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringMetrics;
-import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
-import eu.h2020.symbiote.constants.MonitoringConstants;
-import eu.h2020.symbiote.datamodel.MonitoringDevice;
-import eu.h2020.symbiote.datamodel.MonitoringDeviceStats;
-import eu.h2020.symbiote.datamodel.MonitoringRequest;
-import eu.h2020.symbiote.db.MonitoringDeviceRepository;
-import eu.h2020.symbiote.db.MonitoringRepository;
-import eu.h2020.symbiote.db.MonitoringRequestRepository;
-import eu.h2020.symbiote.db.ResourceRepository;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
+
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.match;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 
 /**
  * Manage the REST operations from Platform using MongoDB 
@@ -76,6 +78,32 @@ public class PlatformMonitoringRestService {
 	 
 	 @Autowired
 	 private MonitoringRequestRepository monitoringRequestRepository;
+	 
+	 @Autowired
+	 private AppConfig config;
+	 
+	 
+	 @PostConstruct
+	 public void init() {
+		
+		 if( monitoringRequestRepository.getByTag("availability") == null)
+		 {
+			 MonitoringRequest defaultRequest = new MonitoringRequest();
+			 defaultRequest.setTag("availability");
+			 defaultRequest.setFederationId("ALL");
+			 defaultRequest.setDateFederationCreation(new Date());
+			 monitoringRequestRepository.save(defaultRequest);
+			
+			 defaultRequest = new MonitoringRequest();
+			 defaultRequest.setTag("load");
+			 defaultRequest.setFederationId("ALL");
+			 defaultRequest.setDateFederationCreation(new Date());
+			 monitoringRequestRepository.save(defaultRequest);
+			
+		 }
+	 	
+	 }
+	 
 	 /**
 	  * Listen from Platform Host.
 	  * Received device monitoring data 
@@ -85,24 +113,9 @@ public class PlatformMonitoringRestService {
 	 @RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.SUBSCRIBE_MONITORING_DATA,  produces = "application/json", consumes = "application/json")
 	 public @ResponseBody String  MonitorRestServer(@PathVariable("platformId") String platformId, @RequestBody CloudMonitoringPlatform platform) throws Throwable {
 
-		 if( monitoringRequestRepository.getByTag("availability") == null) 
-		 {
-			 MonitoringRequest defaultRequest = new MonitoringRequest();
-			 defaultRequest.setTag("availability");
-			 defaultRequest.setFederationId("ALL");
-			 defaultRequest.setDateFederationCreation(new Date());
-			 monitoringRequestRepository.save(defaultRequest);
-
-			 defaultRequest = new MonitoringRequest();
-			 defaultRequest.setTag("load");
-			 defaultRequest.setFederationId("ALL");
-			 defaultRequest.setDateFederationCreation(new Date());
-			 monitoringRequestRepository.save(defaultRequest);
-			 
-		 }
+		
 			 
 		 
-		  MonitoringDevice md = new MonitoringDevice();
 
 		  logger.info("***********************************************************");
 		  try {Thread.sleep(100);} catch (InterruptedException e) {e.printStackTrace();}	
@@ -117,6 +130,7 @@ public class PlatformMonitoringRestService {
 		  int sumload = 0;
 		  int sizeDevices = platform.getDevices().length;
 		  for (int i = 0; i<sizeDevices; i++){
+		  	MonitoringDevice md = new MonitoringDevice();
 			  logger.info(
 					  "Device.id:" + platform.getDevices()[i].getId() + " "+
 					  "Device.type:" + platform.getDevices()[i].getType() + " "+
@@ -507,7 +521,7 @@ public class PlatformMonitoringRestService {
 		String deviceId = resource.getInternalId();
 		Query query = new Query();
 		query.addCriteria(Criteria.where("internalId").is("helloid"));	
-		MongoTemplate mongoTemplate = (new AppConfig()).mongoTemplate();
+		MongoTemplate mongoTemplate = config.mongoTemplate();
 		List<CloudMonitoringPlatform> lcmp = mongoTemplate.find(query, CloudMonitoringPlatform.class);
 		for(int i = 0;i<lcmp.size();i++)
 		{
@@ -560,7 +574,7 @@ public class PlatformMonitoringRestService {
 	 */
 	private List<MonitoringDeviceStats> getAggregation(String metric, Date mindate, Date maxdate, String groupby) throws Exception {
 		
-		  MongoOperations mongoOps = (new AppConfig()).mongoTemplate();
+		  MongoOperations mongoOps = config.mongoTemplate();
 		  List<AggregationOperation> listOp  = new ArrayList<AggregationOperation>();
 		  
 		  if (metric.equals("availability"))
