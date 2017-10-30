@@ -7,7 +7,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class MonitoringDevice {
 
 	//Platform Device id
-	private String internalId; 
+	private String internalId;
+	private String type;
 	private Date timemetric;
 	private String tag;
 	private int value;
@@ -36,6 +37,18 @@ public class MonitoringDevice {
 	}
 	public void setValue(int value) {
 		this.value = value;
+	}
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
+	}
+	public int getCountvalue() {
+		return countvalue;
+	}
+	public void setCountvalue(int countvalue) {
+		this.countvalue = countvalue;
 	}
 	
 }

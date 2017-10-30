@@ -5,6 +5,7 @@ import java.util.Date;
 public class MonitoringDeviceStats {
 
 	private String id; 
+	private String type; 
 	private int percentage;	
 	private int average;
 	private int minValue;
@@ -45,6 +46,12 @@ public class MonitoringDeviceStats {
 	}
 	public void setCount(int count) {
 		this.count = count;
+	}
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
 	}
 
 	

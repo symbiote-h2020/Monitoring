@@ -25,8 +25,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.h2020.symbiote.cloud.model.CloudResourceParams;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.constants.MonitoringConstants;
-import eu.h2020.symbiote.core.model.resources.Resource;
+
 import eu.h2020.symbiote.db.ResourceRepository;
+import eu.h2020.symbiote.model.cim.Resource;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest({"eureka.client.enabled=false", "symbIoTe.aam.integration=false"})
@@ -169,11 +170,11 @@ public class MonitoringRabbitTests {
 		List<String> comments = new ArrayList<String>();
 		comments.add("comment1");
 		comments.add("comment2");
-		r.setComments(comments);
+//		r.setComments(comments);
 		List<String> labels = new ArrayList<String>();
 		labels.add("label1");
 		labels.add("label2");
-		r.setLabels(labels);
+//		r.setLabels(labels);
 		resource.setResource(r);			
 
 		return resource; 
