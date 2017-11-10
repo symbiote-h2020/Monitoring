@@ -29,7 +29,7 @@ public class PlatformMonitoringRabbitServerService {
     private static Log log = LogFactory.getLog(PlatformMonitoringRabbitServerService.class);
 
 	@Autowired 
-	PlatformMonitoringRestService platformManager;
+	PlatformMonitoringComponentRestService platformManager;
 	/**
 	 * Spring AMQP Listener for resource registration requests. This method is invoked when Registration
 	 * Handler sends a resource registration request and it is responsible for forwarding the message

@@ -69,7 +69,7 @@ public  class CRMMessageHandler {
 	@Value("${symbiote.servicecomponentid}")
 	private String serviceComponentIdentifier;
 	
-	@Value("${symbiote.serviceplatformid}")
+	@Value("${platform.id}")
 	private String servicePlatformIdentifier;
 	
 	@Value("${symbIoTe.aam.integration}")

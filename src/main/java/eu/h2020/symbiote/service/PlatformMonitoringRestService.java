@@ -68,19 +68,17 @@ public class PlatformMonitoringRestService {
 	 
 	 @Autowired
 	 private ResourceRepository resourceRepository;
-	 
+
 	 @Autowired
 	 private MonitoringRepository monitoringRepository;
 	 
 	 @Autowired
 	 private MonitoringDeviceRepository monitoringDeviceRepository;
 	 
-	 
 	 @Autowired
 	 private MonitoringRequestRepository monitoringRequestRepository;
 	 
-	 @Autowired
-	 private AppConfig config;
+
 	 
 	 
 	 @PostConstruct
@@ -113,10 +111,6 @@ public class PlatformMonitoringRestService {
 	 @RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.SUBSCRIBE_MONITORING_DATA,  produces = "application/json", consumes = "application/json")
 	 public @ResponseBody String  MonitorRestServer(@PathVariable("platformId") String platformId, @RequestBody CloudMonitoringPlatform platform) throws Throwable {
 
-		
-			 
-		 
-
 		  logger.info("***********************************************************");
 		  try {Thread.sleep(100);} catch (InterruptedException e) {e.printStackTrace();}	
 		  logger.info("****** CloudMonitoringPlatform RECEIVED *******************");
@@ -125,6 +119,11 @@ public class PlatformMonitoringRestService {
 				  "Platform.time: " + platform.getTimePlatform()
 				  //+ " " +"Platform.kpis: " + platform.getKpis()
 				  );
+		  logger.info("Check DEVICES:");
+		  CloudMonitoringDevice[] devicesPlat = platform.getDevices();
+		  CloudMonitoringDevice[] checkdevices = getFilterDevice(devicesPlat);
+		  platform.setDevices(checkdevices);
+		  
 		  logger.info("DEVICES:");
 		  int cantavai = 0;
 		  int sumload = 0;
@@ -158,7 +157,7 @@ public class PlatformMonitoringRestService {
 			  }
 		  }
 
-		  		  // save CloudMonitoringPlatform in internalRepository
+		  // save CloudMonitoringPlatform in internalRepository
 		  logger.info("Adding CloudMonitoringPlatform to database");
 		  
 	    		  
@@ -169,6 +168,12 @@ public class PlatformMonitoringRestService {
 		  
 		  platform.setTimeRegister(new Date());
 
+		  
+		  
+		  
+		  
+/************************* hacer esto antes del envio al CRM tomando el ultimo grabado ***************************/		  
+/*
 		  // Reorganize tags
 		  List<MonitoringRequest> mreq = getMonitoringRequest();
 		  List<MonitoringRequest> mreqdev = new ArrayList<MonitoringRequest>();	 
@@ -365,7 +370,10 @@ public class PlatformMonitoringRestService {
 		  
 		   } // end for MonitoringRequestfor
 		   
-		   logger.info("****** CloudMonitoringPlatform ADDING *******************");
+		  
+*/		  
+		  
+		  logger.info("****** CloudMonitoringPlatform ADDING *******************");
 		  
 		  logger.info("Register TimeRegister: " + platform.getTimeRegister());
 		  logger.info("Register UTC TimeRegister: "+ new DateTime(platform.getTimeRegister(),DateTimeZone.UTC));
@@ -395,58 +403,41 @@ public class PlatformMonitoringRestService {
 	  }
 	 
 		
-	/**
-	  * Add or Update CloudResource document from MongoDB.
-	  */	 
-	 public List<CloudResource>  addOrUpdateInInternalRepository(List<CloudResource>  resources){
-		 logger.info("Adding CloudResource to database");
-		 return resources.stream().map(resource -> {
-			  CloudResource existingResource = resourceRepository.getByInternalId(resource.getInternalId());
-		      if (existingResource != null) {
-		    	  logger.info("update will be done");
-		      }
-		      return resourceRepository.save(resource);
-		 })
-	     .collect(Collectors.toList());
-	  }
+
 	 
-	/**
-	  * Delete CloudResource document from MongoDB.
-	  */	
-	  public List<CloudResource> deleteInInternalRepository(List<String> resourceIds){
-		  List<CloudResource>  result = new ArrayList<CloudResource>();
-		  for (String resourceId:resourceIds){
-			  CloudResource existingResource = resourceRepository.getByInternalId(resourceId);
-		      if (existingResource != null) {
-		    	  result.add(existingResource);
-		    	  resourceRepository.delete(resourceId);
-		      }
-		  }
-		  return result;
-	  }
-	
-	/**
-	  * Get all CloudResource document from MongoDB.
-	  */		  
-	  public List<CloudResource> getResources() {
-		  return resourceRepository.findAll();
-	  }
-	
+
 
 	/**
-	 * The getResource method retrieves \a ResourceBean identified by \a resourceId 
-	 * from the mondodb database and will return it.
-	 * @param resourceId from the resource to be retrieved from the database
-	 * @return the ResourceBean
-	 */  
-	public CloudResource getResource(String resourceId) {
-		if (!"".equals(resourceId)) {
-			return resourceRepository.getByInternalId(resourceId);
+	 * 
+	 * Get filter registered and valid devices
+	 *  
+	 * @param devicesPlat
+	 * @return
+	 */
+	private CloudMonitoringDevice[] getFilterDevice(CloudMonitoringDevice[] devicesPlat) {
+
+		ArrayList<CloudMonitoringDevice> devices = new ArrayList<CloudMonitoringDevice>();
+		for(int i = 0;i<devicesPlat.length;i++)
+		{
+			String idDevPlat =  devicesPlat[i].getId();
+		
+			if (resourceRepository.getByInternalId(idDevPlat)!=null)
+			{
+				devices.add(devicesPlat[i]);
+			}
+			else
+			{
+				logger.info("Device not registered: " + devicesPlat[i].getId());
+			}
+				
 		}
-		return null;
+			
+		CloudMonitoringDevice[] checkdevices= new CloudMonitoringDevice[devices.size()];
+		devices.toArray( checkdevices );
+			
+		return checkdevices;
 	}
-	
-	
+
 	/**
 	  * Add or Update CloudMonitoringPlatform document from MongoDB.
 	  */	 
@@ -456,108 +447,8 @@ public class PlatformMonitoringRestService {
 
 	  }
 	
-	 
-	 /**
-	  * Get Monitoring information
-	 * @throws Exception 
-	  */
-	public CloudMonitoringPlatform getMonitoringInfo() throws Exception{
-		List<CloudResource> resources = resourceRepository.findAll();
-		CloudMonitoringPlatform platform = null;
-		if (resources != null){
-			
-			//monitoringRepository.getByInternalId(monitoringRepository);
-			List<CloudMonitoringPlatform> lcmp = monitoringRepository.findAll(new Sort(Direction.DESC,"timeRegister"));
-			if (lcmp.size() > 0)
-			{
-				platform= lcmp.get(0);
-				
-				logger.info("Last CloudMonitoringPlatform timeRegister at: " + platform.getTimeRegister());				
-				CloudMonitoringDevice[] devicesPlat = platform.getDevices();
-				ArrayList<CloudMonitoringDevice> devices = new ArrayList();
-				
-				int x=0;
-				for(int i = 0;i<devicesPlat.length;i++)
-				{
-					String idDevPlat =  devicesPlat[i].getId();
-					
-					if (resourceRepository.getByInternalId(idDevPlat)!=null)
-					{
-						//devices[x] = devicesPlat[i];
-						devices.add(devicesPlat[i]);
-					}
-					else
-					{
-						logger.info("Device not registered: " + devicesPlat[i].getId());
-					}
-					
-				}
-				
-				CloudMonitoringDevice[] checkdevices= new CloudMonitoringDevice[devices.size()];
-				for(int i = 0;i<devices.size();i++)
-				{
-					checkdevices[0] = devices.get(i);
-				}
-				platform.setDevices(checkdevices);
-				
-			}
-			else
-				logger.error("Not CloudMonitoringPlatform found in DB");
-			
-
 	
-		}
-		return platform;
-	}
 
-	 /**
-	  * Get Monitoring information from device
-	  * @throws Exception
-	  *  
-	  */
-	private CloudMonitoringDevice getMonitoringInfoFromDevice(CloudResource resource) throws Exception{
-		CloudMonitoringDevice monitoringDevice = null;
-		
-		String deviceId = resource.getInternalId();
-		Query query = new Query();
-		query.addCriteria(Criteria.where("internalId").is("helloid"));	
-		MongoTemplate mongoTemplate = config.mongoTemplate();
-		List<CloudMonitoringPlatform> lcmp = mongoTemplate.find(query, CloudMonitoringPlatform.class);
-		for(int i = 0;i<lcmp.size();i++)
-		{
-			CloudMonitoringPlatform cmp = lcmp.get(i);
-			System.out.println("One Device:" + cmp.getDevices()[0].getId());
-		}
-		return monitoringDevice;
-	}
-
-	/**
-	 * 
-	 *  Get Device Position from device by deviceId
-	 *  
-	 */
-	private int getPosdevicebyId(CloudMonitoringPlatform platform, String devId) 
-	{
-		int ipos=0;
-		
-		for (int m = 0; m < platform.getDevices().length; m++)
-		{
-			if ( platform.getDevices()[m].getId().equals(devId) )
-			{
-				ipos = m;
-				break;
-			}
-		}
-		//logger.info("Device: " + devId + " is in Pos:"+ipos);
-		return ipos;
-	}
-	
-	/**
-	  * Get all MonitoringRequest document from MongoDB.
-	  */		  
-	public List<MonitoringRequest> getMonitoringRequest() {
-		  return monitoringRequestRepository.findAll();
-	}
 
 	
 	static <CloudMonitoringMetrics> CloudMonitoringMetrics[] append(CloudMonitoringMetrics[] arr, CloudMonitoringMetrics element) {
@@ -567,63 +458,8 @@ public class PlatformMonitoringRestService {
 	    return arr;
 	}
 	
-	/**
-	 * 
-	 * Get aggregation data from mongoDB.
-	 * 	 
-	 */
-	private List<MonitoringDeviceStats> getAggregation(String metric, Date mindate, Date maxdate, String groupby) throws Exception {
-		
-		  MongoOperations mongoOps = config.mongoTemplate();
-		  List<AggregationOperation> listOp  = new ArrayList<AggregationOperation>();
-		  
-		  if (metric.equals("availability"))
-		  {
-			  if(mindate!=null && !mindate.equals(maxdate))			  
-				  listOp.add( match(Criteria.where("tag").is(metric).andOperator(Criteria.where("timemetric").gte(mindate).andOperator(Criteria.where("timemetric").lt(maxdate)))) );
-			  else
-				  listOp.add( match(Criteria.where("tag").is(metric)));
-			  listOp.add(
-					  group(groupby).sum("value").as("sum").min("value").as("minValue").max("value").as("maxValue").count().as("count")
-			  );
-			  listOp.add(
-					  project()
-					  	.andExpression("sum*100/count").as("percentage")
-					  	.and("count").as("count")
-					  	.and("minValue").as("minValue")
-					  	.and("maxValue").as("maxValue")
-			  );
-		  }	  
-		  else if (metric.equals("load")) 
-		  {
-			  //listOp.add( match(Criteria.where("tag").is(metric).andOperator(Criteria.where("timemetric").gte(mindate).andOperator(Criteria.where("timemetric").lt(maxdate)))) );
-			  if(mindate!=null && !mindate.equals(maxdate))			  
-				  listOp.add( match(Criteria.where("tag").is(metric)
-						  .andOperator(Criteria.where("value").ne(-1)
-						  		.andOperator(Criteria.where("timemetric").gte(mindate)
-						  				.andOperator(Criteria.where("timemetric").lt(maxdate)
-									  				)
-								  			)
-						  				)
-						  			) 
-						  );
-			  else
-				  listOp.add( match(Criteria.where("tag").is(metric)
-						  .andOperator(Criteria.where("value").ne(-1)
-								  		)
-						  			)
-						  );
-			  listOp.add(
-					  group(groupby).avg("value").as("average").min("value").as("minValue").max("value").as("maxValue").count().as("count")
-			  );
-		  }	  
 
 		  
 		  
-		  TypedAggregation<MonitoringDevice> agg = newAggregation(MonitoringDevice.class,listOp);
 
-		  AggregationResults<MonitoringDeviceStats> results = mongoOps.aggregate(agg, MonitoringDeviceStats.class);
-
-		  return results.getMappedResults();
-	}
 }
