@@ -30,6 +30,8 @@ public interface MonitoringRepository extends MongoRepository<CloudMonitoringPla
 	 */
 	CloudMonitoringPlatform getByInternalId(String resourceId);
 	
+	CloudMonitoringPlatform findFirstByOrderByTimeRegisterDesc();
+	
 	//CloudMonitoringPlatform findByBirthdateAfter
 
 	

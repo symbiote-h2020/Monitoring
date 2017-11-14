@@ -9,6 +9,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.unwi
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -84,77 +85,29 @@ public class PlatformMonitoringComponentRestService {
 	  
 	  List<String> pubList = new ArrayList<String>();
 	  Hashtable<String, Hashtable<String, Date>> htFedDevices = new Hashtable<String, Hashtable<String, Date>>();
-	  Hashtable<String, Date> htDevices = new Hashtable<String, Date>();
-	  Hashtable<String, Date> htCoreDevices = new Hashtable<String, Date>();
+	  Hashtable<String, Date> htDevinFed = new Hashtable<String, Date>();
+	  Hashtable<String, Date> htDevinCore = new Hashtable<String, Date>();
 	  //CloudMonitoringPlatform platformDevOri = getMonitoringInfo();
-	  CloudMonitoringPlatform platform= getMonitoringInfo();
-	  
-	  CloudMonitoringDevice[] platformDevOri = new CloudMonitoringDevice[platform.getDevices().length];
-	  platformDevOri=platform.getDevices();
-
-	  List<CloudMonitoringDevice> regCoreDev = getRegisteredCoreDevices();
-
-	  for (int i = 0; i < regCoreDev.size(); i++){
-
-		  logger.info(
-				  "RegisteredCoreDevices Id:" + regCoreDev.get(i).getId()
-				  );
-		  htCoreDevices.put((String)regCoreDev.get(i).getId(), new Date());
-	  }
-	  
-	  String sDeviceList = getDeviceList(regCoreDev);	  	  	  
-	  logger.info("sDeviceList:" + sDeviceList);
-	  if(sDeviceList != null)
-	  {
-		  pubList.add("CORE");
-		  htFedDevices.put("ALL", htCoreDevices);
-	  }
+	  CloudMonitoringPlatform platformDevOri= getMonitoringInfo();
 
 	  
-	  List<MonitoringFedDev> regFedDev = getRegisteredFedDevices();
-	  String idFedPrev = null;	  
-	  for (int i = 0; i < regFedDev.size(); i++){
-		  String idFed = regFedDev.get(i).getIdfed();
-		  String sidDev = regFedDev.get(i).getIddev();
-		  sidDev = sidDev.substring(sidDev.indexOf('"')+1,sidDev.lastIndexOf('"'));
-		  
-		  if (idFedPrev==null)
-			  idFedPrev=idFed;
-		  logger.info(
-				  
-				  "RegisteredFedDevices IdFed:" + regFedDev.get(i).getIdfed() + " " +
-				  "RegisteredFedDevices DateFed:" + regFedDev.get(i).getDatefed()+ " " +
-				  "RegisteredFedDevices IdDev:" + sidDev
-				  
-				  );
-		  
-		  if (idFed.equals(idFedPrev))
-		  {
-			  htDevices.put(sidDev, regFedDev.get(i).getDatefed());
-			  if ( i == (regFedDev.size()-1))
-			  {
-				  htFedDevices.put(idFed, htDevices);
-				  pubList.add(idFed);
-			  }  
-		  }
-		  else
-		  {
-			  htFedDevices.put(idFedPrev, htDevices);
-			  pubList.add(idFedPrev);
-			  idFedPrev=idFed;
-			  htDevices = new Hashtable<String, Date>();
-			  htDevices.put(sidDev, regFedDev.get(i).getDatefed());
-		  }
-			  
-		  
-	  }
-	  logger.info(
-			  
-			  "RegisteredFedDevices htFedDevices:" + htFedDevices
-			  
-			  );
+	  //List<CloudMonitoringMetrics> listCMMPlat = new ArrayList<CloudMonitoringMetrics>();
+	  //listCMMPlat.toArray(cmmPlat);
+
 	  
-	  if (platform != null && platform.getMetrics()==null) 
+//	  CloudMonitoringDevice[] platformDevOri = new CloudMonitoringDevice[platform.getDevices().length];
+//	  platformDevOri=platform.getDevices();
+//	  CloudMonitoringPlatform platform=platformDevOri;
+	  
+	  htDevinCore = addCoredevices(htFedDevices, pubList);	  	  
+	  htDevinFed  = addFederationdevices(htFedDevices, pubList);
+	  
+	  
+
+	  
+	  logger.info("RegisteredFedDevices htFedDevices:" + htFedDevices);
+	  
+	  if (platformDevOri != null && platformDevOri.getMetrics()==null) 
 	  {  
 		  
 		  for (int p = 0; p < pubList.size(); p++)
@@ -163,17 +116,17 @@ public class PlatformMonitoringComponentRestService {
 			  logger.info("********** START PROCESS *********** ->" + pubList.get(p));
 
 			  //CloudMonitoringPlatform platform= duplicationCloudMonitoringPlatform(platformDevOri);
-			  platform.setDevices(platformDevOri);
+			  //platform.setDevices(platformDevOri);
 			  
 			  // Obtained list devices to be published 
 			  Hashtable<String, Date> listDevices = new Hashtable<String, Date>();  
 			  if(pubList.get(p).equals("CORE"))
-				  listDevices = htCoreDevices;
+				  listDevices = htDevinCore;
 			  else
 				  listDevices = htFedDevices.get(pubList.get(p));
 			  
 			  // Filtered platforms received devices with the registar by Core or FederationId.
-			  platform = filterDevicestoSend (listDevices, platform);
+			  CloudMonitoringPlatform platform = filterDevicestoSend (listDevices, platformDevOri);
 			  
 			  // Reorganize tags
 			  List<MonitoringRequest> mreq = getMonitoringRequest();
@@ -410,6 +363,77 @@ public class PlatformMonitoringComponentRestService {
 	  
   }
   
+  private Hashtable<String, Date> addFederationdevices(
+		Hashtable<String, Hashtable<String, Date>> htFedDevices, List<String> pubList) throws Exception {
+	  
+	  Hashtable<String, Date> htDevices = new Hashtable<String, Date>();
+	  
+	  List<MonitoringFedDev> regFedDev = getRegisteredFedDevices();
+	  String idFedPrev = null;	  
+	  for (int i = 0; i < regFedDev.size(); i++){
+		  String idFed = regFedDev.get(i).getIdfed();
+		  String sidDev = regFedDev.get(i).getIddev();
+		  sidDev = sidDev.substring(sidDev.indexOf('"')+1,sidDev.lastIndexOf('"'));
+		  
+		  if (idFedPrev==null)
+			  idFedPrev=idFed;
+		  logger.info(
+				  
+				  "RegisteredFedDevices IdFed:" + regFedDev.get(i).getIdfed() + " " +
+				  "RegisteredFedDevices DateFed:" + regFedDev.get(i).getDatefed()+ " " +
+				  "RegisteredFedDevices IdDev:" + sidDev
+				  
+				  );
+		  
+		  if (idFed.equals(idFedPrev))
+		  {
+			  htDevices.put(sidDev, regFedDev.get(i).getDatefed());
+			  if ( i == (regFedDev.size()-1))
+			  {
+				  htFedDevices.put(idFed, htDevices);
+				  pubList.add(idFed);
+			  }  
+		  }
+		  else
+		  {
+			  htFedDevices.put(idFedPrev, htDevices);
+			  pubList.add(idFedPrev);
+			  idFedPrev=idFed;
+			  htDevices = new Hashtable<String, Date>();
+			  htDevices.put(sidDev, regFedDev.get(i).getDatefed());
+		  }
+			  
+		  
+	  }
+	  
+	return htDevices;
+}
+
+private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<String, Date>> htFedDevices, List<String> pubList) throws Exception {
+
+	  Hashtable<String, Date> htCoreDevices = new Hashtable<String, Date>();
+	  
+	  List<CloudMonitoringDevice> regCoreDev = getRegisteredCoreDevices();
+
+	  for (int i = 0; i < regCoreDev.size(); i++){
+
+		  logger.info(
+				  "RegisteredCoreDevices Id:" + regCoreDev.get(i).getId()
+				  );
+		  htCoreDevices.put((String)regCoreDev.get(i).getId(), new Date());
+	  }
+	  
+	  //String sDeviceList = getDeviceList(regCoreDev);	  	  	  
+	  //logger.info("sDeviceList:" + sDeviceList);
+	  if(regCoreDev.size() > 0)
+	  {
+		  pubList.add("CORE");
+		  htFedDevices.put("ALL", htCoreDevices);
+	  }  
+	  
+	  return htCoreDevices;
+  }
+
 
 
 	/**
@@ -418,16 +442,16 @@ public class PlatformMonitoringComponentRestService {
 	  */
 	public CloudMonitoringPlatform getMonitoringInfo() throws Exception{
 
-		CloudMonitoringPlatform platform = null;
-		List<CloudMonitoringPlatform> lcmp = monitoringRepository.findAll(new Sort(Direction.DESC,"timeRegister"));
-		if (lcmp.size() > 0)
-		{
-			platform= lcmp.get(0);
-			logger.info("Last CloudMonitoringPlatform timeRegister at: " + platform.getTimeRegister());				
-		}
+		//List<CloudMonitoringPlatform> lcmp = monitoringRepository.findAll(new Sort(Direction.DESC,"timeRegister"));
+		
+		CloudMonitoringPlatform platform = monitoringRepository.findFirstByOrderByTimeRegisterDesc();
+		if ( platform!=null )
+			logger.info("Last CloudMonitoringPlatform timeRegister at: " + platform.getTimeRegister());	
 		else
 			logger.error("Not CloudMonitoringPlatform found in DB");
+
 		return platform;
+	
 	}
 
 	
@@ -770,19 +794,48 @@ public class PlatformMonitoringComponentRestService {
 	  */
 	 private CloudMonitoringPlatform filterDevicestoSend(Hashtable listDevices, CloudMonitoringPlatform platOri) {
 
+		 CloudMonitoringPlatform cmp = new CloudMonitoringPlatform();
+		 cmp.setInternalId(platOri.getInternalId());
+		 cmp.setFederationId(platOri.getFederationId());
+		 
+		 
 		 List<CloudMonitoringDevice> listCMD = new ArrayList<CloudMonitoringDevice>();
 		 
 		 for (int i = 0; i < platOri.getDevices().length; i++){
 			 String idd = platOri.getDevices()[i].getId();
 			 if (listDevices.get(idd) != null)
-				 listCMD.add(platOri.getDevices()[i]);
+			 {
+				 CloudMonitoringDevice cmd = new CloudMonitoringDevice();
+				 cmd.setId(platOri.getDevices()[i].getId());
+				 cmd.setTimemetric(platOri.getDevices()[i].getTimemetric());		 
+				 cmd.setTimestamp(platOri.getDevices()[i].getTimestamp());
+				 
+				 List<CloudMonitoringMetrics> listMetrics = new ArrayList<CloudMonitoringMetrics>();
+
+				 listMetrics.addAll(Arrays.asList(platOri.getDevices()[i].getMetrics()));
+				 
+//				 for (int j = 0; j < platOri.getDevices()[i].getMetrics().length; j++){
+//					 
+//					 CloudMonitoringMetrics cmm = new CloudMonitoringMetrics();
+//					 cmm.setTag(platOri.getDevices()[i].getMetrics()[j].getTag());
+//					 cmm.setValue(platOri.getDevices()[i].getMetrics()[j].getValue());
+//					 
+//				 }
+				 
+				 CloudMonitoringMetrics[] metrics = new CloudMonitoringMetrics[listMetrics.size()];
+				 listMetrics.toArray(metrics);
+				 cmd.setMetrics(metrics);
+				 
+				 listCMD.add(cmd);				 
+			 }
+
 		 }
 		 
 		 CloudMonitoringDevice[] devices = new CloudMonitoringDevice[listCMD.size()];
 		 listCMD.toArray(devices);
-		 platOri.setDevices(devices);
+		 cmp.setDevices(devices);
 		 
-		 return platOri;
+		 return cmp;
 	
 	 }
 	 
