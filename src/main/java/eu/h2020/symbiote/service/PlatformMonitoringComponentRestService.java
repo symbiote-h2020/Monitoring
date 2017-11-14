@@ -7,8 +7,8 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.proj
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.unwind;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
@@ -38,7 +39,7 @@ import eu.h2020.symbiote.AppConfig;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringMetrics;
-import  eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 import eu.h2020.symbiote.datamodel.MonitoringDevice;
 import eu.h2020.symbiote.datamodel.MonitoringDeviceStats;
 import eu.h2020.symbiote.datamodel.MonitoringFedDev;
@@ -85,9 +86,12 @@ public class PlatformMonitoringComponentRestService {
 	  Hashtable<String, Hashtable<String, Date>> htFedDevices = new Hashtable<String, Hashtable<String, Date>>();
 	  Hashtable<String, Date> htDevices = new Hashtable<String, Date>();
 	  Hashtable<String, Date> htCoreDevices = new Hashtable<String, Date>();
-	  CloudMonitoringPlatform platformOri = getMonitoringInfo();
-	  CloudMonitoringPlatform platform = platformOri;
+	  //CloudMonitoringPlatform platformDevOri = getMonitoringInfo();
+	  CloudMonitoringPlatform platform= getMonitoringInfo();
 	  
+	  CloudMonitoringDevice[] platformDevOri = new CloudMonitoringDevice[platform.getDevices().length];
+	  platformDevOri=platform.getDevices();
+
 	  List<CloudMonitoringDevice> regCoreDev = getRegisteredCoreDevices();
 
 	  for (int i = 0; i < regCoreDev.size(); i++){
@@ -111,19 +115,22 @@ public class PlatformMonitoringComponentRestService {
 	  String idFedPrev = null;	  
 	  for (int i = 0; i < regFedDev.size(); i++){
 		  String idFed = regFedDev.get(i).getIdfed();
+		  String sidDev = regFedDev.get(i).getIddev();
+		  sidDev = sidDev.substring(sidDev.indexOf('"')+1,sidDev.lastIndexOf('"'));
+		  
 		  if (idFedPrev==null)
 			  idFedPrev=idFed;
 		  logger.info(
 				  
 				  "RegisteredFedDevices IdFed:" + regFedDev.get(i).getIdfed() + " " +
 				  "RegisteredFedDevices DateFed:" + regFedDev.get(i).getDatefed()+ " " +
-				  "RegisteredFedDevices IdDev:" + regFedDev.get(i).getIddev()
+				  "RegisteredFedDevices IdDev:" + sidDev
 				  
 				  );
 		  
 		  if (idFed.equals(idFedPrev))
 		  {
-			  htDevices.put(regFedDev.get(i).getIddev(), regFedDev.get(i).getDatefed());
+			  htDevices.put(sidDev, regFedDev.get(i).getDatefed());
 			  if ( i == (regFedDev.size()-1))
 			  {
 				  htFedDevices.put(idFed, htDevices);
@@ -136,7 +143,7 @@ public class PlatformMonitoringComponentRestService {
 			  pubList.add(idFedPrev);
 			  idFedPrev=idFed;
 			  htDevices = new Hashtable<String, Date>();
-			  htDevices.put(regFedDev.get(i).getIddev(), regFedDev.get(i).getDatefed());
+			  htDevices.put(sidDev, regFedDev.get(i).getDatefed());
 		  }
 			  
 		  
@@ -153,6 +160,11 @@ public class PlatformMonitoringComponentRestService {
 		  for (int p = 0; p < pubList.size(); p++)
 		  {
 
+			  logger.info("********** START PROCESS *********** ->" + pubList.get(p));
+
+			  //CloudMonitoringPlatform platform= duplicationCloudMonitoringPlatform(platformDevOri);
+			  platform.setDevices(platformDevOri);
+			  
 			  // Obtained list devices to be published 
 			  Hashtable<String, Date> listDevices = new Hashtable<String, Date>();  
 			  if(pubList.get(p).equals("CORE"))
@@ -161,7 +173,7 @@ public class PlatformMonitoringComponentRestService {
 				  listDevices = htFedDevices.get(pubList.get(p));
 			  
 			  // Filtered platforms received devices with the registar by Core or FederationId.
-			  platform = filterDevicestoSend (listDevices, platformOri);
+			  platform = filterDevicestoSend (listDevices, platform);
 			  
 			  // Reorganize tags
 			  List<MonitoringRequest> mreq = getMonitoringRequest();
@@ -482,14 +494,19 @@ public class PlatformMonitoringComponentRestService {
 	 * Get aggregation data from mongoDB.
 	 * 	 
 	 */
-	private List<MonitoringDeviceStats> getAggregation(String typeSym, Hashtable<String, Hashtable<String, Date>> htDevices, String metric, Date mindate, Date maxdate, String groupby) throws Exception {
+	private List<MonitoringDeviceStats> getAggregation(String typeSym, Hashtable<String, Hashtable<String, Date>> htFedDevices, String metric, Date mindate, Date maxdate, String groupby) throws Exception {
 		
 		  MongoOperations mongoOps = config.mongoTemplate();
 		  List<AggregationOperation> listOp  = new ArrayList<AggregationOperation>();
-		  Hashtable<String, Date> ht = (Hashtable<String, Date>)htDevices.get("ALL");
+		  Hashtable<String, Date> htDevices = null;
+		  if (typeSym.equals("CORE"))
+			  htDevices = (Hashtable<String, Date>)htFedDevices.get("ALL");
+		  else
+			  htDevices = (Hashtable<String, Date>)htFedDevices.get(typeSym);
+		  
 		  //Arrays.asList(ht.keys().nextElement());
 		  List<String> listDev = new ArrayList<String>();
-		  Enumeration<String> e = ht.keys();
+		  Enumeration<String> e = htDevices.keys();
 		  while(e.hasMoreElements())
 			listDev.add(e.nextElement());
 	  
@@ -509,11 +526,26 @@ public class PlatformMonitoringComponentRestService {
 											  )
 									  ) 
 							  );
+//				  else
+//					  listOp.add( 
+//							  match(Criteria.where("tag").is(metric)
+//									  .andOperator(Criteria.where("timemetric").gte(mindate)
+//											  .andOperator(Criteria.where("timemetric").lt(maxdate)
+//													  )
+//											  )
+//									  )
+//							  );
+
 				  else
 					  listOp.add( 
 						  match(Criteria.where("tag").is(metric)
 								  .andOperator(Criteria.where("timemetric").gte(mindate)
-										  .andOperator(Criteria.where("timemetric").lt(maxdate)))
+										  .andOperator(Criteria.where("timemetric").lt(maxdate)
+									  				.andOperator(
+				  													getFederationCriteria(htDevices)							  						
+									  						)
+												  )
+										  )
 								  ) 
 						  );
 			  }
@@ -522,13 +554,19 @@ public class PlatformMonitoringComponentRestService {
 				  if (typeSym.equals("CORE"))
 					  listOp.add( 
 							  match(Criteria.where("tag").is(metric)
-							  		.andOperator(Criteria.where("internalId").in(listDev)
-							  				)
-							  		)				
+									  .andOperator(Criteria.where("internalId").in(listDev)
+											  )
+									  )				
 							  );
 				  else
 					  listOp.add( 
-							  match(Criteria.where("tag").is(metric))
+							  match(Criteria.where("tag").is(metric)
+									  .andOperator(
+											  getFederationCriteria(htDevices)							  						
+											  )
+
+									  )
+
 							  );
 			  }
 			  listOp.add(
@@ -562,12 +600,15 @@ public class PlatformMonitoringComponentRestService {
 				  else
 					  listOp.add( match(Criteria.where("tag").is(metric)
 							  .andOperator(Criteria.where("value").ne(-1)
-							  		.andOperator(Criteria.where("timemetric").gte(mindate)
-							  				.andOperator(Criteria.where("timemetric").lt(maxdate)
-										  				)
-									  			)
-							  				)
-							  			) 
+									  .andOperator(Criteria.where("timemetric").gte(mindate)
+											  .andOperator(Criteria.where("timemetric").lt(maxdate)
+													  .andOperator(
+															  getFederationCriteria(htDevices)							  						
+															  )							  						
+													  )
+											  )
+									  )
+							  ) 
 							  );
 			  }
 			  else
@@ -583,8 +624,11 @@ public class PlatformMonitoringComponentRestService {
 				  else
 					  listOp.add( match(Criteria.where("tag").is(metric)
 							  .andOperator(Criteria.where("value").ne(-1)
-									  		)
-							  			)
+									  .andOperator(
+											  getFederationCriteria(htDevices)							  						
+											  )
+									  )
+							  )
 							  );
 			  }	  
 			  listOp.add(
@@ -599,6 +643,7 @@ public class PlatformMonitoringComponentRestService {
 		  return results.getMappedResults();
 	}
 	
+
 	/**
 	  * Get Monitoring information from device
 	  * @throws Exception
@@ -704,7 +749,7 @@ public class PlatformMonitoringComponentRestService {
 				  group("params.listFederations").push("internalId").as("internalId")
 		  );
 		 listOp.add(
-					  project()
+					  project() 
 					  	.and("_id.idfederation").as("idfed")
 					  	.and("_id.sincedate").as("datefed")
 					  	.and("internalId").as("iddev")
@@ -723,21 +768,77 @@ public class PlatformMonitoringComponentRestService {
 	  * Filter devices from CloudMonitoringPlatform object. Get a new  CloudMonitoringPlatform filtered object 
 	  * 
 	  */
-	 private CloudMonitoringPlatform filterDevicestoSend(Hashtable listDevices, CloudMonitoringPlatform platformOri) {
+	 private CloudMonitoringPlatform filterDevicestoSend(Hashtable listDevices, CloudMonitoringPlatform platOri) {
 
 		 List<CloudMonitoringDevice> listCMD = new ArrayList<CloudMonitoringDevice>();
 		 
-		 for (int i = 0; i < platformOri.getDevices().length; i++){
-			 String idd = platformOri.getDevices()[i].getId();
+		 for (int i = 0; i < platOri.getDevices().length; i++){
+			 String idd = platOri.getDevices()[i].getId();
 			 if (listDevices.get(idd) != null)
-				 listCMD.add(platformOri.getDevices()[i]);
+				 listCMD.add(platOri.getDevices()[i]);
 		 }
 		 
 		 CloudMonitoringDevice[] devices = new CloudMonitoringDevice[listCMD.size()];
 		 listCMD.toArray(devices);
-		 platformOri.setDevices(devices);
+		 platOri.setDevices(devices);
 		 
-		 return platformOri;
+		 return platOri;
 	
 	 }
+	 
+	 /**
+	  * Get Criteria using and operator with internalId=deviceId and timemetric=federationDate parameters 
+	  *
+	  * @param htDevices
+	  * @return
+	  */
+	 private Criteria getFederationCriteria(Hashtable<String, Date> htDevices) {
+		 Criteria result = new Criteria();
+		 Criteria andCriteria = new Criteria();
+		 		 
+		 Enumeration<String> e = htDevices.keys();
+
+		 List<Criteria> docCriterias = new ArrayList<Criteria>();		 
+		 while(e.hasMoreElements())
+		 {
+			 String idDev =  e.nextElement();
+			 Date dateFed = htDevices.get(idDev);
+			 logger.info("getFederationCriteria: idDev=" + idDev + "dateFed=" + dateFed);
+			 
+			 List<Criteria> arrCriterias = new ArrayList<Criteria>();
+			 arrCriterias.add(Criteria.where("internalId").is(idDev));
+			 arrCriterias.add(Criteria.where("timemetric").gte(dateFed));
+
+			 // mal porque hay varios AND
+			 //docCriterias.add(andCriteria.andOperator(arrCriterias.toArray(new Criteria[arrCriterias.size()])));
+			 
+			docCriterias.add(Criteria.where("internalId").is(idDev).and("timemetric").gte(dateFed));
+			//docCriterias.add(Criteria.where("internalId").is(idDev));
+			 
+		 }
+
+		 //							 .andOperator(Criteria.where("timemetric").gte(dateFed))
+
+		 result = result.orOperator(
+						 docCriterias.toArray(new Criteria[docCriterias.size()])
+				 );
+		 
+//		 result = result.orOperator(
+//				 Criteria.where("internalId").is("dev1")
+//				 );
+				 
+		 return result;
+	 }
+	 
+	 private CloudMonitoringPlatform duplicationCloudMonitoringPlatform(CloudMonitoringPlatform cmpSource) {
+		 	CloudMonitoringPlatform cmpTarget = null;
+			try {
+				cmpTarget = (CloudMonitoringPlatform) SerializationUtils.clone((Serializable) cmpSource);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return cmpTarget;
+		}
+
+	 
 }
