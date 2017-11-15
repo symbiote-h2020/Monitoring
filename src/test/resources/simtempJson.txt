@@ -1,0 +1,6 @@
+{
+    "internalId" : #internalId#,
+	"timePlatform" : #timep#,
+    "_class" : "eu.h2020.symbiote.cloud.monitoring.model",
+	#devices#
+}
