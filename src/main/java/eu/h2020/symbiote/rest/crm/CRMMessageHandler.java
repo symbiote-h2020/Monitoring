@@ -28,7 +28,7 @@ public  class CRMMessageHandler {
 
 	
 	//localAAMAddress
-    @Value("${symbIoTe.core.cloud.interface.url}")
+    @Value("${symbIoTe.localaam.url}")
 	private String url;
 
     @Value("${rabbit.host}")
