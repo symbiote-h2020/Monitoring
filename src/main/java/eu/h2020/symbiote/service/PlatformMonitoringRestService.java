@@ -1,35 +1,21 @@
 package eu.h2020.symbiote.service;
 
-import eu.h2020.symbiote.AppConfig;
-import eu.h2020.symbiote.cloud.model.internal.CloudResource;
-import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
-import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringMetrics;
-import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
+import com.mongodb.WriteResult;
+
+import eu.h2020.symbiote.beans.CloudMonitoringResource;
+import eu.h2020.symbiote.beans.MonitoringMetric;
+import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.constants.MonitoringConstants;
-import eu.h2020.symbiote.datamodel.MonitoringDevice;
-import eu.h2020.symbiote.datamodel.MonitoringDeviceStats;
-import eu.h2020.symbiote.datamodel.MonitoringRequest;
-import eu.h2020.symbiote.db.MonitoringDeviceRepository;
-import eu.h2020.symbiote.db.MonitoringRepository;
-import eu.h2020.symbiote.db.MonitoringRequestRepository;
+import eu.h2020.symbiote.db.FederationInfoRepository;
 import eu.h2020.symbiote.db.ResourceRepository;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -37,429 +23,55 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Hashtable;
 import java.util.List;
-import java.util.StringTokenizer;
-import java.util.stream.Collectors;
-
-import javax.annotation.PostConstruct;
-
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.match;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 
 /**
  * Manage the REST operations from Platform using MongoDB 
- * @author: Fernando Campos
+ * @author: Fernando Campos, Jose Antonio Sanchez
  * @version: 19/04/2017
  */
 @RestController
 @RequestMapping("/")
 public class PlatformMonitoringRestService {
-
-	 private static final Log logger = LogFactory.getLog(PlatformMonitoringRestService.class);
-	 
-	 
-	 @Value("${platform.id}")
-	 private String platformId;
-	 
-	 @Autowired
-	 private ResourceRepository resourceRepository;
-
-	 @Autowired
-	 private MonitoringRepository monitoringRepository;
-	 
-	 @Autowired
-	 private MonitoringDeviceRepository monitoringDeviceRepository;
-	 
-	 @Autowired
-	 private MonitoringRequestRepository monitoringRequestRepository;
-	 
-
-	 
-	 
-	 @PostConstruct
-	 public void init() {
-		
-		 if( monitoringRequestRepository.getByTag("availability") == null)
-		 {
-			 MonitoringRequest defaultRequest = new MonitoringRequest();
-			 defaultRequest.setTag("availability");
-			 defaultRequest.setFederationId("ALL");
-			 defaultRequest.setDateFederationCreation(new Date());
-			 monitoringRequestRepository.save(defaultRequest);
-			
-			 defaultRequest = new MonitoringRequest();
-			 defaultRequest.setTag("load");
-			 defaultRequest.setFederationId("ALL");
-			 defaultRequest.setDateFederationCreation(new Date());
-			 monitoringRequestRepository.save(defaultRequest);
-			
-		 }
-	 	
-	 }
-	 
-	 /**
-	  * Listen from Platform Host.
-	  * Received device monitoring data 
-	 * @throws Throwable 
-	  * 
-	  */
-	 @RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.SUBSCRIBE_MONITORING_DATA,  produces = "application/json", consumes = "application/json")
-	 public @ResponseBody String  MonitorRestServer(@PathVariable("platformId") String platformId, @RequestBody CloudMonitoringPlatform platform) throws Throwable {
-
-		  logger.info("***********************************************************");
-		  try {Thread.sleep(100);} catch (InterruptedException e) {e.printStackTrace();}	
-		  logger.info("****** CloudMonitoringPlatform RECEIVED *******************");
-		  logger.info("Platform.Id:" + platform.getInternalId() + " " +
-				  " has " + platform.getDevices().length + " devices" + " " +
-				  "Platform.time: " + platform.getTimePlatform()
-				  //+ " " +"Platform.kpis: " + platform.getKpis()
-				  );
-		  logger.info("Check DEVICES:");
-		  CloudMonitoringDevice[] devicesPlat = platform.getDevices();
-		  CloudMonitoringDevice[] checkdevices = getFilterDevice(devicesPlat);
-		  platform.setDevices(checkdevices);
-		  
-		  logger.info("DEVICES:");
-		  int cantavai = 0;
-		  int sumload = 0;
-		  int sizeDevices = platform.getDevices().length;
-		  for (int i = 0; i<sizeDevices; i++){
-		  	MonitoringDevice md = new MonitoringDevice();
-			  logger.info(
-					  "Device.id:" + platform.getDevices()[i].getId() + " "+
-					  "Device.type:" + platform.getDevices()[i].getType() + " "+
-				      "Device.timemetric: " + platform.getDevices()[i].getTimemetric()
-				      );
-			  md.setInternalId(platform.getDevices()[i].getId());
-			  md.setType(platform.getDevices()[i].getType());
-			  md.setTimemetric(platform.getDevices()[i].getTimemetric());
-			  for (int m = 0; m<platform.getDevices()[i].getMetrics().length; m++){
-				  logger.info(
-						  "   Metric.tag: " + platform.getDevices()[i].getMetrics()[m].getTag() + " " +				
-						  "   Metric.value: " + platform.getDevices()[i].getMetrics()[m].getValue()
-						  );
-				  md.setTag(platform.getDevices()[i].getMetrics()[m].getTag());				  
-				  md.setValue(platform.getDevices()[i].getMetrics()[m].getValue());		
-				  monitoringDeviceRepository.save(md);
-				  if (md.getTag().equals("availability") && md.getValue() == 1)
-				  {
-					  	cantavai=cantavai+1;
-				  }
-				  else if (md.getTag().equals("load") && md.getValue() != -1 )
-				  {
-				  		sumload = sumload + md.getValue();
-				  }
-			  }
-		  }
-
-		  // save CloudMonitoringPlatform in internalRepository
-		  logger.info("Adding CloudMonitoringPlatform to database");
-		  
-	    		  
-		  int percentAvaiPlatform = ((cantavai*100)/sizeDevices);
-		  int mediaLoadPlatform = (sumload/sizeDevices);
-		  platform.setAvaiPlatform(percentAvaiPlatform);
-		  platform.setLoadPlatform(mediaLoadPlatform);
-		  
-		  platform.setTimeRegister(new Date());
-
-		  
-		  
-		  
-		  
-/************************* hacer esto antes del envio al CRM tomando el ultimo grabado ***************************/		  
-/*
-		  // Reorganize tags
-		  List<MonitoringRequest> mreq = getMonitoringRequest();
-		  List<MonitoringRequest> mreqdev = new ArrayList<MonitoringRequest>();	 
-		  Hashtable<String, String> tagTable = new Hashtable<String, String>();
-
 	
-
-		  for (int i = 0; i < mreq.size(); i++){
-			String metric=null;
-			String tagReq = mreq.get(i).getTag(); 
-			logger.info(
-					"Tag:" + tagReq + " " + 
-					"Federation: " + mreq.get(i).getFederationId() + " " +
-					"F.Date: " + mreq.get(i).getDateFederationCreation()
-				);
-			if (tagReq.indexOf(".") > 0 )
-			{
-
-				StringTokenizer strTkn = new StringTokenizer(tagReq, ".");
-				String sType = strTkn.nextToken();
-				String sTag = strTkn.nextToken();
-				String sMinDay = strTkn.nextToken();
-
-				String sTagwithoutGroup = tagReq.substring(tagReq.indexOf(".")+1);
-				//logger.info("sTagwithoutGroup:" + sTagwithoutGroup);
-				if ( tagTable.get(sTagwithoutGroup) == null)
-				{
-					tagTable.put(sTagwithoutGroup, sTagwithoutGroup);
-					mreqdev.add(mreq.get(i));
-				} 
-			} // end if
-		  }	// end for
-		  
-
-		  List<CloudMonitoringMetrics> listCMMPlat = new ArrayList<CloudMonitoringMetrics>();
-		  Hashtable<String, String> tagProcessed = new Hashtable<String, String>();
-		  // Include Metrics in CloudMonitoringPlatform level
-		  for (int r = 0; r < mreq.size(); r++){
-			   String metric=null;
-			   String tagReq = mreq.get(r).getTag();
-		  
-		  	if (tagReq.indexOf(".") > 0 && tagProcessed.get(tagReq)==null )
-			{
-				int sizeCMM=0;	
-		  		StringTokenizer strTkn = new StringTokenizer(tagReq, ".");
-				String sType = strTkn.nextToken();
-				String sTag = strTkn.nextToken();
-				String sMinDay = strTkn.nextToken();
-		  		
-				Date mindate=null;
-				Date maxdate = new Date();				   
-				DateTime jdate = new DateTime(maxdate); 
-				if (!sMinDay.equals("all"))
-				{
-					int iMinday = (new Integer(sMinDay)).intValue();  
-					mindate = (jdate.minusDays(iMinday)).toDate();
-					logger.info("mindate:"+mindate.toString());
-				}
-				else
-				{
-					logger.info("mindate:"+mindate);
-				}
-					logger.info("maxdate:"+maxdate.toString());
-					   
-				if ( sTag.equals("avai") ) metric="availability";
-				else if (sTag.equals("load")) metric="load";
-				
-				List<MonitoringDeviceStats> monitoringDeviceStats = getAggregation(metric, mindate, maxdate, "type");
-				logger.info("--- monitoringDeviceStats by Type ---");	
-				String devId=null;
-				sizeCMM = monitoringDeviceStats.size();
-
-
-
-				for (int j = 0; j<sizeCMM; j++){
-					CloudMonitoringMetrics objCMM = new CloudMonitoringMetrics();
-					devId = monitoringDeviceStats.get(j).getId();		   	      
-					logger.info(
-								"Id:" + devId + " " +
-								"Percentage: " + monitoringDeviceStats.get(j).getPercentage() + " " +  
-								"Average: " + monitoringDeviceStats.get(j).getAverage() + " " +
-								"MinValue: " + monitoringDeviceStats.get(j).getMinValue() + " " +
-								"MaxValue: " + monitoringDeviceStats.get(j).getMaxValue() + " " +
-								"Count: " + monitoringDeviceStats.get(j).getCount()
-								  );
-					
-					String tagProc = devId+tagReq.substring(tagReq.indexOf("."));
-					tagProcessed.put(tagProc, tagProc);
-					logger.info("tagProc:"+tagProc);
-					objCMM.setTag(tagProc);
-					if(metric.equals("availability"))				
-						objCMM.setValue(monitoringDeviceStats.get(j).getPercentage());
-					else if (metric.equals("load"))
-						objCMM.setValue(monitoringDeviceStats.get(j).getAverage());
-					objCMM.setDatemin(mindate);
-					objCMM.setDatemax(maxdate);
-					objCMM.setValuemin(monitoringDeviceStats.get(j).getMinValue());
-					objCMM.setValuemax(monitoringDeviceStats.get(j).getMaxValue());
-					objCMM.setCount(monitoringDeviceStats.get(j).getCount());
+	private static final Log logger = LogFactory.getLog(PlatformMonitoringRestService.class);
 	
-					listCMMPlat.add(objCMM);
-
-				}
-	   
-			} // end if
-	   
-		  } // end for
-		  CloudMonitoringMetrics[] cmmPlat = new CloudMonitoringMetrics[listCMMPlat.size()];
-		  listCMMPlat.toArray(cmmPlat);
-		  platform.setMetrics(cmmPlat);	  
-		  
-//		   ApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);
-//		   MongoTemplate mongotemp = ctx.getBean(MongoTemplate.class); 
-//		   MongoOperations mongoOps = mongotemp; 		   
-		   
-		  for (int r = 0; r < mreqdev.size(); r++){
-			   String metric=null;
-			   String tagReq = mreqdev.get(r).getTag();
-		
-			   
-
-			   if(tagReq.indexOf(".") > 0)
-			   {
-				   StringTokenizer strTkn = new StringTokenizer(tagReq, ".");
-				   String sType = strTkn.nextToken();
-				   String sTag = strTkn.nextToken();
-				   String sMinDay = strTkn.nextToken();
-				   logger.info(
-							"sTag: " + sTag + " " +
-							"sMinDay: " + sMinDay
-						);
-				   
-				   Date mindate=null;
-				   Date maxdate = new Date();				   
-				   DateTime jdate = new DateTime(maxdate); 
-				   if (!sMinDay.equals("all"))
-				   {
-					   int iMinday = (new Integer(sMinDay)).intValue();  
-					   mindate = (jdate.minusDays(iMinday)).toDate();
-					   logger.info("mindate:"+mindate.toString());
-				   }
-				   else
-				   {
-					   logger.info("mindate:"+mindate);
-				   }
-				   logger.info("maxdate:"+maxdate.toString());
-				   
-				   if ( sTag.equals("avai") ) metric="availability";
-				   else if (sTag.equals("load")) metric="load";
-
-				   
-				   List<MonitoringDeviceStats> monitoringDeviceStats = getAggregation(metric, mindate, maxdate, "internalId");
-				   logger.info("--- monitoringDeviceStats by DeviceId ---");	
-				   
-				   String devId=null;
-				   for (int i = 0; i<monitoringDeviceStats.size(); i++){
-					  devId = monitoringDeviceStats.get(i).getId();		   	      
-					  logger.info(
-							  "Id:" + devId + " " + 
-							  "Percentage: " + monitoringDeviceStats.get(i).getPercentage() + " " +  
-							  "Average: " + monitoringDeviceStats.get(i).getAverage() + " " +
-							  "MinValue: " + monitoringDeviceStats.get(i).getMinValue() + " " +
-							  "MaxValue: " + monitoringDeviceStats.get(i).getMaxValue() + " " +
-							  "Count: " + monitoringDeviceStats.get(i).getCount()
-							  );
-					  int posDev = getPosdevicebyId(platform, devId);
-					  CloudMonitoringMetrics[] cmm = platform.getDevices()[posDev].getMetrics();
-					  int ilenM = cmm.length;
-					  List<CloudMonitoringMetrics> listCMM = new ArrayList<CloudMonitoringMetrics>();
-					  for (int j = 0; j < ilenM; j++){
-						  listCMM.add(cmm[j]);						  
-					  }
-					  CloudMonitoringMetrics newCMM = new CloudMonitoringMetrics();	 
-					  newCMM.setTag(sTag+"."+sMinDay);
-					  if(metric.equals("availability"))
-						  newCMM.setValue(monitoringDeviceStats.get(i).getPercentage());
-					  else if (metric.equals("load"))
-						  newCMM.setValue(monitoringDeviceStats.get(i).getAverage());
-					  newCMM.setDatemin(mindate);
-					  newCMM.setDatemax(maxdate);	
-					  newCMM.setCount(monitoringDeviceStats.get(i).getCount());
-					  newCMM.setValuemin(monitoringDeviceStats.get(i).getMinValue());
-					  newCMM.setValuemax(monitoringDeviceStats.get(i).getMaxValue());
-					  
-					  listCMM.add(newCMM);
-					  
-					  CloudMonitoringMetrics[] newlistCMM = new CloudMonitoringMetrics[ listCMM.size() ];
-					  listCMM.toArray( newlistCMM );
-					  platform.getDevices()[posDev].setMetrics(newlistCMM);
-					  
-				  } // end for monitoringDeviceStats
-			   
-			   } // end if tagReq.indexOf(".")
-		  
-		   } // end for MonitoringRequestfor
-		   
-		  
-*/		  
-		  
-		  logger.info("****** CloudMonitoringPlatform ADDING *******************");
-		  
-		  logger.info("Register TimeRegister: " + platform.getTimeRegister());
-		  logger.info("Register UTC TimeRegister: "+ new DateTime(platform.getTimeRegister(),DateTimeZone.UTC));
-	  
-		  CloudMonitoringPlatform res = addOrUpdateInInternalRepository(platform);
-		  logger.info("added: " + res);
-		  
-		  return "received";
-	  }
-	 
-
-
-
-
-
-
+	@Autowired
+	private ResourceRepository resourceRepository;
+	
+	@Autowired
+	private FederationInfoRepository monitoringDeviceRepository;
+	
+	@Autowired
+	private MongoTemplate template;
+	
+	@Autowired
+	private MetricsProcessor processor;
+	
 	/**
-	  * Listen from Platform Host.
-	  * Received request monitoring data from SLAM
-	  * 
-	  */
-	 @RequestMapping(method = RequestMethod.GET, path = MonitoringConstants.SUBSCRIBE_REQUEST_MONITORING_DATA,  produces = "application/json", consumes = "application/json")
-	 public @ResponseBody String  RequestMonitorRestServer(@PathVariable("platformId") String platformId, @RequestBody MonitoringRequest monitoringrequest) {
-
-		  
-		  return "received";
-	  }
-	 
-		
-
-	 
-
-
-	/**
-	 * 
-	 * Get filter registered and valid devices
-	 *  
-	 * @param devicesPlat
-	 * @return
+	 * Listen from Platform Host.
+	 * Received device monitoring data
+	 * @throws Throwable
+	 *
 	 */
-	private CloudMonitoringDevice[] getFilterDevice(CloudMonitoringDevice[] devicesPlat) {
-
-		ArrayList<CloudMonitoringDevice> devices = new ArrayList<CloudMonitoringDevice>();
-		for(int i = 0;i<devicesPlat.length;i++)
-		{
-			String idDevPlat =  devicesPlat[i].getId();
+	@RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.METRICS_DATA,  produces = "application/json", consumes = "application/json")
+	public @ResponseBody List<DeviceMetric>  MonitorRestServer(@RequestBody List<DeviceMetric> metrics) throws Throwable {
 		
-			if (resourceRepository.getByInternalId(idDevPlat)!=null)
-			{
-				devices.add(devicesPlat[i]);
+		List<DeviceMetric> updated = new ArrayList<>();
+		
+		metrics.forEach(metric -> {
+			MonitoringMetric monMetric = new MonitoringMetric(metric);
+			Query query = new Query(Criteria.where("resource.internalId").is(metric.getDeviceId()));
+			Update update = new Update().addToSet("metrics", monMetric);
+			WriteResult result = template.updateFirst(query, update, CloudMonitoringResource.class);
+			if (result.isUpdateOfExisting()) {
+				updated.add(metric);
 			}
-			else
-			{
-				logger.info("Device not registered: " + devicesPlat[i].getId());
-			}
-				
-		}
-			
-		CloudMonitoringDevice[] checkdevices= new CloudMonitoringDevice[devices.size()];
-		devices.toArray( checkdevices );
-			
-		return checkdevices;
-	}
-
-	/**
-	  * Add or Update CloudMonitoringPlatform document from MongoDB.
-	  */	 
-	 public CloudMonitoringPlatform addOrUpdateInInternalRepository(CloudMonitoringPlatform resource){
-		 	logger.info("Adding CloudMonitoringPlatform to database");
-		    return monitoringRepository.save(resource);
-
-	  }
-	
-	
-
-
-	
-	static <CloudMonitoringMetrics> CloudMonitoringMetrics[] append(CloudMonitoringMetrics[] arr, CloudMonitoringMetrics element) {
-	    final int N = arr.length;
-	    arr = Arrays.copyOf(arr, N + 1);
-	    arr[N] = element;
-	    return arr;
+		});
+		
+		List<CloudMonitoringResource> coreMetrics = processor.getCoreMetrics();
+		
+		return updated;
 	}
 	
-
-		  
-		  
-
 }

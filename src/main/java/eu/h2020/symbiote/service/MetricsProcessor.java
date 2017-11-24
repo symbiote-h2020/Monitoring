@@ -1,54 +1,28 @@
 package eu.h2020.symbiote.service;
 
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.match;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.unwind;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang.SerializationUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.mongodb.core.MongoOperations;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-
 import eu.h2020.symbiote.AppConfig;
-import eu.h2020.symbiote.cloud.model.internal.CloudResource;
-import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
-import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringMetrics;
-import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
-import eu.h2020.symbiote.datamodel.MonitoringDevice;
-import eu.h2020.symbiote.datamodel.MonitoringDeviceStats;
-import eu.h2020.symbiote.datamodel.MonitoringFedDev;
-import eu.h2020.symbiote.datamodel.MonitoringRequest;
+import eu.h2020.symbiote.beans.CloudMonitoringResource;
+import eu.h2020.symbiote.beans.FederationInfo;
+import eu.h2020.symbiote.constants.MonitoringConstants;
+import eu.h2020.symbiote.db.FederationInfoRepository;
 import eu.h2020.symbiote.db.MonitoringRepository;
 import eu.h2020.symbiote.db.MonitoringRequestRepository;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.rest.crm.CRMMessageHandler;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class implements the rest interfaces. Initially created by jose
@@ -57,8 +31,8 @@ import eu.h2020.symbiote.rest.crm.CRMMessageHandler;
  * @version: 02/11/2017
  */
 @Component
-public class PlatformMonitoringComponentRestService {
-  private static final Log logger = LogFactory.getLog(PlatformMonitoringComponentRestService.class);
+public class MetricsProcessor {
+  private static final Log logger = LogFactory.getLog(MetricsProcessor.class);
   
   @Value("${symbIoTe.crm.integration}")
   private boolean pubCRM;
@@ -68,18 +42,45 @@ public class PlatformMonitoringComponentRestService {
   
   @Autowired
   private ResourceRepository resourceRepository;
-	 
+  
   @Autowired
   private MonitoringRepository monitoringRepository;
-
+  
   @Autowired
   private MonitoringRequestRepository monitoringRequestRepository;
-
+  
+  @Autowired
+  private FederationInfoRepository federationInfoRepository;
+  
   @Autowired
   private AppConfig config;
-	 
-  @Scheduled(cron = "${symbiote.crm.publish.period}")
-  public void publishMonitoringDataCrm() throws Exception{
+  
+  @Autowired
+  private MongoTemplate template;
+  
+  public List<CloudMonitoringResource> getCoreMetrics() {
+    
+    FederationInfo core = federationInfoRepository.findByFederationId(MonitoringConstants.CORE_FED_ID);
+    
+    List<AggregationOperation> list = new ArrayList<AggregationOperation>();
+    list.add(Aggregation.match(Criteria.where("resource.internalId").in(core.getDevices())));
+    list.add(Aggregation.unwind("metrics"));
+    list.add(Aggregation.match(Criteria.where("metrics.processed").is(false)));
+    list.add(Aggregation.group("id").first("resource").as("resource").push("metrics").as("metrics"));
+    //list.add(Aggregation.project("resource", "metrics"));
+    TypedAggregation<CloudMonitoringResource> agg = Aggregation.newAggregation(CloudMonitoringResource.class, list);
+    
+		/*Query notProcessed = new Query().addCriteria(Criteria.where("resource.internalId").in(core.getDevices())
+		.and("metrics").elemMatch(Criteria.where("processed").is(false)));*/
+    
+    List<CloudMonitoringResource> metrics = template.aggregate(agg, CloudMonitoringResource.class, CloudMonitoringResource.class).getMappedResults();
+    
+    
+    return metrics;
+  }
+  
+  //@Scheduled(cron = "${symbiote.crm.publish.period}")
+  /*public void publishMonitoringDataCrm() throws Exception{
 	  
 	  logger.info("Polling...");
 	  
@@ -436,10 +437,10 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 
 
 
-	/**
-	  * Get Monitoring information
-	 * @throws Exception 
-	  */
+	*//**
+   * Get Monitoring information
+   * @throws Exception
+   *//*
 	public CloudMonitoringPlatform getMonitoringInfo() throws Exception{
 
 		//List<CloudMonitoringPlatform> lcmp = monitoringRepository.findAll(new Sort(Direction.DESC,"timeRegister"));
@@ -455,9 +456,9 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 	}
 
 	
-	/**
-	  * Add or Update CloudResource document from MongoDB.
-	  */	 
+	*//**
+   * Add or Update CloudResource document from MongoDB.
+   *//*
 	 public List<CloudResource>  addOrUpdateInInternalRepository(List<CloudResource>  resources){
 		 logger.info("Adding CloudResource to database");
 		 return resources.stream().map(resource -> {
@@ -470,9 +471,9 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 	     .collect(Collectors.toList());
 	  }
 	 
-	/**
-	  * Delete CloudResource document from MongoDB.
-	  */	
+	*//**
+   * Delete CloudResource document from MongoDB.
+   *//*
 	  public List<CloudResource> deleteInInternalRepository(List<String> resourceIds){
 		  List<CloudResource>  result = new ArrayList<CloudResource>();
 		  for (String resourceId:resourceIds){
@@ -485,20 +486,20 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 		  return result;
 	  }
 	
-	/**
-	  * Get all CloudResource document from MongoDB.
-	  */		  
+	*//**
+   * Get all CloudResource document from MongoDB.
+   *//*
 	  public List<CloudResource> getResources() {
 		  return resourceRepository.findAll();
 	  }
 	
 
-	/**
-	 * The getResource method retrieves \a ResourceBean identified by \a resourceId 
-	 * from the mondodb database and will return it.
-	 * @param resourceId from the resource to be retrieved from the database
-	 * @return the ResourceBean
-	 */  
+	*//**
+   * The getResource method retrieves \a ResourceBean identified by \a resourceId
+   * from the mondodb database and will return it.
+   * @param resourceId from the resource to be retrieved from the database
+   * @return the ResourceBean
+   *//*
 	public CloudResource getResource(String resourceId) {
 		if (!"".equals(resourceId)) {
 			return resourceRepository.getByInternalId(resourceId);
@@ -506,18 +507,18 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 		return null;
 	}
 	
-	/**
-	  * Get all MonitoringRequest document from MongoDB.
-	  */		  
+	*//**
+   * Get all MonitoringRequest document from MongoDB.
+   *//*
 	public List<MonitoringRequest> getMonitoringRequest() {
 		  return monitoringRequestRepository.findAll();
 	}
 	
-	/**
-	 * 
-	 * Get aggregation data from mongoDB.
-	 * 	 
-	 */
+	*//**
+   *
+   * Get aggregation data from mongoDB.
+   *
+   *//*
 	private List<MonitoringDeviceStats> getAggregation(String typeSym, Hashtable<String, Hashtable<String, Date>> htFedDevices, String metric, Date mindate, Date maxdate, String groupby) throws Exception {
 		
 		  MongoOperations mongoOps = config.mongoTemplate();
@@ -668,11 +669,11 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 	}
 	
 
-	/**
-	  * Get Monitoring information from device
-	  * @throws Exception
-	  *  
-	  */
+	*//**
+   * Get Monitoring information from device
+   * @throws Exception
+   *
+   *//*
 	private CloudMonitoringDevice getMonitoringInfoFromDevice(CloudResource resource) throws Exception{
 		CloudMonitoringDevice monitoringDevice = null;
 		
@@ -689,11 +690,11 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 		return monitoringDevice;
 	}
 
-	/**
-	 * 
-	 *  Get Device Position from device by deviceId
-	 *  
-	 */
+	*//**
+   *
+   *  Get Device Position from device by deviceId
+   *
+   *//*
 	private int getPosdevicebyId(CloudMonitoringPlatform platform, String devId) 
 	{
 		int ipos=-1;
@@ -710,19 +711,19 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 		return ipos;
 	}
 
-	/**
-	  * Add or Update CloudMonitoringPlatform document from MongoDB.
-	  */	 
+	*//**
+   * Add or Update CloudMonitoringPlatform document from MongoDB.
+   *//*
 	 public CloudMonitoringPlatform addOrUpdateInInternalRepository(CloudMonitoringPlatform resource){
 		 	logger.info("Adding CloudMonitoringPlatform to database");
 		    return monitoringRepository.save(resource);
 
 	  }
 
-	 /**
-	  * Get aggregation data to registered core devices from mongoDB.
-	  * 	 
-	  */
+	 *//**
+   * Get aggregation data to registered core devices from mongoDB.
+   *
+   *//*
 	 private List<CloudMonitoringDevice> getRegisteredCoreDevices() throws Exception {
 
 		 MongoOperations mongoOps = config.mongoTemplate();
@@ -739,10 +740,10 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 		 
 	 }
 
-	 /*
+	 *//*
 	  * Get list to String Array from CloudMonitoringDevice object
 	  * "dev1","dev2","dev3"
-	  */
+	  *//*
 	 private String getDeviceList(List<CloudMonitoringDevice> list) throws Exception {
 
 		 String sList=null;
@@ -759,10 +760,10 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 		 return sList;
 		 
 	 }
-	 /**
-	  * Get aggregation data to registered federation devices from mongoDB.
-	  * 	 
-	  */
+	 *//**
+   * Get aggregation data to registered federation devices from mongoDB.
+   *
+   *//*
 	 private List<MonitoringFedDev> getRegisteredFedDevices() throws Exception {
 
 		 MongoOperations mongoOps = config.mongoTemplate();
@@ -788,10 +789,10 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 		 
 	 }
 	 
-	 /*
+	 *//*
 	  * Filter devices from CloudMonitoringPlatform object. Get a new  CloudMonitoringPlatform filtered object 
 	  * 
-	  */
+	  *//*
 	 private CloudMonitoringPlatform filterDevicestoSend(Hashtable listDevices, CloudMonitoringPlatform platOri) {
 
 		 CloudMonitoringPlatform cmp = new CloudMonitoringPlatform();
@@ -839,12 +840,12 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 	
 	 }
 	 
-	 /**
-	  * Get Criteria using and operator with internalId=deviceId and timemetric=federationDate parameters 
-	  *
-	  * @param htDevices
-	  * @return
-	  */
+	 *//**
+   * Get Criteria using and operator with internalId=deviceId and timemetric=federationDate parameters
+   *
+   * @param htDevices
+   * @return
+   *//*
 	 private Criteria getFederationCriteria(Hashtable<String, Date> htDevices) {
 		 Criteria result = new Criteria();
 		 Criteria andCriteria = new Criteria();
@@ -891,7 +892,7 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 				e.printStackTrace();
 			}
 			return cmpTarget;
-		}
-
-	 
+		}*/
+  
+  
 }

@@ -28,8 +28,8 @@ public class PlatformMonitoringRabbitServerService {
 
     private static Log log = LogFactory.getLog(PlatformMonitoringRabbitServerService.class);
 
-	@Autowired 
-	PlatformMonitoringComponentRestService platformManager;
+	@Autowired
+  MetricsProcessor platformManager;
 	/**
 	 * Spring AMQP Listener for resource registration requests. This method is invoked when Registration
 	 * Handler sends a resource registration request and it is responsible for forwarding the message
@@ -49,7 +49,7 @@ public class PlatformMonitoringRabbitServerService {
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
 		          log.info("Received Resource Registration message");
 		          if (resources != null){
-		        	  platformManager.addOrUpdateInInternalRepository(resources);
+		        	  //platformManager.addOrUpdateInInternalRepository(resources);
 		          }
 	}
 
@@ -62,7 +62,7 @@ public class PlatformMonitoringRabbitServerService {
 		          log.info("Received Resource Unregistration message");
 		          Gson gson = new Gson();
 		          ArrayList<String> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<String>>() {}.getType());
-		          platformManager.deleteInInternalRepository(resources);
+		         // platformManager.deleteInInternalRepository(resources);
 		          		          
 	}
 
@@ -75,7 +75,7 @@ public class PlatformMonitoringRabbitServerService {
 		          log.info("Received Resource Update message");
 		          Gson gson = new Gson();
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
-		          platformManager.addOrUpdateInInternalRepository(resources);
+		          //platformManager.addOrUpdateInInternalRepository(resources);
 		          
 	}
 	
@@ -88,13 +88,13 @@ public class PlatformMonitoringRabbitServerService {
 		          Gson gson = new Gson();
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
 		          
-		          List<CloudResource> added = platformManager.addOrUpdateInInternalRepository(resources);
+		          /*List<CloudResource> added = platformManager.addOrUpdateInInternalRepository(resources);
 		          if (added != null && added.size()>0){
 		        	  System.out.println("TEST: added " + added.size() + " devices to database");  
 		          }
 		          else {
 		        	  System.out.println("TEST: added 0 devices to database");
-		          }
+		          }*/
 	}
 	
 	@RabbitListener(bindings = @QueueBinding(
@@ -108,13 +108,13 @@ public class PlatformMonitoringRabbitServerService {
 		          Gson gson = new Gson();
 		          ArrayList<String> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<String>>() {}.getType());
 		          //		          platformManager.deleteResources(resources);    
-		          List<CloudResource> deleted = platformManager.deleteInInternalRepository(resources);
+		          /*List<CloudResource> deleted = platformManager.deleteInInternalRepository(resources);
 		          if (deleted != null && deleted.size()>0){
 		        	  System.out.println("TEST: deleted " + deleted.size() + " devices from database");  
 		          }
 		          else {
 		        	  System.out.println("TEST: deleted 0 devices to database");
-		          }
+		          }*/
 	}
 	
 	@RabbitListener(bindings = @QueueBinding(
@@ -126,13 +126,13 @@ public class PlatformMonitoringRabbitServerService {
 		          Gson gson = new Gson();
 		          ArrayList<CloudResource> resources = gson.fromJson(new String(message.getBody()), new TypeToken<ArrayList<CloudResource>>() {}.getType());
 		          //		          platformManager.updateResources(resources);
-		          List<CloudResource> updated = platformManager.addOrUpdateInInternalRepository(resources);
+		          /*List<CloudResource> updated = platformManager.addOrUpdateInInternalRepository(resources);
 		          if (updated != null && updated.size()>0){
 		        	  System.out.println("TEST: updated " + updated.size() + " devices from database");  
 		          }
 		          else {
 		        	  System.out.println("TEST: updated 0 devices to database");
-		          }
+		          }*/
 		          
 	}
 	

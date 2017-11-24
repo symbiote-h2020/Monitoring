@@ -1,21 +1,13 @@
 package eu.h2020.symbiote.constants;
 
 public class MonitoringConstants {
-
-	public static final String PLATFORM_ID = "platformId1";
-	public static final String RESOURCE_ID = "id";
-//    public static final String DO_CREATE_RESOURCES="/platforms/{platformId}/resources";
-//	public static final String DO_UPDATE_RESOURCES = "/platforms/{platformId}/resources";
-//	public static final String DO_REMOVE_RESOURCES = "/platforms/{platformId}/resources";
-	public static final String PUBLISH_MONITORING_DATA = "crm/monitoring/{platformId}/devices/status";
-	public static final String SUBSCRIBE_MONITORING_DATA = "monitoring/{platformId}";
-	public static final String SUBSCRIBE_REQUEST_MONITORING_DATA = "monitoring/getdata/{platformId}";
-	public static final String PUBLISH_SLAM_MONITORING_DATA = "slam/monitoring/{platformId}";
-
 	
-	// public static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rh.reg";
-	// public static final String EXCHANGE_NAME_UNREGISTRATION = "symbIoTe.rh.unreg";
-	// public static final String EXCHANGE_NAME_UPDATED = "symbIoTe.rh.update";
+	public static final String CORE_FED_ID = "{{core}}";
+	public static final String AVAILABILITY_TAG = "availability";
+	public static final String LOAD_TAG = "load";
+
+	public static final String PUBLISH_MONITORING_DATA = "crm/monitoring/{platformId}/devices/status";
+	public static final String METRICS_DATA = "monitoring/metrics";
 	
 	public static final String EXCHANGE_NAME_REGISTRATION = "symbIoTe.rap";
 	public static final String EXCHANGE_NAME_UNREGISTRATION = "symbIoTe.rap";

@@ -1,28 +1,18 @@
 package eu.h2020.symbiote;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
-import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-
-
+import eu.h2020.symbiote.beans.CloudMonitoringResource;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.model.cim.Resource;
 import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
-import eu.h2020.symbiote.rest.RestProxy;
-import eu.h2020.symbiote.cloud.model.internal.CloudResource;
-import eu.h2020.symbiote.cloud.model.CloudResourceParams;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 
 //@RunWith(SpringRunner.class)
@@ -60,9 +50,10 @@ public class MonitoringApplicationTests {
 			delay(tdelaym);
 			
 
-			CloudResource result = resourceRepo.findOne(cre_resource.getInternalId());
+			CloudMonitoringResource result = resourceRepo.findOne(cre_resource.getInternalId());
 
-			assertEquals(cre_resource.getResource().getInterworkingServiceURL(), result.getResource().getInterworkingServiceURL());   
+			assertEquals(cre_resource.getResource().getInterworkingServiceURL(),
+					result.getResource().getResource().getInterworkingServiceURL());
 		
 			// AFTER CREATE
 			String id_cre= cre_resource.getInternalId();
@@ -130,9 +121,9 @@ public class MonitoringApplicationTests {
 		LOGGER.info("********************************************************************");
 		delay(tdelaym);
 		
-		CloudResource result = resourceRepo.findOne(upd_resource.getInternalId());
+		CloudMonitoringResource result = resourceRepo.findOne(upd_resource.getInternalId());
 
-		assertEquals(result.getResource().getInterworkingServiceURL(), newValue);
+		assertEquals(result.getResource().getResource().getInterworkingServiceURL(), newValue);
 
 		// AFTER UPDATE	
 	    // test update
@@ -193,7 +184,7 @@ public class MonitoringApplicationTests {
 		delay(20000);
 		
 
-		CloudResource result = resourceRepo.findOne(id);
+		CloudMonitoringResource result = resourceRepo.findOne(id);
 		assertEquals(null, result);   
 		
 		
@@ -212,35 +203,10 @@ public class MonitoringApplicationTests {
 	private CloudResource getTestResource(){
 		return getTestResource("Test");
 	}
+	
 	private static CloudResource getTestResource(String prefix){
-		
-			CloudResource resource = new CloudResource();
-		   
-		   //String id="IdUpdateTest";
-		   String id = prefix+"-"+java.util.UUID.randomUUID().toString();
-		   resource.setInternalId(id);
-		   //resource.setHost("127.0.0.1");
-		   resource.setCloudMonitoringHost("62.14.219.137");
-		   		   
-		   CloudResourceParams params = new CloudResourceParams();
-		   params.setType("resourceType");
-		   resource.setParams(params);
-		   
-		   Resource r = new Resource();
-		   r.setId("symbioteId1");
-		   r.setInterworkingServiceURL("http://tests.io/interworking/url");
-		   List<String> comments = new ArrayList<String>();
-		   comments.add("comment1");
-		   comments.add("comment2");
-//		   r.setComments(comments);
-		   List<String> labels = new ArrayList<String>();
-		   labels.add("label1");
-		   labels.add("label2");
-//		   r.setLabels(labels);
-		   resource.setResource(r);			
-
-		   return resource; 
-	   }
+		return TestUtils.createResource(prefix+"-"+java.util.UUID.randomUUID().toString());
+	}
 
 	
 	private static void delay(int timems) {

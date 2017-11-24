@@ -1,13 +1,11 @@
 package eu.h2020.symbiote;
 
-import static org.junit.Assert.assertEquals;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import eu.h2020.symbiote.beans.CloudMonitoringResource;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
+import eu.h2020.symbiote.constants.MonitoringConstants;
+import eu.h2020.symbiote.db.ResourceRepository;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -20,14 +18,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import eu.h2020.symbiote.cloud.model.CloudResourceParams;
-import eu.h2020.symbiote.cloud.model.internal.CloudResource;
-import eu.h2020.symbiote.constants.MonitoringConstants;
-
-import eu.h2020.symbiote.db.ResourceRepository;
-import eu.h2020.symbiote.model.cim.Resource;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest({"eureka.client.enabled=false", "symbIoTe.aam.integration=false"})
@@ -47,10 +45,6 @@ public class MonitoringRabbitTests {
 	private static String INTERNAL_ID_DELETE = "internalId_delete_rabbit";
 	private static String INTERNAL_ID_UPDATE = "internalId_update_rabbit";
 	
-	private static String SYMBIOTE_ID_ADD = "symbioteId_add_rabbit";
-	private static String SYMBIOTE_ID_DELETE = "symbioteId_delete_rabbit";
-	private static String SYMBIOTE_ID_UPDATE = "symbioteId_update_rabbit";
-	
 	private CloudResource add_item;
 	private CloudResource delete_item;
 	private String idForDelete;
@@ -68,13 +62,13 @@ public class MonitoringRabbitTests {
     		
     		//DELETE
     		delete_item = getResourceForDelete();
-    		resourceRepo.save(delete_item);
+    		//resourceRepo.save(delete_item);
     		
     		idForDelete = delete_item.getInternalId();
     		
     		//UPDATE
     		update_item = getResourceForUpdate();
-    		resourceRepo.save(update_item);
+    		//resourceRepo.save(update_item);
     		
     		// Sleep to make sure that the platform has been saved to the repo before querying
             try {
@@ -101,10 +95,10 @@ public class MonitoringRabbitTests {
 		// Sleep to make sure that the platform has been saved to the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 
-		CloudResource result = resourceRepo.findOne(add_item.getInternalId());
+		CloudMonitoringResource result = resourceRepo.findOne(add_item.getInternalId());
 
 		assertEquals(add_item.getResource().getInterworkingServiceURL(), 
-				result.getResource().getInterworkingServiceURL());   
+				result.getResource().getResource().getInterworkingServiceURL());
 
 		resourceRepo.delete(add_item.getInternalId());
 	}
@@ -125,7 +119,7 @@ public class MonitoringRabbitTests {
 		// Sleep to make sure that the platform has been deleted for the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 
-		CloudResource result = resourceRepo.findOne(delete_item.getInternalId());
+		CloudMonitoringResource result = resourceRepo.findOne(delete_item.getInternalId());
 
 		assertEquals(null, result);   
 	}
@@ -146,38 +140,16 @@ public class MonitoringRabbitTests {
 		// Sleep to make sure that the platform has been updated for the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 
-		CloudResource result = resourceRepo.findOne(update_item.getInternalId());
+		CloudMonitoringResource result = resourceRepo.findOne(update_item.getInternalId());
 
-		assertEquals(result.getResource().getInterworkingServiceURL(), newValue);
+		assertEquals(result.getResource().getResource().getInterworkingServiceURL(), newValue);
 		
-		resourceRepo.delete(update_item);
+		//resourceRepo.delete(update_item);
 	}
 
 	
 	private CloudResource getResourceForAdd(){
-		CloudResource resource = new CloudResource();
-
-		resource.setInternalId(INTERNAL_ID_ADD);
-		resource.setCloudMonitoringHost("62.14.219.137");
-
-		CloudResourceParams params = new CloudResourceParams();
-		params.setType("resourceType");
-		resource.setParams(params);
-
-		Resource r = new Resource();
-		r.setId(SYMBIOTE_ID_ADD);
-		r.setInterworkingServiceURL("http://tests.io/interworking/url");
-		List<String> comments = new ArrayList<String>();
-		comments.add("comment1");
-		comments.add("comment2");
-//		r.setComments(comments);
-		List<String> labels = new ArrayList<String>();
-		labels.add("label1");
-		labels.add("label2");
-//		r.setLabels(labels);
-		resource.setResource(r);			
-
-		return resource; 
+		return TestUtils.createResource(INTERNAL_ID_ADD);
 	}
 	
 	void sendResourceMessage (String exchange, String key, byte[] message) throws Exception {
@@ -191,18 +163,12 @@ public class MonitoringRabbitTests {
 	}
 	
 	private CloudResource getResourceForDelete(){
-		CloudResource r = getResourceForAdd();
-		r.setInternalId(INTERNAL_ID_DELETE);
-		r.getResource().setId(SYMBIOTE_ID_DELETE);
-		return r;
+		return TestUtils.createResource(INTERNAL_ID_DELETE);
+		
 	}
 	
 	private CloudResource getResourceForUpdate(){
-		CloudResource r = getResourceForAdd();
-		r.setInternalId(INTERNAL_ID_UPDATE);
-		r.getResource().setId(SYMBIOTE_ID_UPDATE);
-		r.getResource().setInterworkingServiceURL(oldValue);		
-		return r;
+		return TestUtils.createResource(INTERNAL_ID_UPDATE);
 	}
 
 }
