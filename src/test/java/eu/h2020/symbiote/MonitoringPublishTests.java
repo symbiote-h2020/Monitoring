@@ -44,7 +44,7 @@ public class MonitoringPublishTests {
 	
 	public CloudMonitoringPlatform getTestPlatform(){
 		CloudMonitoringPlatform cmp = new CloudMonitoringPlatform();
-		cmp.setInternalId("symbiotePlatform");
+		cmp.setPlatformId("symbiotePlatform");
 		
 		CloudMonitoringDevice device1 = new CloudMonitoringDevice();
 		device1.setAvailability(1);

@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 import eu.h2020.symbiote.security.ComponentSecurityHandlerFactory;
-import eu.h2020.symbiote.security.commons.Token;
 import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import eu.h2020.symbiote.security.communication.SymbioteAuthorizationClient;
 import eu.h2020.symbiote.security.handler.IComponentSecurityHandler;
@@ -112,9 +111,9 @@ public  class CRMMessageHandler {
     public String doPost2Crm(CloudMonitoringPlatform platform)  {
 		String result = "not send";
     	try{
-			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
+			logger.info("Monitoring trying to publish data for platform "+ platform.getPlatformId() + " containing " +
 					platform.getDevices().length + " devices");
-			result = jsonclient.doPost2Crm(platform.getInternalId(), platform);
+			result = jsonclient.doPost2Crm(platform.getPlatformId(), platform);
     	}
 
     	catch(FeignException t) {
@@ -138,9 +137,9 @@ public  class CRMMessageHandler {
     public String doPost2CrmTest(CloudMonitoringPlatform platform, String token)  {
 		String result = "not send";
     	try{
-			logger.info("Monitoring trying to publish data for platform "+ platform.getInternalId() + " containing " + 
+			logger.info("Monitoring trying to publish data for platform "+ platform.getPlatformId() + " containing " +
 					platform.getDevices().length + " devices");
-			result = jsonclient.doPost2Crm(platform.getInternalId(), platform);
+			result = jsonclient.doPost2Crm(platform.getPlatformId(), platform);
     	}
     	catch(FeignException t) {
     		logger.error("Error accessing to CRM server at " + url);

@@ -55,7 +55,7 @@ public class PlatformMonitoringRestService {
 	 *
 	 */
 	@RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.METRICS_DATA,  produces = "application/json", consumes = "application/json")
-	public @ResponseBody List<DeviceMetric>  MonitorRestServer(@RequestBody List<DeviceMetric> metrics) throws Throwable {
+	public @ResponseBody List<DeviceMetric> saveMetrics(@RequestBody List<DeviceMetric> metrics) throws Throwable {
 		
 		List<DeviceMetric> updated = new ArrayList<>();
 		

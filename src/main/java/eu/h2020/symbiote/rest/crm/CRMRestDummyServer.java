@@ -29,7 +29,7 @@ public class CRMRestDummyServer {
   public @ResponseBody String  publishMonitoringData(@PathVariable("platformId") String platformId, @RequestBody CloudMonitoringPlatform platform) {
 	  logger.info("*********************************************************");
 	  logger.info("Publishing monitoring data for platform " + platformId);
-	  logger.info("Platform " + platform.getInternalId() + " has " + platform.getDevices().length + " devices");
+	  logger.info("Platform " + platform.getPlatformId() + " has " + platform.getDevices().length + " devices");
 	  for (int i = 0; i<platform.getDevices().length; i++){
 		  logger.info("Device " + platform.getDevices()[i].getId());
 		  logger.info("load: " + platform.getDevices()[i].getLoad());

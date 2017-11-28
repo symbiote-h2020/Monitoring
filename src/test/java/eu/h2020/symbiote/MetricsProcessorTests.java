@@ -41,16 +41,17 @@ public class MetricsProcessorTests {
   @Autowired
   private FederationInfoRepository federationInfoRepository;
   
+  FederationInfo coreInfo = new FederationInfo();
+  
   @Before
   public void setup() {
   
     template.dropCollection(CloudMonitoringResource.class);
     template.dropCollection(FederationInfo.class);
-  
-    FederationInfo core = new FederationInfo();
-    core.setFederationId(MonitoringConstants.CORE_FED_ID);
-    core.getMetrics().add(MonitoringConstants.AVAILABILITY_TAG);
-    core.getMetrics().add(MonitoringConstants.LOAD_TAG);
+    
+    coreInfo.setFederationId(MonitoringConstants.CORE_FED_ID);
+    coreInfo.getMetrics().add(MonitoringConstants.AVAILABILITY_TAG);
+    coreInfo.getMetrics().add(MonitoringConstants.LOAD_TAG);
     
     for (int i=0; i<10; i++) {
       CloudResource resource = TestUtils.createResource(Integer.toString(i));
@@ -73,11 +74,11 @@ public class MetricsProcessorTests {
       
       
       if ((i % 2) == 0) {
-        core.getDevices().add(resource.getInternalId());
+        coreInfo.getDevices().add(resource.getInternalId());
       }
     }
   
-    federationInfoRepository.save(core);
+    federationInfoRepository.save(coreInfo);
     
   }
   
@@ -94,6 +95,7 @@ public class MetricsProcessorTests {
       
       resource.getMetrics().forEach(metric -> {
         assert metric.isProcessed() == false;
+        assert coreInfo.getMetrics().contains(metric.getMetric().getTag());
       });
       
     });

@@ -3,12 +3,26 @@ package eu.h2020.symbiote.service;
 import eu.h2020.symbiote.AppConfig;
 import eu.h2020.symbiote.beans.CloudMonitoringResource;
 import eu.h2020.symbiote.beans.FederationInfo;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
+import eu.h2020.symbiote.cloud.monitoring.model.Metric;
 import eu.h2020.symbiote.constants.MonitoringConstants;
 import eu.h2020.symbiote.db.FederationInfoRepository;
 import eu.h2020.symbiote.db.MonitoringRepository;
 import eu.h2020.symbiote.db.MonitoringRequestRepository;
 import eu.h2020.symbiote.db.ResourceRepository;
 import eu.h2020.symbiote.rest.crm.CRMMessageHandler;
+import eu.h2020.symbiote.rest.crm.CRMRestService;
+import eu.h2020.symbiote.security.ComponentSecurityHandlerFactory;
+import eu.h2020.symbiote.security.commons.SecurityConstants;
+import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
+import eu.h2020.symbiote.security.communication.SymbioteAuthorizationClient;
+import eu.h2020.symbiote.security.handler.IComponentSecurityHandler;
+
+import feign.Client;
+import feign.Feign;
+import feign.jackson.JacksonDecoder;
+import feign.jackson.JacksonEncoder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,10 +33,14 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
 
 /**
  * This class implements the rest interfaces. Initially created by jose
@@ -36,6 +54,36 @@ public class MetricsProcessor {
   
   @Value("${symbIoTe.crm.integration}")
   private boolean pubCRM;
+  
+  @Value("${platform.id}")
+  private String platformId;
+  
+  @Value("${symbiote.crm.url}")
+  private String crmUrl;
+  
+  @Value("${symbIoTe.aam.integration}")
+  private boolean useSecurity;
+  
+  @Value("${symbIoTe.coreaam.url}")
+  private String coreAAMAddress;
+  
+  @Value("${symbIoTe.component.keystore.password}")
+  private String keystorePassword;
+  
+  @Value("${symbIoTe.component.keystore.path}")
+  private String keystorePath;
+  
+  @Value("${symbIoTe.component.clientId}")
+  private String clientId;
+  
+  @Value("${symbIoTe.localaam.url}")
+  private String localAAMAddress;
+  
+  @Value("${symbIoTe.component.username}")
+  private String username;
+  
+  @Value("${symbIoTe.component.password}")
+  private String password;
   
   @Autowired
   private CRMMessageHandler crmMessageHandler;
@@ -58,6 +106,33 @@ public class MetricsProcessor {
   @Autowired
   private MongoTemplate template;
   
+  private CRMRestService jsonclient;
+  
+  @PostConstruct
+  public void createClient() throws SecurityHandlerException {
+    
+    Feign.Builder builder = Feign.builder()
+                                .decoder(new JacksonDecoder())
+                                .encoder(new JacksonEncoder());
+    if (useSecurity) {
+      IComponentSecurityHandler secHandler = ComponentSecurityHandlerFactory
+                                                 .getComponentSecurityHandler(
+                                                     coreAAMAddress, keystorePath, keystorePassword,
+                                                     clientId, localAAMAddress, false,
+                                                     username, password
+                                                 );
+      
+      Client client = new SymbioteAuthorizationClient(
+                                                         secHandler, "crm", SecurityConstants.CORE_AAM_INSTANCE_ID,
+                                                         new Client.Default(null, null));
+      
+      logger.info("Will use " + crmUrl + " to access to interworking interface");
+      builder = builder.client(client);
+    }
+    
+    jsonclient = builder.target(CRMRestService.class, crmUrl);
+  }
+  
   public List<CloudMonitoringResource> getCoreMetrics() {
     
     FederationInfo core = federationInfoRepository.findByFederationId(MonitoringConstants.CORE_FED_ID);
@@ -65,7 +140,7 @@ public class MetricsProcessor {
     List<AggregationOperation> list = new ArrayList<AggregationOperation>();
     list.add(Aggregation.match(Criteria.where("resource.internalId").in(core.getDevices())));
     list.add(Aggregation.unwind("metrics"));
-    list.add(Aggregation.match(Criteria.where("metrics.processed").is(false)));
+    list.add(Aggregation.match(Criteria.where("metrics.processed").is(false).andOperator(Criteria.where("metrics.metric.tag").in(core.getMetrics()))));
     list.add(Aggregation.group("id").first("resource").as("resource").push("metrics").as("metrics"));
     //list.add(Aggregation.project("resource", "metrics"));
     TypedAggregation<CloudMonitoringResource> agg = Aggregation.newAggregation(CloudMonitoringResource.class, list);
@@ -79,10 +154,35 @@ public class MetricsProcessor {
     return metrics;
   }
   
-  //@Scheduled(cron = "${symbiote.crm.publish.period}")
-  /*public void publishMonitoringDataCrm() throws Exception{
+  @Scheduled(cron = "${symbiote.crm.publish.period}")
+  public void publishMonitoringDataCrm() throws Exception{
+  
+    List<CloudMonitoringResource> resources = getCoreMetrics();
+  
+    CloudMonitoringPlatform payload = new CloudMonitoringPlatform();
+    payload.setPlatformId(platformId);
+  
+    List<CloudMonitoringDevice> metrics = resources.stream().map(resourceInfo -> {
+      
+      CloudMonitoringDevice result = new CloudMonitoringDevice();
+      result.setId(resourceInfo.getResource().getResource().getId());
+      
+      List<Metric> resourceMetrics = resourceInfo.getMetrics().stream()
+                                         .map(metric -> metric.getMetric())
+                                         .collect(Collectors.toList());
+      
+      result.setMetrics(resourceMetrics);
+      
+      return result;
+      
+    }).collect(Collectors.toList());
+    
+    payload.setMetrics(metrics);
+    
+    jsonclient.doPost2Crm(platformId, payload);
+  }
 	  
-	  logger.info("Polling...");
+	  /*logger.info("Polling...");
 	  
 	  List<String> pubList = new ArrayList<String>();
 	  Hashtable<String, Hashtable<String, Date>> htFedDevices = new Hashtable<String, Hashtable<String, Date>>();
@@ -336,7 +436,7 @@ public class MetricsProcessor {
 
 
 			  logger.info("Publishing monitoring info to CRM");
-			  logger.info("Platform " + platform.getInternalId() + " has " + platform.getDevices().length + " devices");
+			  logger.info("Platform " + platform.getPlatformId() + " has " + platform.getDevices().length + " devices");
 
 			  for (int i = 0; i<platform.getDevices().length; i++){
 				  logger.info("Device " + platform.getDevices()[i].getId());
@@ -349,8 +449,8 @@ public class MetricsProcessor {
 				  result = "NO POST to CRM. Change symbIoTe.crm.integration=true in bootstrap.properties to POST";
 
 			  logger.info("************** Result of post to crm = " + result);
-			  logger.info("Publishing monitoring data for platform " + platform.getInternalId());
-			  logger.info("Platform " + platform.getInternalId() + " has " + platform.getDevices().length + " devices");
+			  logger.info("Publishing monitoring data for platform " + platform.getPlatformId());
+			  logger.info("Platform " + platform.getPlatformId() + " has " + platform.getDevices().length + " devices");
 			  for (int i = 0; i<platform.getDevices().length; i++)
 			  {
 				  logger.info("Device " + platform.getDevices()[i].getId());
@@ -462,7 +562,7 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 	 public List<CloudResource>  addOrUpdateInInternalRepository(List<CloudResource>  resources){
 		 logger.info("Adding CloudResource to database");
 		 return resources.stream().map(resource -> {
-			  CloudResource existingResource = resourceRepository.getByInternalId(resource.getInternalId());
+			  CloudResource existingResource = resourceRepository.getByInternalId(resource.getPlatformId());
 		      if (existingResource != null) {
 		    	  logger.info("update will be done");
 		      }
@@ -677,7 +777,7 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 	private CloudMonitoringDevice getMonitoringInfoFromDevice(CloudResource resource) throws Exception{
 		CloudMonitoringDevice monitoringDevice = null;
 		
-		String deviceId = resource.getInternalId();
+		String deviceId = resource.getPlatformId();
 		Query query = new Query();
 		query.addCriteria(Criteria.where("internalId").is("helloid"));	
 		MongoTemplate mongoTemplate = config.mongoTemplate();
@@ -796,7 +896,7 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 	 private CloudMonitoringPlatform filterDevicestoSend(Hashtable listDevices, CloudMonitoringPlatform platOri) {
 
 		 CloudMonitoringPlatform cmp = new CloudMonitoringPlatform();
-		 cmp.setInternalId(platOri.getInternalId());
+		 cmp.setPlatformId(platOri.getPlatformId());
 		 cmp.setFederationId(platOri.getFederationId());
 		 
 		 
