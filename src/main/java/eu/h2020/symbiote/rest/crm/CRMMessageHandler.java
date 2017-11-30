@@ -44,7 +44,9 @@ public  class CRMMessageHandler {
 	@Value("${symbIoTe.core.interface.url}")
 	private String coreAAMUrl;
 
-	
+	@Value("${symbIoTe.validation.localaam}")
+	private Boolean alwaysUseLocalAAMForValidation;
+
 	@Value("${symbIoTe.component.keystore.path}")
 	private String keystorePath;
 
@@ -86,7 +88,7 @@ public  class CRMMessageHandler {
     	IComponentSecurityHandler secHandler = ComponentSecurityHandlerFactory
                 .getComponentSecurityHandler(
                 		coreAAMUrl, keystorePath, keystorePassword,
-                    clientId, url, false,
+                    clientId, url, alwaysUseLocalAAMForValidation,
                     username, password  );
     	
     	Client client = new SymbioteAuthorizationClient(
