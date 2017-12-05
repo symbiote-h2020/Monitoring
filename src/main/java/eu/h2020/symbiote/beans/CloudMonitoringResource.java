@@ -1,7 +1,5 @@
 package eu.h2020.symbiote.beans;
 
-import eu.h2020.symbiote.cloud.model.internal.CloudResource;
-
 import org.springframework.data.annotation.Id;
 
 import java.util.ArrayList;
@@ -10,31 +8,26 @@ import java.util.List;
 public class CloudMonitoringResource {
   
   @Id
-  private String id;
+  private String resourceId;
   
-  private CloudResource resource;
-  private List<MonitoringMetric> metrics = new ArrayList<>();
+  private List<DeviceMetricList> deviceMetrics = new ArrayList<>();
   
   public CloudMonitoringResource() {
   }
   
-  public CloudMonitoringResource(CloudResource resource) {
-    this.resource = resource;
+  public String getResource() {
+    return resourceId;
   }
   
-  public CloudResource getResource() {
-    return resource;
+  public void setResource(String resource) {
+    this.resourceId = resource;
   }
   
-  public void setResource(CloudResource resource) {
-    this.resource = resource;
+  public List<DeviceMetricList> getMetrics() {
+    return deviceMetrics;
   }
   
-  public List<MonitoringMetric> getMetrics() {
-    return metrics;
-  }
-  
-  public void setMetrics(List<MonitoringMetric> metrics) {
-    this.metrics = metrics;
+  public void setMetrics(List<DeviceMetricList> metrics) {
+    this.deviceMetrics = metrics;
   }
 }

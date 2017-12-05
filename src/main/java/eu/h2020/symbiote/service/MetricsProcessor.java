@@ -1,17 +1,12 @@
 package eu.h2020.symbiote.service;
 
 import eu.h2020.symbiote.AppConfig;
-import eu.h2020.symbiote.beans.CloudMonitoringResource;
-import eu.h2020.symbiote.beans.FederationInfo;
+import eu.h2020.symbiote.beans.MonitoringMetric;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
-import eu.h2020.symbiote.cloud.monitoring.model.Metric;
-import eu.h2020.symbiote.constants.MonitoringConstants;
-import eu.h2020.symbiote.db.FederationInfoRepository;
-import eu.h2020.symbiote.db.MonitoringRepository;
-import eu.h2020.symbiote.db.MonitoringRequestRepository;
-import eu.h2020.symbiote.db.ResourceRepository;
-import eu.h2020.symbiote.rest.crm.CRMMessageHandler;
+import eu.h2020.symbiote.db.CloudResourceRepository;
+import eu.h2020.symbiote.db.MetricsRepository;
 import eu.h2020.symbiote.rest.crm.CRMRestService;
 import eu.h2020.symbiote.security.ComponentSecurityHandlerFactory;
 import eu.h2020.symbiote.security.commons.SecurityConstants;
@@ -29,16 +24,13 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
-import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -52,53 +44,44 @@ import javax.annotation.PostConstruct;
 public class MetricsProcessor {
   private static final Log logger = LogFactory.getLog(MetricsProcessor.class);
   
-  @Value("${symbIoTe.crm.integration}")
+  @Value("${symbIoTe.crm.integration:true}")
   private boolean pubCRM;
   
   @Value("${platform.id}")
   private String platformId;
   
-  @Value("${symbiote.crm.url}")
+  @Value("${symbiote.crm.url:}")
   private String crmUrl;
   
-  @Value("${symbIoTe.aam.integration}")
+  @Value("${symbIoTe.aam.integration:true}")
   private boolean useSecurity;
   
-  @Value("${symbIoTe.coreaam.url}")
+  @Value("${symbIoTe.coreaam.url:}")
   private String coreAAMAddress;
   
-  @Value("${symbIoTe.component.keystore.password}")
+  @Value("${symbIoTe.component.keystore.password:}")
   private String keystorePassword;
   
-  @Value("${symbIoTe.component.keystore.path}")
+  @Value("${symbIoTe.component.keystore.path:}")
   private String keystorePath;
   
-  @Value("${symbIoTe.component.clientId}")
+  @Value("${symbIoTe.component.clientId:}")
   private String clientId;
   
-  @Value("${symbIoTe.localaam.url}")
+  @Value("${symbIoTe.localaam.url:}")
   private String localAAMAddress;
   
-  @Value("${symbIoTe.component.username}")
+  @Value("${symbIoTe.component.username:}")
   private String username;
   
-  @Value("${symbIoTe.component.password}")
+  @Value("${symbIoTe.component.password:}")
   private String password;
   
   @Autowired
-  private CRMMessageHandler crmMessageHandler;
+  private CloudResourceRepository resourceRepository;
   
   @Autowired
-  private ResourceRepository resourceRepository;
-  
-  @Autowired
-  private MonitoringRepository monitoringRepository;
-  
-  @Autowired
-  private MonitoringRequestRepository monitoringRequestRepository;
-  
-  @Autowired
-  private FederationInfoRepository federationInfoRepository;
+  private MetricsRepository monitoringRepository;
   
   @Autowired
   private AppConfig config;
@@ -133,51 +116,40 @@ public class MetricsProcessor {
     jsonclient = builder.target(CRMRestService.class, crmUrl);
   }
   
-  public List<CloudMonitoringResource> getCoreMetrics() {
-    
-    FederationInfo core = federationInfoRepository.findByFederationId(MonitoringConstants.CORE_FED_ID);
-    
-    List<AggregationOperation> list = new ArrayList<AggregationOperation>();
-    list.add(Aggregation.match(Criteria.where("resource.internalId").in(core.getDevices())));
-    list.add(Aggregation.unwind("metrics"));
-    list.add(Aggregation.match(Criteria.where("metrics.processed").is(false).andOperator(Criteria.where("metrics.metric.tag").in(core.getMetrics()))));
-    list.add(Aggregation.group("id").first("resource").as("resource").push("metrics").as("metrics"));
-    //list.add(Aggregation.project("resource", "metrics"));
-    TypedAggregation<CloudMonitoringResource> agg = Aggregation.newAggregation(CloudMonitoringResource.class, list);
-    
-		/*Query notProcessed = new Query().addCriteria(Criteria.where("resource.internalId").in(core.getDevices())
-		.and("metrics").elemMatch(Criteria.where("processed").is(false)));*/
-    
-    List<CloudMonitoringResource> metrics = template.aggregate(agg, CloudMonitoringResource.class, CloudMonitoringResource.class).getMappedResults();
-    
-    
-    return metrics;
-  }
-  
   @Scheduled(cron = "${symbiote.crm.publish.period}")
   public void publishMonitoringDataCrm() throws Exception{
   
-    List<CloudMonitoringResource> resources = getCoreMetrics();
+  
+    List<MonitoringMetric> toSend = monitoringRepository.findAll();
+  
+    Map<String, CloudMonitoringDevice> resources = new HashMap<>();
+    
   
     CloudMonitoringPlatform payload = new CloudMonitoringPlatform();
     payload.setPlatformId(platformId);
   
-    List<CloudMonitoringDevice> metrics = resources.stream().map(resourceInfo -> {
+    toSend.forEach(metric -> {
+  
+      String resourceId = metric.getMetric().getDeviceId();
       
-      CloudMonitoringDevice result = new CloudMonitoringDevice();
-      result.setId(resourceInfo.getResource().getResource().getId());
+      CloudMonitoringDevice monitoringDevice = resources.get(resourceId);
+      if (monitoringDevice == null) {
+        CloudResource resource = resourceRepository.findOne(resourceId);
+        if (resource != null) {
+          monitoringDevice = new CloudMonitoringDevice();
+          monitoringDevice.setId(resourceId);
+          monitoringDevice.setType(resource.getParams().getType());
+          monitoringDevice.setMetrics(new ArrayList<>());
+        }
+      }
+  
+      if (monitoringDevice != null) {
+        monitoringDevice.getMetrics().add(metric.getMetric());
+      }
       
-      List<Metric> resourceMetrics = resourceInfo.getMetrics().stream()
-                                         .map(metric -> metric.getMetric())
-                                         .collect(Collectors.toList());
-      
-      result.setMetrics(resourceMetrics);
-      
-      return result;
-      
-    }).collect(Collectors.toList());
+    });
     
-    payload.setMetrics(metrics);
+    payload.setMetrics(new ArrayList<>(resources.values()));
     
     jsonclient.doPost2Crm(platformId, payload);
   }
@@ -562,11 +534,11 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 	 public List<CloudResource>  addOrUpdateInInternalRepository(List<CloudResource>  resources){
 		 logger.info("Adding CloudResource to database");
 		 return resources.stream().map(resource -> {
-			  CloudResource existingResource = resourceRepository.getByInternalId(resource.getPlatformId());
+			  CloudResource existingResource = resourceMetricsRepository.getByInternalId(resource.getPlatformId());
 		      if (existingResource != null) {
 		    	  logger.info("update will be done");
 		      }
-		      return resourceRepository.save(resource);
+		      return resourceMetricsRepository.save(resource);
 		 })
 	     .collect(Collectors.toList());
 	  }
@@ -577,10 +549,10 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
 	  public List<CloudResource> deleteInInternalRepository(List<String> resourceIds){
 		  List<CloudResource>  result = new ArrayList<CloudResource>();
 		  for (String resourceId:resourceIds){
-			  CloudResource existingResource = resourceRepository.getByInternalId(resourceId);
+			  CloudResource existingResource = resourceMetricsRepository.getByInternalId(resourceId);
 		      if (existingResource != null) {
 		    	  result.add(existingResource);
-		    	  resourceRepository.delete(resourceId);
+		    	  resourceMetricsRepository.delete(resourceId);
 		      }
 		  }
 		  return result;
@@ -590,7 +562,7 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
    * Get all CloudResource document from MongoDB.
    *//*
 	  public List<CloudResource> getResources() {
-		  return resourceRepository.findAll();
+		  return resourceMetricsRepository.findAll();
 	  }
 	
 
@@ -602,7 +574,7 @@ private Hashtable<String, Date> addCoredevices(Hashtable<String, Hashtable<Strin
    *//*
 	public CloudResource getResource(String resourceId) {
 		if (!"".equals(resourceId)) {
-			return resourceRepository.getByInternalId(resourceId);
+			return resourceMetricsRepository.getByInternalId(resourceId);
 		}
 		return null;
 	}

@@ -1,6 +1,11 @@
 package eu.h2020.symbiote.rest.crm;
 
 
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
+import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
+import eu.h2020.symbiote.cloud.monitoring.model.Metric;
+import eu.h2020.symbiote.constants.MonitoringConstants;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,9 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import eu.h2020.symbiote.constants.MonitoringConstants;
-import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 
 
 /**
@@ -29,12 +31,15 @@ public class CRMRestDummyServer {
   public @ResponseBody String  publishMonitoringData(@PathVariable("platformId") String platformId, @RequestBody CloudMonitoringPlatform platform) {
 	  logger.info("*********************************************************");
 	  logger.info("Publishing monitoring data for platform " + platformId);
-	  logger.info("Platform " + platform.getPlatformId() + " has " + platform.getDevices().length + " devices");
-	  for (int i = 0; i<platform.getDevices().length; i++){
-		  logger.info("Device " + platform.getDevices()[i].getId());
-		  logger.info("load: " + platform.getDevices()[i].getLoad());
-		  logger.info("availability: " + platform.getDevices()[i].getAvailability());
-		  logger.info("timestamp: " + platform.getDevices()[i].getTimestamp());		  
+	  logger.info("Platform " + platform.getPlatformId() + " has " + platform.getMetrics().size() + " devices");
+	  for (CloudMonitoringDevice device : platform.getMetrics()){
+		  logger.info("Device " + device.getId());
+		  logger.info("Metrics: " + device.getMetrics().size());
+		  for (Metric metric : device.getMetrics()) {
+		  	logger.info("Tag: " + metric.getTag());
+				logger.info("Value: " + metric.getValue());
+				logger.info("Date: " + metric.getDate());
+			}
 	  }
 	  return "received";
   }

@@ -2,10 +2,9 @@ package eu.h2020.symbiote;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eu.h2020.symbiote.beans.CloudMonitoringResource;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.constants.MonitoringConstants;
-import eu.h2020.symbiote.db.ResourceRepository;
+import eu.h2020.symbiote.db.CloudResourceRepository;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +33,7 @@ public class MonitoringRabbitTests {
 	private static Logger logger = LoggerFactory.getLogger(MonitoringRabbitTests.class);
 	
 	@Autowired
-    private ResourceRepository resourceRepo;
+    private CloudResourceRepository resourceRepo;
 
 	@Autowired
     private RabbitTemplate rabbitTemplate;
@@ -95,10 +94,10 @@ public class MonitoringRabbitTests {
 		// Sleep to make sure that the platform has been saved to the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 
-		CloudMonitoringResource result = resourceRepo.findOne(add_item.getInternalId());
+		CloudResource result = resourceRepo.findOne(add_item.getInternalId());
 
 		assertEquals(add_item.getResource().getInterworkingServiceURL(), 
-				result.getResource().getResource().getInterworkingServiceURL());
+				result.getResource().getInterworkingServiceURL());
 
 		resourceRepo.delete(add_item.getInternalId());
 	}
@@ -119,7 +118,7 @@ public class MonitoringRabbitTests {
 		// Sleep to make sure that the platform has been deleted for the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 
-		CloudMonitoringResource result = resourceRepo.findOne(delete_item.getInternalId());
+		CloudResource result = resourceRepo.findOne(delete_item.getInternalId());
 
 		assertEquals(null, result);   
 	}
@@ -140,9 +139,9 @@ public class MonitoringRabbitTests {
 		// Sleep to make sure that the platform has been updated for the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 
-		CloudMonitoringResource result = resourceRepo.findOne(update_item.getInternalId());
+		CloudResource result = resourceRepo.findOne(update_item.getInternalId());
 
-		assertEquals(result.getResource().getResource().getInterworkingServiceURL(), newValue);
+		assertEquals(result.getResource().getInterworkingServiceURL(), newValue);
 		
 		//resourceRepo.delete(update_item);
 	}

@@ -1,33 +1,37 @@
 package eu.h2020.symbiote.beans;
 
-import eu.h2020.symbiote.cloud.monitoring.model.Metric;
+import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
+
+import org.springframework.data.annotation.Id;
 
 public class MonitoringMetric {
   
-  private Metric metric;
-  private boolean processed = false;
+  @Id
+  private String id;
   
-  public MonitoringMetric(Metric metric) {
-    this.metric = metric;
-  }
+  private DeviceMetric metric;
   
   public MonitoringMetric() {
   }
   
-  public Metric getMetric() {
-    return metric;
-  }
-  
-  public void setMetric(Metric metric) {
+  public MonitoringMetric(DeviceMetric metric) {
     this.metric = metric;
   }
   
-  public boolean isProcessed() {
-    return processed;
+  public String getId() {
+    return id;
   }
   
-  public void setProcessed(boolean processed) {
-    this.processed = processed;
+  public void setId(String id) {
+    this.id = id;
+  }
+  
+  public DeviceMetric getMetric() {
+    return metric;
+  }
+  
+  public void setMetric(DeviceMetric metric) {
+    this.metric = metric;
   }
 }
 

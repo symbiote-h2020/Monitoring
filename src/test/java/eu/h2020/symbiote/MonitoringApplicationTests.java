@@ -1,8 +1,7 @@
 package eu.h2020.symbiote;
 
-import eu.h2020.symbiote.beans.CloudMonitoringResource;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
-import eu.h2020.symbiote.db.ResourceRepository;
+import eu.h2020.symbiote.db.CloudResourceRepository;
 import eu.h2020.symbiote.model.cim.Resource;
 import eu.h2020.symbiote.rabbitmq.RHResourceMessageHandler;
 
@@ -24,7 +23,7 @@ public class MonitoringApplicationTests {
 //	 @Autowired
 	 private  RHResourceMessageHandler rhResourceRegistrationMessageHandler;
 //	 @Autowired
-	 private ResourceRepository resourceRepo;
+	 private CloudResourceRepository resourceRepo;
 	 
 	 private  CloudResource cre_resource;
 	 private  CloudResource upd_resource;	
@@ -50,10 +49,10 @@ public class MonitoringApplicationTests {
 			delay(tdelaym);
 			
 
-			CloudMonitoringResource result = resourceRepo.findOne(cre_resource.getInternalId());
+			CloudResource result = resourceRepo.findOne(cre_resource.getInternalId());
 
 			assertEquals(cre_resource.getResource().getInterworkingServiceURL(),
-					result.getResource().getResource().getInterworkingServiceURL());
+					result.getResource().getInterworkingServiceURL());
 		
 			// AFTER CREATE
 			String id_cre= cre_resource.getInternalId();
@@ -121,9 +120,9 @@ public class MonitoringApplicationTests {
 		LOGGER.info("********************************************************************");
 		delay(tdelaym);
 		
-		CloudMonitoringResource result = resourceRepo.findOne(upd_resource.getInternalId());
+		CloudResource result = resourceRepo.findOne(upd_resource.getInternalId());
 
-		assertEquals(result.getResource().getResource().getInterworkingServiceURL(), newValue);
+		assertEquals(result.getResource().getInterworkingServiceURL(), newValue);
 
 		// AFTER UPDATE	
 	    // test update
@@ -184,7 +183,7 @@ public class MonitoringApplicationTests {
 		delay(20000);
 		
 
-		CloudMonitoringResource result = resourceRepo.findOne(id);
+		CloudResource result = resourceRepo.findOne(id);
 		assertEquals(null, result);   
 		
 		

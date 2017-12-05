@@ -91,6 +91,7 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-data-rest')
     compile('org.springframework.boot:spring-boot-starter-web')
     compile('org.springframework.boot:spring-boot-starter-data-mongodb')
+    compile('org.mongodb:mongodb-driver:3.6.0-rc1')
 
     // http libraries to develop icinga2 REST client
     compile ('commons-httpclient:commons-httpclient:3.1')
