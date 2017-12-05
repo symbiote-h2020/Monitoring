@@ -1,12 +1,18 @@
 package eu.h2020.symbiote.service;
 
+import com.google.gson.Gson;
+
 import com.mongodb.BasicDBObject;
+import com.mongodb.BulkWriteOperation;
+import com.mongodb.BulkWriteResult;
+import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.WriteResult;
 import com.mongodb.client.model.DBCollectionUpdateOptions;
 
 import eu.h2020.symbiote.beans.CloudMonitoringResource;
 import eu.h2020.symbiote.beans.DayMetricList;
+import eu.h2020.symbiote.beans.DeviceMetricList;
 import eu.h2020.symbiote.beans.FederationInfo;
 import eu.h2020.symbiote.beans.MetricValue;
 import eu.h2020.symbiote.beans.MonitoringMetric;
@@ -19,6 +25,8 @@ import eu.h2020.symbiote.db.ResourceMetricsRepository;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -38,10 +46,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -111,7 +117,10 @@ public class PlatformMonitoringRestService {
 		CloudMonitoringResource input = new CloudMonitoringResource();
 		input.setResource(metric.getDeviceId());
 		
-		Map<String,List<DayMetricList>> metrics = new HashMap<>();
+		List<DeviceMetricList> deviceMetrics = new ArrayList<>();
+		
+		DeviceMetricList deviceMetric = new DeviceMetricList();
+		deviceMetric.setMetric(metric.getTag());
 		
 		List<DayMetricList> dayMetrics = new ArrayList<>();
 		
@@ -128,15 +137,20 @@ public class PlatformMonitoringRestService {
 		
 		dayMetrics.add(dayMetricsList);
 		
+		deviceMetric.setMetricValues(dayMetrics);
 		
-		metrics.put(metric.getTag(), dayMetrics);
+		deviceMetrics.add(deviceMetric);
 		
-		input.setMetrics(metrics);
+		input.setMetrics(deviceMetrics);
 		
 		return input;
 	}
 	
 	private boolean addMetricToDevice(DeviceMetric metric) {
+		
+		String metricString = new Gson().toJson(metric);
+		
+		logger.debug("Saving metric " + metricString);
 		
 		MetricValue value = new MetricValue();
 		value.setDate(metric.getDate());
@@ -144,51 +158,63 @@ public class PlatformMonitoringRestService {
 		
 		String day = getDateWithoutTime(metric.getDate());
 		
-		/*
-		 * TODO: With MongoDB 3.6 we shoud be able to use arrayFilters but we have to wait until Spring Data catches up:
-		 * https://jira.mongodb.org/browse/SERVER-831
-		 */
+		DBObject query = new BasicDBObject().append("_id",metric.getDeviceId());
 		
-		DBObject query = new BasicDBObject().append("resourceId",metric.getDeviceId());
+		BSONObject valueObject = new BasicBSONObject();
+		valueObject.put("date", metric.getDate());
+		valueObject.put("value", metric.getValue());
 		
-		
-		DBObject update = new BasicDBObject().append("$push", new BasicDBObject().append("deviceMetrics.$[i].metricValues.$[j].values", value));
-		
-		
+		DBObject update = new BasicDBObject().append("$push", new BasicDBObject().append("deviceMetrics.$[i].metricValues.$[j].values", valueObject));
 		
 		DBCollectionUpdateOptions options = new DBCollectionUpdateOptions();
 
-		template.getDb().getCollection(template.getCollectionName(CloudMonitoringResource.class)).update(query, update, options);
+		List<DBObject> arrayFilters = new ArrayList<>();
+		arrayFilters.add(new BasicDBObject().append("i.metric", metric.getTag()));
+		arrayFilters.add(new BasicDBObject().append("j.day", day));
+		options.arrayFilters(arrayFilters);
 		
-		String tagElement = "deviceMetrics."+metric.getTag();
+		DBCollection collection = template.getDb().getCollection(template.getCollectionName(CloudMonitoringResource.class));
 		
-		Query match = new Query(Criteria
-																.where("resourceId").is(metric.getDeviceId())
-																.and(tagElement+".day").is(day));
+		// We have to make it as bulk due to this bug: https://jira.mongodb.org/browse/JAVA-2690
+		BulkWriteOperation bulkOperation = collection.initializeOrderedBulkOperation();
+		bulkOperation.find(query).arrayFilters(arrayFilters).update(update);
+		BulkWriteResult bulkResult = bulkOperation.execute();
 		
-		Update update = new Update().push(tagElement+".$.values", value);
 		
-		
-
-		
-		WriteResult result = template.updateFirst(match, update, CloudMonitoringResource.class);
-		if (!result.isUpdateOfExisting()) {
-			//Resource, metric or day doesn't exist. Let's try to create the initial document.
+		if (bulkResult.getModifiedCount() == 0) {
+			//Resource, metric or day doesn't exist. Let's try to add a day
 			CloudMonitoringResource resource = createResourceDocument(metric);
+			logger.debug("Trying by creating the day of " + metricString);
 			
-			Query resourceQuery = new Query(Criteria.where("resourceId").is(metric.getDeviceId()));
+			Query resourceQuery = new Query(Criteria.where("resourceId").is(metric.getDeviceId()).and("deviceMetrics.metric").is(metric.getTag()));
 			
-			result = template.upsert(resourceQuery,
-					new Update().push(tagElement)
-							.each(resource.getMetrics().get(metric.getTag())), CloudMonitoringResource.class);
+			Update dayUpdate = new Update().push("deviceMetrics.$.metricValues").each(resource.getMetrics().get(0).getMetricValues());
 			
-			if (result.getN() != 1) {
-				logger.error("Error upserting metric");
-				return false;
+			WriteResult result = template.updateFirst(resourceQuery, dayUpdate, CloudMonitoringResource.class);
+			
+			if (result.getN() == 0) {
+				// Maybe metric doesn't exist either. Let's try to insert it
+				
+				logger.debug("Trying by creating the metric of " + metricString);
+				
+				resourceQuery = new Query(Criteria.where("resourceId").is(metric.getDeviceId()));
+				
+				Update metricUpdate = new Update().push("deviceMetrics").each(resource.getMetrics());
+				
+				result = template.updateFirst(resourceQuery, metricUpdate, CloudMonitoringResource.class);
+				
+				if (result.getN() == 0) {
+					// OK, it's the first time we see this device, let's initialize it
+					
+					logger.debug("Trying by creating the a resource for " + metricString);
+					CloudMonitoringResource saved = resourceMetricsRepository.insert(resource);
+					return saved != null;
+				} else {
+					return true;
+				}
 			} else {
 				return true;
 			}
-			
 		} else {
 			return true;
 		}
@@ -246,8 +272,7 @@ public class PlatformMonitoringRestService {
 				// Best case, get only one metric
 				metrics.add(metric);
 			} else {
-				// Need to get the list of metrics. This is going to take time
-				template.get
+
 			}
 			
 			list.add(Aggregation.unwind("deviceMetrics"));

@@ -47,9 +47,9 @@ public class MetricsProcessorTests {
   public static final String SYMBIOTE_PREFIX = "symbiote_";
   public static final String MONITORING_URL = "http://localhost:18033";
   
-  public static final Integer NUM_DEVICES = 10;
-  public static final Integer NUM_DAYS = 10;
-  public static final Integer NUM_METRICS_PER_DAY = 10;
+  public static final Integer NUM_DEVICES = 2;
+  public static final Integer NUM_DAYS = 2;
+  public static final Integer NUM_METRICS_PER_DAY = 2;
   
   @Autowired
   private MetricsProcessor processor;
@@ -99,8 +99,8 @@ public class MetricsProcessorTests {
           
           date.add(Calendar.MINUTE, 1);
           
-          metrics.add(generateMetric(resource.getInternalId(), MonitoringConstants.AVAILABILITY_TAG, 1, date.getTime()));
-          metrics.add(generateMetric(resource.getInternalId(), MonitoringConstants.LOAD_TAG, 100, date.getTime()));
+          metrics.add(generateMetric(resource.getInternalId(), MonitoringConstants.AVAILABILITY_TAG, 2, date.getTime()));
+          metrics.add(generateMetric(resource.getInternalId(), MonitoringConstants.LOAD_TAG, 101, date.getTime()));
           
         }
         
