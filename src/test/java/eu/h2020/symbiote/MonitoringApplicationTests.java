@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -47,12 +48,12 @@ public class MonitoringApplicationTests {
 			LOGGER.info("****** Verify CREATE:" + cre_resource.getInternalId() +"************");
 			LOGGER.info("********************************************************************");
 			delay(tdelaym);
-			
-
-			CloudResource result = resourceRepo.findOne(cre_resource.getInternalId());
+		
+		
+		Optional<CloudResource> result = resourceRepo.findById(cre_resource.getInternalId());
 
 			assertEquals(cre_resource.getResource().getInterworkingServiceURL(),
-					result.getResource().getInterworkingServiceURL());
+					result.get().getResource().getInterworkingServiceURL());
 		
 			// AFTER CREATE
 			String id_cre= cre_resource.getInternalId();
@@ -120,9 +121,9 @@ public class MonitoringApplicationTests {
 		LOGGER.info("********************************************************************");
 		delay(tdelaym);
 		
-		CloudResource result = resourceRepo.findOne(upd_resource.getInternalId());
+		Optional<CloudResource> result = resourceRepo.findById(upd_resource.getInternalId());
 
-		assertEquals(result.getResource().getInterworkingServiceURL(), newValue);
+		assertEquals(result.get().getResource().getInterworkingServiceURL(), newValue);
 
 		// AFTER UPDATE	
 	    // test update
@@ -182,8 +183,8 @@ public class MonitoringApplicationTests {
 		LOGGER.info("********************************************************************");
 		delay(20000);
 		
-
-		CloudResource result = resourceRepo.findOne(id);
+		
+		Optional<CloudResource> result = resourceRepo.findById(id);
 		assertEquals(null, result);   
 		
 		

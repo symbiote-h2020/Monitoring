@@ -28,7 +28,7 @@ public class AppConfig extends AbstractMongoConfiguration {
     }
 
     @Override
-    public MongoClient mongo() throws Exception {
+    public MongoClient mongoClient() {
         if (mongoUri != null) {
             return new MongoClient(new MongoClientURI(mongoUri));
         } else {

@@ -17,5 +17,6 @@ public interface MonitoringClient {
   List<DeviceMetric> postMetrics(List<DeviceMetric> metrics);
   
   @RequestLine("GET " + MonitoringConstants.METRICS_DATA)
-  List<DeviceMetric> postMetrics(@QueryMap Map<String, String> parameters);
+  @Headers("Content-Type: application/json")
+  List<DeviceMetric> getMetrics(@QueryMap Map<String, String> parameters);
 }

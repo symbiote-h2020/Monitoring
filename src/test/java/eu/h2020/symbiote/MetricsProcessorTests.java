@@ -24,10 +24,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 @RunWith(SpringRunner.class)
@@ -47,9 +52,9 @@ public class MetricsProcessorTests {
   public static final String SYMBIOTE_PREFIX = "symbiote_";
   public static final String MONITORING_URL = "http://localhost:18033";
   
-  public static final Integer NUM_DEVICES = 2;
-  public static final Integer NUM_DAYS = 2;
-  public static final Integer NUM_METRICS_PER_DAY = 2;
+  public static final Integer NUM_DEVICES = 10;
+  public static final Integer NUM_DAYS = 10;
+  public static final Integer NUM_METRICS_PER_DAY = 10;
   
   @Autowired
   private MetricsProcessor processor;
@@ -70,6 +75,11 @@ public class MetricsProcessorTests {
   
   MonitoringClient client;
   
+  ZonedDateTime lastDate;
+  ZonedDateTime firstDate;
+  
+  DateTimeFormatter inputFormat = DateTimeFormatter.ISO_INSTANT;
+  
   @Before
   public void setup() {
   
@@ -81,9 +91,12 @@ public class MetricsProcessorTests {
     coreInfo.setFederationId(MonitoringConstants.CORE_FED_ID);
     coreInfo.getMetrics().add(MonitoringConstants.AVAILABILITY_TAG);
     coreInfo.getMetrics().add(MonitoringConstants.LOAD_TAG);
-  
-    Calendar date = Calendar.getInstance();
-    date.add(Calendar.DAY_OF_YEAR, -1 - NUM_DAYS);
+    
+    lastDate = Instant.now().atZone(ZoneId.of("UTC")).withHour(0).withMinute(0).withSecond(0).withNano(0);
+    
+    
+    firstDate = lastDate.minusDays(NUM_DAYS);
+    lastDate = firstDate.minusDays(1);
     
     List<DeviceMetric> metrics = new ArrayList<>();
     
@@ -92,16 +105,17 @@ public class MetricsProcessorTests {
       resourceRepository.save(resource);
       
       for (int j = 0 ; j < NUM_DAYS ; j++) {
-        
-        date.add(Calendar.DAY_OF_YEAR, 1);
+  
+        lastDate = lastDate.plusDays(1);
         
         for (int k = 0; k < NUM_METRICS_PER_DAY; k++) {
+  
+          lastDate = lastDate.plusMinutes(1);
           
-          date.add(Calendar.MINUTE, 1);
-          
-          metrics.add(generateMetric(resource.getInternalId(), MonitoringConstants.AVAILABILITY_TAG, 2, date.getTime()));
-          metrics.add(generateMetric(resource.getInternalId(), MonitoringConstants.LOAD_TAG, 101, date.getTime()));
-          
+          metrics.add(generateMetric(resource.getInternalId(), MonitoringConstants.AVAILABILITY_TAG, 2,
+              Date.from(lastDate.toInstant())));
+          metrics.add(generateMetric(resource.getInternalId(), MonitoringConstants.LOAD_TAG, 101,
+              Date.from(lastDate.toInstant())));
         }
         
       }
@@ -113,6 +127,7 @@ public class MetricsProcessorTests {
   
     federationInfoRepository.save(coreInfo);
     
+    
     client = Feign.builder()
                  .encoder(new JacksonEncoder()).decoder(new JacksonDecoder())
                  .target(MonitoringClient.class, MONITORING_URL);
@@ -122,9 +137,73 @@ public class MetricsProcessorTests {
   }
   
   @Test
-  public void testCoreResources() {
-  
+  public void testFilters() {
     
+    int total = NUM_DEVICES * 2 * NUM_DAYS * NUM_METRICS_PER_DAY;
+  
+    Map<String, String> params = new HashMap<>();
+    
+    List<DeviceMetric> metrics = client.getMetrics(params);
+    
+    assert metrics != null;
+    assert metrics.size() == total;
+    
+    params.put("device", "0");
+    
+    metrics = client.getMetrics(params);
+    
+    assert metrics.size() == total / NUM_DEVICES;
+    metrics.forEach(metric -> {
+      assert "0".equals(metric.getDeviceId());
+    });
+    
+    params.remove("device");
+    params.put("type", TestUtils.RESOURCE_TYPE);
+    
+    metrics = client.getMetrics(params);
+    assert metrics.size() == total;
+  
+    params.put("type", "nonexistent");
+    
+    metrics = client.getMetrics(params);
+    assert metrics.size() == 0;
+    
+    params.remove("type");
+    
+    params.put("metric", MonitoringConstants.AVAILABILITY_TAG);
+    metrics = client.getMetrics(params);
+    
+    assert metrics.size() == total / 2;
+    metrics.forEach(metric -> {
+      assert MonitoringConstants.AVAILABILITY_TAG.equals(metric.getTag());
+    });
+    
+    params.put("metric", "nonexistent");
+    
+    metrics = client.getMetrics(params);
+    assert metrics.size() == 0;
+    
+    params.remove("metric");
+  
+
+    ZonedDateTime start = firstDate.plusDays(1);
+    params.put("startDate", DateTimeFormatter.ISO_INSTANT.format(start));
+    
+    metrics = client.getMetrics(params);
+    metrics.forEach(metric -> {
+      ZonedDateTime metricDate = ZonedDateTime.ofInstant(metric.getDate().toInstant(), ZoneId.of("UTC"));
+      assert  start.isBefore(metricDate) || start.isEqual(metricDate);
+    });
+    
+    ZonedDateTime end = lastDate.minusDays(1);
+    params.remove("startDate");
+    params.put("endDate", DateTimeFormatter.ISO_INSTANT.format(end));
+    
+    metrics = client.getMetrics(params);
+    metrics.forEach(metric -> {
+      ZonedDateTime metricDate = ZonedDateTime.ofInstant(metric.getDate().toInstant(), ZoneId.of("UTC"));
+      assert  end.isAfter(metricDate) || end.isEqual(metricDate);
+    });
   }
   
   private DeviceMetric generateMetric(String deviceId, String tag, int maxValue, Date date) {

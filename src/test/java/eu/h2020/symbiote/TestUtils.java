@@ -10,6 +10,7 @@ import java.util.List;
 public class TestUtils {
   
   public static final String SYMBIOTE_PREFIX = "symbiote_";
+  public static final String RESOURCE_TYPE = "type1";
   
   public static CloudResource createResource(String id) {
     CloudResource resource = new CloudResource();
@@ -17,7 +18,7 @@ public class TestUtils {
     resource.setInternalId(id);
     
     CloudResourceParams params = new CloudResourceParams();
-    params.setType("type1");
+    params.setType(RESOURCE_TYPE);
     resource.setParams(params);
     
     Resource r = new Resource();
