@@ -204,6 +204,25 @@ public class MetricsProcessorTests {
       ZonedDateTime metricDate = ZonedDateTime.ofInstant(metric.getDate().toInstant(), ZoneId.of("UTC"));
       assert  end.isAfter(metricDate) || end.isEqual(metricDate);
     });
+    
+    params.put("device", "0");
+    params.put("metric", MonitoringConstants.AVAILABILITY_TAG);
+    params.put("startDate", DateTimeFormatter.ISO_INSTANT.format(start));
+    params.put("endDate", DateTimeFormatter.ISO_INSTANT.format(end));
+    
+    metrics = client.getMetrics(params);
+    metrics.forEach(metric -> {
+      
+      assert "0".equals(metric.getDeviceId());
+      assert MonitoringConstants.AVAILABILITY_TAG.equals(metric.getTag());
+      
+      ZonedDateTime metricDate = ZonedDateTime.ofInstant(metric.getDate().toInstant(), ZoneId.of("UTC"));
+      
+      assert (start.isBefore(metricDate) || start.isEqual(metricDate))
+                 && (end.isAfter(metricDate) || end.isEqual(metricDate));
+      
+    });
+    
   }
   
   private DeviceMetric generateMetric(String deviceId, String tag, int maxValue, Date date) {
