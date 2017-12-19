@@ -16,6 +16,8 @@ import feign.Feign;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,12 +51,18 @@ import java.util.concurrent.ThreadLocalRandom;
     "symbIoTe.coreaam.url=http://localhost:8083"})
 public class MetricsProcessorTests {
   
+  private interface Benchmark<T> {
+    T execute();
+  }
+  
   public static final String SYMBIOTE_PREFIX = "symbiote_";
   public static final String MONITORING_URL = "http://localhost:18033";
   
-  public static final Integer NUM_DEVICES = 10;
-  public static final Integer NUM_DAYS = 10;
-  public static final Integer NUM_METRICS_PER_DAY = 10;
+  public static final Integer NUM_DEVICES = 100;
+  public static final Integer NUM_DAYS = 100;
+  public static final Integer NUM_METRICS_PER_DAY = 100;
+  
+  private static final Log logger = LogFactory.getLog(MetricsProcessorTests.class);
   
   @Autowired
   private MetricsProcessor processor;
@@ -80,6 +88,15 @@ public class MetricsProcessorTests {
   
   DateTimeFormatter inputFormat = DateTimeFormatter.ISO_INSTANT;
   
+  private <T> T benchmark(String message, Benchmark<T> run) {
+    long t1 = System.nanoTime();
+    T result = run.execute();
+    long elapsed = System.nanoTime() - t1;
+    double elapsed_milis = elapsed/1000000.0;
+    logger.info(message + ": " + elapsed + " ns; " + elapsed_milis + " ms");
+    return result;
+  }
+  
   @Before
   public void setup() {
   
@@ -97,16 +114,25 @@ public class MetricsProcessorTests {
     
     firstDate = lastDate.minusDays(NUM_DAYS);
     lastDate = firstDate.minusDays(1);
-    
-    List<DeviceMetric> metrics = new ArrayList<>();
+  
+    client = Feign.builder()
+                 .encoder(new JacksonEncoder()).decoder(new JacksonDecoder())
+                 .target(MonitoringClient.class, MONITORING_URL);
     
     for (int i=0; i<NUM_DEVICES; i++) {
       CloudResource resource = TestUtils.createResource(Integer.toString(i));
       resourceRepository.save(resource);
+  
+      if ((i % 2) == 0) {
+        coreInfo.getDevices().add(resource.getInternalId());
+        coreInfo = federationInfoRepository.save(coreInfo);
+      }
       
       for (int j = 0 ; j < NUM_DAYS ; j++) {
   
         lastDate = lastDate.plusDays(1);
+  
+        List<DeviceMetric> metrics = new ArrayList<>();
         
         for (int k = 0; k < NUM_METRICS_PER_DAY; k++) {
   
@@ -117,24 +143,14 @@ public class MetricsProcessorTests {
           metrics.add(generateMetric(resource.getInternalId(), MonitoringConstants.LOAD_TAG, 101,
               Date.from(lastDate.toInstant())));
         }
-        
+  
+        benchmark(metrics.size() + " metrics input", () -> client.postMetrics(metrics));
       }
       
-      if ((i % 2) == 0) {
-        coreInfo.getDevices().add(resource.getInternalId());
-      }
     }
-  
-    federationInfoRepository.save(coreInfo);
-    
-    
-    client = Feign.builder()
-                 .encoder(new JacksonEncoder()).decoder(new JacksonDecoder())
-                 .target(MonitoringClient.class, MONITORING_URL);
-    
-    client.postMetrics(metrics);
     
   }
+  
   
   @Test
   public void testFilters() {
@@ -150,7 +166,7 @@ public class MetricsProcessorTests {
     
     params.put("device", "0");
     
-    metrics = client.getMetrics(params);
+    metrics = benchmark("Get by device", () ->  client.getMetrics(params));
     
     assert metrics.size() == total / NUM_DEVICES;
     metrics.forEach(metric -> {
@@ -159,19 +175,19 @@ public class MetricsProcessorTests {
     
     params.remove("device");
     params.put("type", TestUtils.RESOURCE_TYPE);
-    
-    metrics = client.getMetrics(params);
+  
+    metrics = benchmark("Get by type", () ->  client.getMetrics(params));
     assert metrics.size() == total;
   
     params.put("type", "nonexistent");
     
     metrics = client.getMetrics(params);
-    assert metrics.size() == 0;
+    metrics = benchmark("Get by non existing type", () ->  client.getMetrics(params));
     
     params.remove("type");
     
     params.put("metric", MonitoringConstants.AVAILABILITY_TAG);
-    metrics = client.getMetrics(params);
+    metrics = benchmark("Get by metric", () ->  client.getMetrics(params));
     
     assert metrics.size() == total / 2;
     metrics.forEach(metric -> {
@@ -179,8 +195,8 @@ public class MetricsProcessorTests {
     });
     
     params.put("metric", "nonexistent");
-    
-    metrics = client.getMetrics(params);
+  
+    metrics = benchmark("Get by non existing metric", () ->  client.getMetrics(params));
     assert metrics.size() == 0;
     
     params.remove("metric");
@@ -188,8 +204,8 @@ public class MetricsProcessorTests {
 
     ZonedDateTime start = firstDate.plusDays(1);
     params.put("startDate", DateTimeFormatter.ISO_INSTANT.format(start));
-    
-    metrics = client.getMetrics(params);
+  
+    metrics = benchmark("Get by init date", () ->  client.getMetrics(params));
     metrics.forEach(metric -> {
       ZonedDateTime metricDate = ZonedDateTime.ofInstant(metric.getDate().toInstant(), ZoneId.of("UTC"));
       assert  start.isBefore(metricDate) || start.isEqual(metricDate);
@@ -198,8 +214,8 @@ public class MetricsProcessorTests {
     ZonedDateTime end = lastDate.minusDays(1);
     params.remove("startDate");
     params.put("endDate", DateTimeFormatter.ISO_INSTANT.format(end));
-    
-    metrics = client.getMetrics(params);
+  
+    metrics = benchmark("Get by end date", () ->  client.getMetrics(params));
     metrics.forEach(metric -> {
       ZonedDateTime metricDate = ZonedDateTime.ofInstant(metric.getDate().toInstant(), ZoneId.of("UTC"));
       assert  end.isAfter(metricDate) || end.isEqual(metricDate);
@@ -209,8 +225,8 @@ public class MetricsProcessorTests {
     params.put("metric", MonitoringConstants.AVAILABILITY_TAG);
     params.put("startDate", DateTimeFormatter.ISO_INSTANT.format(start));
     params.put("endDate", DateTimeFormatter.ISO_INSTANT.format(end));
-    
-    metrics = client.getMetrics(params);
+  
+    metrics = benchmark("Get by full query", () ->  client.getMetrics(params));
     metrics.forEach(metric -> {
       
       assert "0".equals(metric.getDeviceId());

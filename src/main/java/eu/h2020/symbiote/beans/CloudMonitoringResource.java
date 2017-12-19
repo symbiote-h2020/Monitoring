@@ -2,15 +2,16 @@ package eu.h2020.symbiote.beans;
 
 import org.springframework.data.annotation.Id;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CloudMonitoringResource {
   
   @Id
   private String resourceId;
   
-  private List<DeviceMetricList> deviceMetrics = new ArrayList<>();
+  private Map<String, Map<String, List<MetricValue>>> deviceMetrics = new HashMap<>();
   
   public CloudMonitoringResource() {
   }
@@ -23,11 +24,11 @@ public class CloudMonitoringResource {
     this.resourceId = resource;
   }
   
-  public List<DeviceMetricList> getMetrics() {
+  public Map<String, Map<String, List<MetricValue>>> getMetrics() {
     return deviceMetrics;
   }
   
-  public void setMetrics(List<DeviceMetricList> metrics) {
+  public void setMetrics(Map<String, Map<String, List<MetricValue>>> metrics) {
     this.deviceMetrics = metrics;
   }
 }

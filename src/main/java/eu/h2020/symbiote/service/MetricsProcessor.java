@@ -1,10 +1,10 @@
 package eu.h2020.symbiote.service;
 
 import eu.h2020.symbiote.AppConfig;
-import eu.h2020.symbiote.beans.MonitoringMetric;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
+import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.db.CloudResourceRepository;
 import eu.h2020.symbiote.db.MetricsRepository;
 import eu.h2020.symbiote.rest.crm.CRMRestService;
@@ -120,7 +120,7 @@ public class MetricsProcessor {
   public void publishMonitoringDataCrm() throws Exception{
   
   
-    List<MonitoringMetric> toSend = monitoringRepository.findAll();
+    List<DeviceMetric> toSend = monitoringRepository.findAll();
   
     Map<String, CloudMonitoringDevice> resources = new HashMap<>();
     
@@ -130,7 +130,7 @@ public class MetricsProcessor {
   
     toSend.forEach(metric -> {
   
-      String resourceId = metric.getMetric().getDeviceId();
+      String resourceId = metric.getDeviceId();
       
       CloudMonitoringDevice monitoringDevice = resources.get(resourceId);
       if (monitoringDevice == null) {
@@ -144,7 +144,7 @@ public class MetricsProcessor {
       }
   
       if (monitoringDevice != null) {
-        monitoringDevice.getMetrics().add(metric.getMetric());
+        monitoringDevice.getMetrics().add(metric);
       }
       
     });

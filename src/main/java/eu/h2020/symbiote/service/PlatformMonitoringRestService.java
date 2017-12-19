@@ -1,18 +1,12 @@
 package eu.h2020.symbiote.service;
 
-import com.google.gson.Gson;
-
 import com.mongodb.BasicDBObject;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.result.UpdateResult;
+import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.client.AggregateIterable;
 
 import eu.h2020.symbiote.beans.CloudMonitoringResource;
-import eu.h2020.symbiote.beans.DayMetricList;
-import eu.h2020.symbiote.beans.DeviceMetricList;
 import eu.h2020.symbiote.beans.FederationInfo;
 import eu.h2020.symbiote.beans.MetricValue;
-import eu.h2020.symbiote.beans.MonitoringMetric;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.constants.MonitoringConstants;
 import eu.h2020.symbiote.db.CloudResourceRepository;
@@ -22,17 +16,15 @@ import eu.h2020.symbiote.db.ResourceMetricsRepository;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
-import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.Pair;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -45,8 +37,10 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -86,23 +80,53 @@ public class PlatformMonitoringRestService {
 	public @ResponseBody
 	List<DeviceMetric> saveMetrics(@RequestBody List<DeviceMetric> metrics) throws Throwable {
 		
+		Map<String, CloudMonitoringResource> resources = new HashMap<>();
+		
 		FederationInfo coreInfo = monitoringDeviceRepository.findByFederationId(MonitoringConstants.CORE_FED_ID);
 		
 		List<String> coreDevices = coreInfo.getDevices();
 		
-		List<DeviceMetric> updated = new ArrayList<>();
+		List<DeviceMetric> coreMetrics = new ArrayList<>();
+		
+		List<Pair<Query, Update>> updates = new ArrayList<>();
+		
+		BulkOperations bulkOps = template.bulkOps(BulkOperations.BulkMode.ORDERED, CloudMonitoringResource.class);
 		
 		metrics.forEach(metric -> {
 			
 			if (coreDevices.contains(metric.getDeviceId())) {
-				updated.add(metricsRepository.save(new MonitoringMetric(metric)).getMetric());
+				coreMetrics.add(metric);
 			}
 			
-			addMetricToDevice(metric);
+			addToResource(resources, metric);
 			
 		});
 		
-		return updated;
+		resources.values().forEach(resource -> {
+			String resourceId = resource.getResource();
+			resource.getMetrics().forEach((metric, days) -> {
+				days.forEach((day, values) -> {
+					
+					Query query = new Query(Criteria.where("resourceId").is(resourceId));
+					Update update = new Update().push("deviceMetrics."+metric+"."+day).each(values);
+					Pair<Query, Update> updatePair = Pair.of(query, update);
+					updates.add(updatePair);
+				});
+			});
+		});
+		
+		BulkWriteResult insertResult;
+		
+		if (!coreMetrics.isEmpty()) {
+			insertResult = template.bulkOps(BulkOperations.BulkMode.ORDERED, DeviceMetric.class)
+												 .insert(coreMetrics).execute();
+		}
+		
+		if (!updates.isEmpty()) {
+			BulkWriteResult updateResult = bulkOps.upsert(updates).execute();
+		}
+		
+		return coreMetrics;
 	}
 	
 	private String getDateWithoutTime(Date input) {
@@ -113,105 +137,33 @@ public class PlatformMonitoringRestService {
 		return Date.from(DateTimeFormatter.ISO_INSTANT.parse(isoDateTime, Instant::from));
 	}
 	
-	private CloudMonitoringResource createResourceDocument(DeviceMetric metric) {
-		CloudMonitoringResource input = new CloudMonitoringResource();
-		input.setResource(metric.getDeviceId());
+	private void addToResource(Map<String, CloudMonitoringResource> resources, DeviceMetric metric) {
 		
-		List<DeviceMetricList> deviceMetrics = new ArrayList<>();
+		CloudMonitoringResource resource = resources.get(metric.getDeviceId());
+		if (resource == null) {
+			resource = new CloudMonitoringResource();
+			resource.setResource(metric.getDeviceId());
+			resources.put(metric.getDeviceId(), resource);
+		}
 		
-		DeviceMetricList deviceMetric = new DeviceMetricList();
-		deviceMetric.setMetric(metric.getTag());
-		
-		List<DayMetricList> dayMetrics = new ArrayList<>();
-		
-		DayMetricList dayMetricsList = new DayMetricList();
-		dayMetricsList.setDay(getDateWithoutTime(metric.getDate()));
-		
-		List<MetricValue> listValues = new ArrayList<>();
-		MetricValue metricValue = new MetricValue();
-		metricValue.setDate(metric.getDate());
-		metricValue.setValue(metric.getValue());
-		
-		listValues.add(metricValue);
-		dayMetricsList.setValues(listValues);
-		
-		dayMetrics.add(dayMetricsList);
-		
-		deviceMetric.setMetricValues(dayMetrics);
-		
-		deviceMetrics.add(deviceMetric);
-		
-		input.setMetrics(deviceMetrics);
-		
-		return input;
-	}
-	
-	private boolean addMetricToDevice(DeviceMetric metric) {
-		
-		String metricString = new Gson().toJson(metric);
-		
-		logger.debug("Saving metric " + metricString);
-		
-		
+		Map<String, List<MetricValue>> metricValues = resource.getMetrics().get(metric.getTag());
+		if (metricValues == null) {
+			metricValues = new HashMap<>();
+			resource.getMetrics().put(metric.getTag(), metricValues);
+		}
 		
 		String day = getDateWithoutTime(metric.getDate());
-		
-		Bson query = new BasicDBObject().append("_id",metric.getDeviceId());
-		
-		BSONObject valueObject = new BasicBSONObject();
-		valueObject.put("date", metric.getDate());
-		valueObject.put("value", metric.getValue());
-		
-		Bson update = new BasicDBObject().append("$push", new BasicDBObject().append("deviceMetrics.$[i].metricValues.$[j].values", valueObject));
-		
-		UpdateOptions options = new UpdateOptions();
-		
-		List<Bson> arrayFilters = new ArrayList<>();
-		arrayFilters.add(new BasicDBObject().append("i.metric", metric.getTag()));
-		arrayFilters.add(new BasicDBObject().append("j.day", day));
-		options.arrayFilters(arrayFilters);
-		
-		MongoCollection collection = template.getDb().getCollection(template.getCollectionName(CloudMonitoringResource.class));
-		
-		UpdateResult result = collection.updateOne(query, update, options);
-		
-		if (result.getModifiedCount() == 0) {
-			//Resource, metric or day doesn't exist. Let's try to add a day
-			CloudMonitoringResource resource = createResourceDocument(metric);
-			logger.debug("Trying by creating the day of " + metricString);
-			
-			Query resourceQuery = new Query(Criteria.where("resourceId").is(metric.getDeviceId()).and("deviceMetrics.metric").is(metric.getTag()));
-			
-			Update dayUpdate = new Update().push("deviceMetrics.$.metricValues").each(resource.getMetrics().get(0).getMetricValues());
-			
-			result = template.updateFirst(resourceQuery, dayUpdate, CloudMonitoringResource.class);
-			
-			if (result.getModifiedCount() == 0) {
-				// Maybe metric doesn't exist either. Let's try to insert it
-				
-				logger.debug("Trying by creating the metric of " + metricString);
-				
-				resourceQuery = new Query(Criteria.where("resourceId").is(metric.getDeviceId()));
-				
-				Update metricUpdate = new Update().push("deviceMetrics").each(resource.getMetrics());
-				
-				result = template.updateFirst(resourceQuery, metricUpdate, CloudMonitoringResource.class);
-				
-				if (result.getModifiedCount() == 0) {
-					// OK, it's the first time we see this device, let's initialize it
-					
-					logger.debug("Trying by creating the a resource for " + metricString);
-					CloudMonitoringResource saved = resourceMetricsRepository.insert(resource);
-					return saved != null;
-				} else {
-					return true;
-				}
-			} else {
-				return true;
-			}
-		} else {
-			return true;
+		List<MetricValue> dayMetricValues = metricValues.get(day);
+		if (dayMetricValues == null) {
+			dayMetricValues = new ArrayList<>();
+			metricValues.put(day, dayMetricValues);
 		}
+		
+		MetricValue value = new MetricValue();
+		value.setDate(metric.getDate());
+		value.setValue(metric.getValue());
+		
+		dayMetricValues.add(value);
 	}
 	
 	@RequestMapping(method = RequestMethod.GET, path = MonitoringConstants.METRICS_DATA, produces = "application/json", consumes = "application/json")
@@ -226,60 +178,152 @@ public class PlatformMonitoringRestService {
 																@RequestParam(value = "startDate", required = false) String startDateStr,
 																@RequestParam(value = "endDate", required = false) String endDateStr) throws Throwable {
 		
-		List<AggregationOperation> list = new ArrayList<AggregationOperation>();
+		List<Bson> pipeline = new ArrayList<>();
+		
+		//List<AggregationOperation> list = new ArrayList<AggregationOperation>();
 		
 		if (device != null) {
-			list.add(Aggregation.match(Criteria.where("resourceId").is(device)));
+			pipeline.add(new BasicDBObject().append("$match",new BasicDBObject("_id", device)));
+			//list.add(Aggregation.match(Criteria.where("resourceId").is(device)));
 		} else {
 			
 			if (type != null) {
 				Set<String> deviceIds = new HashSet<>();
 				deviceIds.addAll(cloudResourceRepository.findByParamsType(type).stream()
 														 .map(resource -> resource.getInternalId()).collect(Collectors.toList()));
-				list.add(Aggregation.match(Criteria.where("resourceId").in(deviceIds)));
+				pipeline.add(new BasicDBObject().append("$match",new BasicDBObject("_id",
+						new BasicDBObject().append("$in", deviceIds))));
+				//list.add(Aggregation.match(Criteria.where("resourceId").in(deviceIds)));
 			}
 			
 		}
 		
-		list.add(Aggregation.unwind("deviceMetrics"));
+		pipeline.add(new BasicDBObject().append("$project",
+				new BasicDBObject().append("deviceId","$_id").append("deviceMetrics",
+						new BasicDBObject().append("$objectToArray", "$deviceMetrics"))));
 		
 		if (metric != null) {
-			list.add(Aggregation.match(Criteria.where("deviceMetrics.metric").is(metric)));
+			String[] match = new String[]{"$$metric.k",metric};
+			pipeline.add(new BasicDBObject().append("$project",
+					new BasicDBObject().append("deviceId", 1).append("deviceMetrics",
+							new BasicDBObject().append("$filter",
+									new BasicDBObject()
+											.append("input", "$deviceMetrics")
+											.append("as", "metric")
+											.append("cond",
+													new BasicDBObject().append("$eq", match))))));
 		}
 		
-		list.add(Aggregation.unwind("deviceMetrics.metricValues"));
+		pipeline.add(new BasicDBObject().append("$unwind", "$deviceMetrics"));
+		
+		pipeline.add(new BasicDBObject().append("$project",
+				new BasicDBObject()
+						.append("deviceId", 1)
+						.append("tag", "$deviceMetrics.k")
+						.append("dayValues",
+								new BasicDBObject().append("$objectToArray", "$deviceMetrics.v"))));
+		//list.add(Aggregation.unwind("deviceMetrics.metricValues"));
 		
 		if (startDateStr != null || endDateStr != null) {
 			
 			Date startDate = null;
 			Date endDate = null;
 			
+			
+			
 			if (startDateStr != null) {
 				startDate = getDate(startDateStr);
 				String startDay = getDateWithoutTime(startDate);
-				list.add(Aggregation.match(Criteria.where("deviceMetrics.metricValues.day").gte(startDay)));
+				//list.add(Aggregation.match(Criteria.where("deviceMetrics.metricValues.day").gte(startDay)));
+				String[] match = new String[]{"$$day.k",startDay};
+				pipeline.add(new BasicDBObject().append("$project",
+						new BasicDBObject()
+								.append("deviceId", 1)
+								.append("tag", 1)
+								.append("dayValues",
+								new BasicDBObject().append("$filter",
+										new BasicDBObject()
+												.append("input", "$dayValues")
+												.append("as", "day")
+												.append("cond",
+														new BasicDBObject().append("$gte", match))))));
 			}
 			
 			if (endDateStr != null) {
 				endDate = getDate(endDateStr);
 				String endDay = getDateWithoutTime(endDate);
-				list.add(Aggregation.match(Criteria.where("deviceMetrics.metricValues.day").lte(endDay)));
+				//list.add(Aggregation.match(Criteria.where("deviceMetrics.metricValues.day").lte(endDay)));
+				String[] match = new String[]{"$$day.k",endDay};
+				pipeline.add(new BasicDBObject().append("$project",
+						new BasicDBObject()
+								.append("deviceId", 1)
+								.append("tag", 1)
+								.append("dayValues",
+										new BasicDBObject().append("$filter",
+												new BasicDBObject()
+														.append("input", "$dayValues")
+														.append("as", "day")
+														.append("cond",
+																new BasicDBObject().append("$lte", match))))));
 			}
 			
-			list.add(Aggregation.unwind("deviceMetrics.metricValues.values"));
+			//list.add(Aggregation.unwind("deviceMetrics.metricValues.values"));
+			pipeline.add(new BasicDBObject().append("$unwind", "$dayValues"));
+			
 			
 			if (startDate != null) {
-				list.add(Aggregation.match(Criteria.where("deviceMetrics.metricValues.values.date").gte(startDate)));
+				//list.add(Aggregation.match(Criteria.where("deviceMetrics.metricValues.values.date").gte(startDate)));
+				Object[] match = new Object[]{"$$value.k",startDate};
+				pipeline.add(new BasicDBObject().append("$project",
+						new BasicDBObject()
+								.append("deviceId", 1)
+								.append("tag", 1)
+								.append("dayValues.v",
+										new BasicDBObject().append("$filter",
+												new BasicDBObject()
+														.append("input", "$dayValues.v")
+														.append("as", "value")
+														.append("cond",
+																new BasicDBObject().append("$gte", match))))));
 			}
 			
 			if (endDate != null) {
-				list.add(Aggregation.match(Criteria.where("deviceMetrics.metricValues.values.date").lte(endDate)));
+				//list.add(Aggregation.match(Criteria.where("deviceMetrics.metricValues.values.date").lte(endDate)));
+				Object[] match = new Object[]{"$$value.k",endDate};
+				pipeline.add(new BasicDBObject().append("$project",
+						new BasicDBObject()
+								.append("deviceId", 1)
+								.append("tag", 1)
+								.append("dayValues.v",
+										new BasicDBObject().append("$filter",
+												new BasicDBObject()
+														.append("input", "$dayValues.v")
+														.append("as", "value")
+														.append("cond",
+																new BasicDBObject().append("$lte", match))))));
 			}
+			
 		} else {
-			list.add(Aggregation.unwind("deviceMetrics.metricValues.values"));
+			//list.add(Aggregation.unwind("deviceMetrics.metricValues.values"));
+			pipeline.add(new BasicDBObject().append("$unwind", "$dayValues"));
 		}
 		
-		list.add(Aggregation.project("resourceId")
+		pipeline.add(new BasicDBObject().append("$project",
+				new BasicDBObject()
+						.append("deviceId", 1)
+						.append("tag", 1)
+						.append("values", "$dayValues.v")));
+		
+		pipeline.add(new BasicDBObject().append("$unwind", "$values"));
+		
+		pipeline.add(new BasicDBObject().append("$project",
+				new BasicDBObject()
+						.append("deviceId", 1)
+						.append("tag", 1)
+						.append("date", "$values.date")
+						.append("value", "$values.value")));
+		
+		/*list.add(Aggregation.project("resourceId")
 				.and("resourceId").as("deviceId")
 								 .and("deviceMetrics.metric").as("tag")
 								 .and("deviceMetrics.metricValues.values.date").as("date")
@@ -287,7 +331,25 @@ public class PlatformMonitoringRestService {
 		
 		TypedAggregation<CloudMonitoringResource> agg = Aggregation.newAggregation(CloudMonitoringResource.class, list);
 		
-		List<DeviceMetric> metrics = template.aggregate(agg, CloudMonitoringResource.class, DeviceMetric.class).getMappedResults();
+		List<DeviceMetric> metrics = template.aggregate(agg, CloudMonitoringResource.class, DeviceMetric.class).getMappedResults();*/
+		
+		AggregateIterable<Document> aggregation = template.getDb()
+																		 .getCollection(
+																		 		template.getCollectionName(CloudMonitoringResource.class))
+																		 .aggregate(pipeline, Document.class);
+		
+		
+		List<DeviceMetric> metrics = new ArrayList<>();
+		
+		aggregation.map((document) -> {
+			DeviceMetric newMetric = new DeviceMetric();
+			newMetric.setDeviceId(document.getString("deviceId"));
+			newMetric.setTag(document.getString("tag"));
+			newMetric.setDate(document.getDate("date"));
+			newMetric.setValue(document.getString("value"));
+			return newMetric;
+		}).into(metrics);
+		
 		
 		return metrics;
 	}
