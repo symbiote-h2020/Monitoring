@@ -5,6 +5,7 @@ import com.mongodb.MongoClientOptions;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.UpdateOneModel;
@@ -75,7 +76,8 @@ public class MongoDbMonitoringBackend {
     });
   
   
-    BulkWriteResult result = collection.bulkWrite(ops);
+    BulkWriteOptions options = new BulkWriteOptions().bypassDocumentValidation(true).ordered(false);
+    BulkWriteResult result = collection.bulkWrite(ops, options);
     return result;
   }
   
