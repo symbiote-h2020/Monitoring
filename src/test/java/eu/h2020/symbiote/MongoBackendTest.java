@@ -21,7 +21,7 @@ public class MongoBackendTest {
   
   public static final Integer NUM_DEVICES = 10;
   public static final Integer NUM_TAGS = 10;
-  public static final Integer NUM_DAYS = 10;
+  public static final Integer NUM_DAYS = 100;
   public static final Integer NUM_METRICS_PER_DAY = 100;
   
   private MongoDbMonitoringBackend backend;
@@ -113,6 +113,23 @@ public class MongoBackendTest {
       ZonedDateTime metricDate = ZonedDateTime.ofInstant(metric.getDate().toInstant(), ZoneId.of("UTC"));
       assert  end.isAfter(metricDate) || end.isEqual(metricDate);
     });
+  
+    metrics = MonitoringTestUtils.benchmark("Get by full query group",
+        () ->  backend.getMetrics(devices, tags, startDate, endDate));
+    int totalMetrics = devices.size() * tags.size() * NUM_DAYS * NUM_METRICS_PER_DAY;
+    assert metrics.size() == totalMetrics - devices.size()*tags.size()*2*(NUM_METRICS_PER_DAY + 1);
+    metrics.forEach(metric -> {
+    
+      assert devices.contains(metric.getDeviceId());
+      assert tags.contains(metric.getTag());
+    
+      ZonedDateTime metricDate = ZonedDateTime.ofInstant(metric.getDate().toInstant(), ZoneId.of("UTC"));
+    
+      assert (start.isBefore(metricDate) || start.isEqual(metricDate))
+                 && (end.isAfter(metricDate) || end.isEqual(metricDate));
+    
+    });
+    
     
     String deviceId = MonitoringTestUtils.DEVICE_PF+"0";
     String tag = MonitoringTestUtils.TAG_PF+"0";
