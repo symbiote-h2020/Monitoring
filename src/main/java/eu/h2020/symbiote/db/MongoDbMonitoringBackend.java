@@ -1,8 +1,9 @@
 package eu.h2020.symbiote.db;
 
+import com.mongodb.BulkWriteError;
+import com.mongodb.BulkWriteException;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
-import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.BulkWriteOptions;
@@ -12,6 +13,7 @@ import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 
 import eu.h2020.symbiote.beans.CloudMonitoringResource;
+import eu.h2020.symbiote.beans.MetricValue;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.compat.FiltersCompat;
 import eu.h2020.symbiote.compat.ProjectionsCompat;
@@ -23,6 +25,7 @@ import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +58,10 @@ public class MongoDbMonitoringBackend {
     return client;
   }
   
-  public BulkWriteResult saveMetrics(List<DeviceMetric> metrics) {
+  public List<DeviceMetric> saveMetrics(List<DeviceMetric> metrics) {
     Map<String, CloudMonitoringResource> resources = MonitoringUtils.toResourceMap(metrics);
+    
+    List<DeviceMetric> result = new ArrayList<>(metrics);
   
     List<UpdateOneModel<Document>> ops = new ArrayList<>();
   
@@ -75,10 +80,49 @@ public class MongoDbMonitoringBackend {
       });
     });
   
-  
     BulkWriteOptions options = new BulkWriteOptions().bypassDocumentValidation(true).ordered(false);
-    BulkWriteResult result = collection.bulkWrite(ops, options);
+    try {
+      collection.bulkWrite(ops, options);
+    } catch (BulkWriteException e) {
+      com.mongodb.BulkWriteResult exceptionResult = e.getWriteResult();
+      for (BulkWriteError error : e.getWriteErrors()) {
+        int index = error.getIndex();
+        if (index < ops.size()) {
+          UpdateOneModel operation = ops.get(index);
+          result.removeAll(getMetricsFromOperation(operation));
+        }
+      }
+    }
     return result;
+  }
+  
+  private Collection<DeviceMetric> getMetricsFromOperation(UpdateOneModel operation) {
+    List<DeviceMetric> metricList = new ArrayList<>();
+    String deviceId = operation.getFilter()
+                          .toBsonDocument(Document.class, MongoClient.getDefaultCodecRegistry())
+                          .getString("_id").getValue();
+    Document push = ((Document) operation.getUpdate())
+                                  .get("$push", Document.class);
+    
+    String dayKey = push.keySet().iterator().next();
+    String[] path = dayKey.split(".");
+    String tag = path[1];
+    
+    Document valuesDocument = push.get(dayKey, Document.class);
+    
+    List<MetricValue> values = (List<MetricValue>) valuesDocument.get("$each");
+    
+    for (MetricValue value : values) {
+      DeviceMetric metric = new DeviceMetric();
+      metric.setDate(value.getDate());
+      metric.setValue(value.getValue());
+      metric.setTag(tag);
+      metric.setDeviceId(deviceId);
+      
+      metricList.add(metric);
+    }
+    
+    return metricList;
   }
   
   List<Document> debugPipeline(List<Bson> pipeline) {

@@ -21,8 +21,8 @@ public class MongoBackendTest {
   
   public static final Integer NUM_DEVICES = 10;
   public static final Integer NUM_TAGS = 10;
-  public static final Integer NUM_DAYS = 100;
-  public static final Integer NUM_METRICS_PER_DAY = 100;
+  public static final Integer NUM_DAYS = 10;
+  public static final Integer NUM_METRICS_PER_DAY = 10;
   
   private MongoDbMonitoringBackend backend;
   
@@ -41,8 +41,10 @@ public class MongoBackendTest {
     this.firstDate = result.getFirstDate();
     this.lastDate = result.getLastDate();
     
-    MonitoringTestUtils.benchmark("Insertion of " + result.getMetrics().size() + " elements",
+    List<DeviceMetric> saved = MonitoringTestUtils.benchmark("Insertion of " + result.getMetrics().size() + " elements",
         () -> backend.saveMetrics(result.getMetrics()));
+    
+    assert result.getMetrics().size() == saved.size();
   }
   
   List<String> getEven(int max, String prefix) {

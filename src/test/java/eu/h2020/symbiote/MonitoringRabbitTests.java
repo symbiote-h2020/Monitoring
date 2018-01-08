@@ -20,7 +20,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -95,12 +94,12 @@ public class MonitoringRabbitTests {
 		// Sleep to make sure that the platform has been saved to the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 
-		Optional<CloudResource> result = resourceRepo.findById(add_item.getInternalId());
+		CloudResource result = resourceRepo.findOne(add_item.getInternalId());
 
 		assertEquals(add_item.getResource().getInterworkingServiceURL(), 
-				result.get().getResource().getInterworkingServiceURL());
+				result.getResource().getInterworkingServiceURL());
 
-		resourceRepo.deleteById(add_item.getInternalId());
+		resourceRepo.delete(add_item.getInternalId());
 	}
 		
 
@@ -119,7 +118,7 @@ public class MonitoringRabbitTests {
 		// Sleep to make sure that the platform has been deleted for the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 		
-		Optional<CloudResource> result = resourceRepo.findById(delete_item.getInternalId());
+		CloudResource result = resourceRepo.findOne(delete_item.getInternalId());
 
 		assertEquals(null, result);   
 	}
@@ -140,9 +139,9 @@ public class MonitoringRabbitTests {
 		// Sleep to make sure that the platform has been updated for the repo before querying
 		TimeUnit.SECONDS.sleep(3);
 		
-		Optional<CloudResource> result = resourceRepo.findById(update_item.getInternalId());
+		CloudResource result = resourceRepo.findOne(update_item.getInternalId());
 
-		assertEquals(result.get().getResource().getInterworkingServiceURL(), newValue);
+		assertEquals(result.getResource().getInterworkingServiceURL(), newValue);
 		
 		//resourceRepo.delete(update_item);
 	}

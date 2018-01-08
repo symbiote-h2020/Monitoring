@@ -18,9 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.util.Pair;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -88,16 +85,11 @@ public class PlatformMonitoringRestService {
 	public @ResponseBody
 	List<DeviceMetric> saveMetrics(@RequestBody List<DeviceMetric> metrics) throws Throwable {
 		
-		
 		FederationInfo coreInfo = monitoringDeviceRepository.findByFederationId(MonitoringConstants.CORE_FED_ID);
 		
 		List<String> coreDevices = coreInfo.getDevices();
 		
 		List<DeviceMetric> coreMetrics = new ArrayList<>();
-		
-		List<Pair<Query, Update>> updates = new ArrayList<>();
-		
-		BulkOperations bulkOps = template.bulkOps(BulkOperations.BulkMode.ORDERED, CloudMonitoringResource.class);
 		
 		metrics.forEach(metric -> {
 			
@@ -111,13 +103,11 @@ public class PlatformMonitoringRestService {
 		BulkWriteResult insertResult;
 		
 		if (!coreMetrics.isEmpty()) {
-			insertResult = template.bulkOps(BulkOperations.BulkMode.ORDERED, DeviceMetric.class)
-												 .insert(coreMetrics).execute();
+			template.bulkOps(BulkOperations.BulkMode.UNORDERED, DeviceMetric.class).insert(coreMetrics)
+					.execute();
 		}
 		
-		BulkWriteResult updateResults = backend.saveMetrics(metrics);
-		
-		return coreMetrics;
+		return backend.saveMetrics(metrics);
 	}
 	
 	private String getDateWithoutTime(Date input) {

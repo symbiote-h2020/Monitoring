@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
@@ -134,11 +133,11 @@ public class MetricsProcessor {
       
       CloudMonitoringDevice monitoringDevice = resources.get(resourceId);
       if (monitoringDevice == null) {
-        Optional<CloudResource> resource = resourceRepository.findById(resourceId);
-        if (resource.isPresent()) {
+        CloudResource resource = resourceRepository.findOne(resourceId);
+        if (resource != null) {
           monitoringDevice = new CloudMonitoringDevice();
           monitoringDevice.setId(resourceId);
-          monitoringDevice.setType(resource.get().getParams().getType());
+          monitoringDevice.setType(resource.getParams().getType());
           monitoringDevice.setMetrics(new ArrayList<>());
         }
       }
