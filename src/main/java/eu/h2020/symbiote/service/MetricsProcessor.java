@@ -91,7 +91,7 @@ public class MetricsProcessor {
   private CRMRestService jsonclient;
   
   @PostConstruct
-  public void createClient() throws SecurityHandlerException {
+  private void createClient() throws SecurityHandlerException {
     
     Feign.Builder builder = Feign.builder()
                                 .decoder(new JacksonDecoder())
@@ -117,20 +117,24 @@ public class MetricsProcessor {
   
   //@Scheduled(cron = "${symbiote.crm.publish.period}")
   public void publishMonitoringDataCrm() throws Exception{
+    jsonclient.doPost2Crm(platformId, getDataToSend());
+    
+    monitoringRepository.deleteAll();
+  }
   
-  
+  public CloudMonitoringPlatform getDataToSend() {
     List<DeviceMetric> toSend = monitoringRepository.findAll();
   
     Map<String, CloudMonitoringDevice> resources = new HashMap<>();
-    
+  
   
     CloudMonitoringPlatform payload = new CloudMonitoringPlatform();
     payload.setPlatformId(platformId);
   
     toSend.forEach(metric -> {
-  
+    
       String resourceId = metric.getDeviceId();
-      
+    
       CloudMonitoringDevice monitoringDevice = resources.get(resourceId);
       if (monitoringDevice == null) {
         CloudResource resource = resourceRepository.findOne(resourceId);
@@ -141,16 +145,16 @@ public class MetricsProcessor {
           resources.put(resourceId, monitoringDevice);
         }
       }
-  
+    
       if (monitoringDevice != null) {
         monitoringDevice.getMetrics().add(metric);
       }
-      
-    });
     
+    });
+  
     payload.setMetrics(new ArrayList<>(resources.values()));
     
-    jsonclient.doPost2Crm(platformId, payload);
+    return payload;
   }
   
 }
