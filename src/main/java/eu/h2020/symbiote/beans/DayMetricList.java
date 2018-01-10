@@ -6,7 +6,7 @@ public class DayMetricList {
   
   private String day;
   
-  private List<MetricValue> values;
+  private List<TimedValue> values;
   
   public String getDay() {
     return day;
@@ -16,11 +16,11 @@ public class DayMetricList {
     this.day = day;
   }
   
-  public List<MetricValue> getValues() {
+  public List<TimedValue> getValues() {
     return values;
   }
   
-  public void setValues(List<MetricValue> values) {
+  public void setValues(List<TimedValue> values) {
     this.values = values;
   }
 }

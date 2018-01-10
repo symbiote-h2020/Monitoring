@@ -2,7 +2,7 @@ package eu.h2020.symbiote.beans;
 
 import java.util.Date;
 
-public class MetricValue {
+public class TimedValue {
   
   private Date date;
   private String value;

@@ -1,6 +1,6 @@
 package eu.h2020.symbiote.db;
 
-import eu.h2020.symbiote.beans.MetricValue;
+import eu.h2020.symbiote.beans.TimedValue;
 
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
@@ -10,11 +10,11 @@ import org.bson.codecs.EncoderContext;
 
 import java.util.Date;
 
-public class MetricValueCodec implements Codec<MetricValue> {
+public class MetricValueCodec implements Codec<TimedValue> {
   @Override
-  public MetricValue decode(BsonReader reader, DecoderContext decoderContext) {
+  public TimedValue decode(BsonReader reader, DecoderContext decoderContext) {
     reader.readStartDocument();
-    MetricValue value = new MetricValue();
+    TimedValue value = new TimedValue();
     value.setDate(new Date(reader.readDateTime("date")));
     value.setValue(reader.readString("value"));
     reader.readEndDocument();
@@ -22,7 +22,7 @@ public class MetricValueCodec implements Codec<MetricValue> {
   }
   
   @Override
-  public void encode(BsonWriter writer, MetricValue value, EncoderContext encoderContext) {
+  public void encode(BsonWriter writer, TimedValue value, EncoderContext encoderContext) {
     writer.writeStartDocument();
     writer.writeDateTime("date", value.getDate().getTime());
     writer.writeString("value", value.getValue());
@@ -30,7 +30,7 @@ public class MetricValueCodec implements Codec<MetricValue> {
   }
   
   @Override
-  public Class<MetricValue> getEncoderClass() {
-    return MetricValue.class;
+  public Class<TimedValue> getEncoderClass() {
+    return TimedValue.class;
   }
 }

@@ -13,7 +13,7 @@ import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 
 import eu.h2020.symbiote.beans.CloudMonitoringResource;
-import eu.h2020.symbiote.beans.MetricValue;
+import eu.h2020.symbiote.beans.TimedValue;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.compat.FiltersCompat;
 import eu.h2020.symbiote.compat.ProjectionsCompat;
@@ -110,9 +110,9 @@ public class MongoDbMonitoringBackend {
     
     Document valuesDocument = push.get(dayKey, Document.class);
     
-    List<MetricValue> values = (List<MetricValue>) valuesDocument.get("$each");
+    List<TimedValue> values = (List<TimedValue>) valuesDocument.get("$each");
     
-    for (MetricValue value : values) {
+    for (TimedValue value : values) {
       DeviceMetric metric = new DeviceMetric();
       metric.setDate(value.getDate());
       metric.setValue(value.getValue());

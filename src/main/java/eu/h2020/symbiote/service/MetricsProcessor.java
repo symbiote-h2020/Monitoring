@@ -1,6 +1,6 @@
 package eu.h2020.symbiote.service;
 
-import eu.h2020.symbiote.AppConfig;
+import eu.h2020.symbiote.MongoConfig;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
@@ -83,7 +83,7 @@ public class MetricsProcessor {
   private MetricsRepository monitoringRepository;
   
   @Autowired
-  private AppConfig config;
+  private MongoConfig config;
   
   @Autowired
   private MongoTemplate template;
@@ -134,11 +134,11 @@ public class MetricsProcessor {
       CloudMonitoringDevice monitoringDevice = resources.get(resourceId);
       if (monitoringDevice == null) {
         CloudResource resource = resourceRepository.findOne(resourceId);
-        if (resource != null) {
+        if (resource != null && resource.getResource() != null) {
           monitoringDevice = new CloudMonitoringDevice();
-          monitoringDevice.setId(resourceId);
-          monitoringDevice.setType(resource.getParams().getType());
+          monitoringDevice.setId(resource.getResource().getId());
           monitoringDevice.setMetrics(new ArrayList<>());
+          resources.put(resourceId, monitoringDevice);
         }
       }
   

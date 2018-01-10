@@ -1,7 +1,7 @@
 package eu.h2020.symbiote.utils;
 
 import eu.h2020.symbiote.beans.CloudMonitoringResource;
-import eu.h2020.symbiote.beans.MetricValue;
+import eu.h2020.symbiote.beans.TimedValue;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 
 import java.time.Instant;
@@ -32,20 +32,20 @@ public class MonitoringUtils {
       resources.put(metric.getDeviceId(), resource);
     }
     
-    Map<String, List<MetricValue>> metricValues = resource.getMetrics().get(metric.getTag());
+    Map<String, List<TimedValue>> metricValues = resource.getMetrics().get(metric.getTag());
     if (metricValues == null) {
       metricValues = new HashMap<>();
       resource.getMetrics().put(metric.getTag(), metricValues);
     }
     
     String day = getDateWithoutTime(metric.getDate());
-    List<MetricValue> dayMetricValues = metricValues.get(day);
+    List<TimedValue> dayMetricValues = metricValues.get(day);
     if (dayMetricValues == null) {
       dayMetricValues = new ArrayList<>();
       metricValues.put(day, dayMetricValues);
     }
     
-    MetricValue value = new MetricValue();
+    TimedValue value = new TimedValue();
     value.setDate(metric.getDate());
     value.setValue(metric.getValue());
     

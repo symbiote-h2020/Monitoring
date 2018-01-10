@@ -16,7 +16,7 @@ import java.util.List;
 
 public class MongoBackendTest {
 
-  public static final String DATABASE = "metrics-test";
+  public static final String DATABASE = "monitoring-test";
   public static final String COLLECTION = "cloudMonitoringResource";
   
   public static final Integer NUM_DEVICES = 10;

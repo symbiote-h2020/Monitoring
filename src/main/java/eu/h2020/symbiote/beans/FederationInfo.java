@@ -2,15 +2,14 @@ package eu.h2020.symbiote.beans;
 
 import org.springframework.data.annotation.Id;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 public class FederationInfo {
   
   @Id
   private String federationId;
-  private List<String> metrics = new ArrayList<>();
-  private List<String> devices = new ArrayList<>();
+  
+  private Map<String, TimedValue> resources;
   
   public String getFederationId() {
     return federationId;
@@ -20,19 +19,11 @@ public class FederationInfo {
     this.federationId = federationId;
   }
   
-  public List<String> getMetrics() {
-    return metrics;
+  public Map<String, TimedValue> getResources() {
+    return resources;
   }
   
-  public void setMetrics(List<String> metrics) {
-    this.metrics = metrics;
-  }
-  
-  public List<String> getDevices() {
-    return devices;
-  }
-  
-  public void setDevices(List<String> devices) {
-    this.devices = devices;
+  public void setResources(Map<String, TimedValue> resources) {
+    this.resources = resources;
   }
 }

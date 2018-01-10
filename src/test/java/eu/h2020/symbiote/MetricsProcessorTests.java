@@ -24,7 +24,7 @@ import java.time.format.DateTimeFormatter;
     properties = {"eureka.client.enabled=false",
     "symbIoTe.aam.integration=false",
     "server.port=18033",
-    "monitoring.mongo.database=metrics-test",
+    "monitoring.mongo.database=monitoring-test",
     "symbIoTe.coreaam.url=http://localhost:8083",
     "symbIoTe.crm.integration=false",
     "platform.id=TestPlatform",

@@ -3,11 +3,10 @@ package eu.h2020.symbiote.service;
 import com.mongodb.bulk.BulkWriteResult;
 
 import eu.h2020.symbiote.beans.CloudMonitoringResource;
-import eu.h2020.symbiote.beans.FederationInfo;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.constants.MonitoringConstants;
 import eu.h2020.symbiote.db.CloudResourceRepository;
-import eu.h2020.symbiote.db.FederationInfoRepository;
 import eu.h2020.symbiote.db.MetricsRepository;
 import eu.h2020.symbiote.db.MongoDbMonitoringBackend;
 import eu.h2020.symbiote.db.ResourceMetricsRepository;
@@ -31,7 +30,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -56,13 +57,10 @@ public class PlatformMonitoringRestService {
 	private ResourceMetricsRepository resourceMetricsRepository;
 	
 	@Autowired
-	private FederationInfoRepository monitoringDeviceRepository;
-	
-	@Autowired
 	private MetricsRepository metricsRepository;
 	
 	@Autowired
-	private CloudResourceRepository cloudResourceRepository;
+	private CloudResourceRepository coreRepository;
 	
 	@Autowired
 	private MongoTemplate template;
@@ -85,15 +83,20 @@ public class PlatformMonitoringRestService {
 	public @ResponseBody
 	List<DeviceMetric> saveMetrics(@RequestBody List<DeviceMetric> metrics) throws Throwable {
 		
-		FederationInfo coreInfo = monitoringDeviceRepository.findByFederationId(MonitoringConstants.CORE_FED_ID);
 		
-		List<String> coreDevices = coreInfo.getDevices();
 		
 		List<DeviceMetric> coreMetrics = new ArrayList<>();
+		Map<String, CloudResource> resourceCache = new HashMap<>();
 		
 		metrics.forEach(metric -> {
+			String deviceId = metric.getDeviceId();
+			CloudResource resource = resourceCache.get(deviceId);
+			if (resource == null) {
+				resource = coreRepository.findOne(deviceId);
+				resourceCache.put(deviceId, resource);
+			}
 			
-			if (coreDevices.contains(metric.getDeviceId())) {
+			if (resource != null && resource.getResource() != null) {
 				coreMetrics.add(metric);
 			}
 			
@@ -125,12 +128,11 @@ public class PlatformMonitoringRestService {
 	@RequestMapping(method = RequestMethod.GET, path = MonitoringConstants.METRICS_DATA, produces = "application/json", consumes = "application/json")
 	public @ResponseBody
 	List<DeviceMetric> getMetrics(@RequestParam(value = "device", required = false) String device,
-																@RequestParam(value = "type", required = false) String type,
 																@RequestParam(value = "metric", required = false) String metric,
 																/*
 																 * Bug https://github.com/JodaOrg/joda-time/issues/443 which I still consider a bug, prevents automatic deserialization.
 																 * If it's fixed in the future, we might rely on DateTimeFormat annotation.
-																*/
+																 */
 																@RequestParam(value = "startDate", required = false) String startDateStr,
 																@RequestParam(value = "endDate", required = false) String endDateStr) throws Throwable {
 		
@@ -138,5 +140,9 @@ public class PlatformMonitoringRestService {
 		Date startDate = getDate(startDateStr);
 		Date endDate = getDate(endDateStr);
 		return backend.getMetrics(Arrays.asList(device), Arrays.asList(metric), startDate, endDate);
+	}
+	
+	public double getAggregatedMetric(String federationId, String metric) {
+		return 0;
 	}
 }
