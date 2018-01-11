@@ -10,10 +10,15 @@ public class MonitoringConstants {
 	
 	public static final String EXCHANGE_NAME_RH = "symbIoTe.rh";
 
-	public static final String MONITORING_QUEUE_NAME = "symbIoTe.rh.monitoring";
+	public static final String MONITORING_REGISTRATION_QUEUE_NAME = "symbIoTe.rh.monitoring.registration";
+	public static final String MONITORING_UNREGISTRATION_QUEUE_NAME = "symbIoTe.rh.monitoring.unregistration";
+	public static final String MONITORING_SHARING_QUEUE_NAME = "symbIoTe.rh.monitoring.sharing";
+	public static final String MONITORING_UNSHARING_QUEUE_NAME = "symbIoTe.rh.monitoring.unsharing";
 	
 	public static final String RESOURCE_REGISTRATION_KEY = "symbiote.rh.resource_registration";
 	public static final String RESOURCE_UNREGISTRATION_KEY = "symbiote.rh.resource_unregistration";
-	public static final String RESOURCE_UPDATE_KEY = "symbiote.rh.resource_update";
+	
+	public static final String RESOURCE_SHARING_KEY = "symbiote.rh.resource_sharing";
+	public static final String RESOURCE_UNSHARING_KEY = "symbiote.rh.resource_unsharing";
 	
 }

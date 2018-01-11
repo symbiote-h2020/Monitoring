@@ -50,7 +50,7 @@ public class CRAMRestDummyServer {
 //	  logger.info("User trying to createResources platformId"+platformId);
 //      //List<CloudResource> resources = gson.fromJson(new String(message.getBody()),  new TypeToken<ArrayList<CloudResource>>(){}.getType());
 //
-//      List<CloudResource> result = resources.stream().map(resource -> { resource.setId("symbiote"+resource.getName()); return resource;})
+//      List<CloudResource> result = resources.stream().map(resources -> { resources.setId("symbiote"+resources.getName()); return resources;})
 //      .collect(Collectors.toList());
 //
 //	  return result;
@@ -61,7 +61,7 @@ public class CRAMRestDummyServer {
 //	  logger.info("User trying to ypdateResources platformId"+platformId);
 //      //List<CloudResource> resources = gson.fromJson(new String(message.getBody()),  new TypeToken<ArrayList<CloudResource>>(){}.getType());
 //
-//      List<CloudResource> result = resources.stream().map(resource -> { resource.setId("symbiote"+resource.getName()); return resource;})
+//      List<CloudResource> result = resources.stream().map(resources -> { resources.setId("symbiote"+resources.getName()); return resources;})
 //      .collect(Collectors.toList());
 //
 //	  return result;

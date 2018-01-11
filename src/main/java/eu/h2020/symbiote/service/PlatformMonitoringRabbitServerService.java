@@ -1,5 +1,7 @@
 package eu.h2020.symbiote.service;
 
+import eu.h2020.symbiote.beans.FederationInfo;
+import eu.h2020.symbiote.cloud.model.FederatedResource;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.constants.MonitoringConstants;
 import eu.h2020.symbiote.db.CloudResourceRepository;
@@ -39,8 +41,8 @@ public class PlatformMonitoringRabbitServerService {
    * @param resources List of resources to add process
    */
   @RabbitListener(bindings = @QueueBinding(
-      value = @Queue(value = MonitoringConstants.MONITORING_QUEUE_NAME, durable = "true",
-          exclusive = "false", autoDelete = "false"),
+      value = @Queue(value = MonitoringConstants.MONITORING_REGISTRATION_QUEUE_NAME, durable = "true",
+          exclusive = "true", autoDelete = "true"),
       exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_RH, durable = "true"),
       key = MonitoringConstants.RESOURCE_REGISTRATION_KEY)
   )
@@ -49,8 +51,8 @@ public class PlatformMonitoringRabbitServerService {
   }
   
   @RabbitListener(bindings = @QueueBinding(
-      value = @Queue(value = MonitoringConstants.MONITORING_QUEUE_NAME, durable = "true",
-          exclusive = "false", autoDelete = "false"),
+      value = @Queue(value = MonitoringConstants.MONITORING_UNREGISTRATION_QUEUE_NAME, durable = "true",
+          exclusive = "true", autoDelete = "true"),
       exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_RH, durable = "true"),
       key = MonitoringConstants.RESOURCE_UNREGISTRATION_KEY)
   )
@@ -60,5 +62,47 @@ public class PlatformMonitoringRabbitServerService {
       coreRepository.delete(resourceId);
     }
 
+  }
+  
+  @RabbitListener(bindings = @QueueBinding(
+      value = @Queue(value = MonitoringConstants.MONITORING_SHARING_QUEUE_NAME, durable = "true",
+          exclusive = "true", autoDelete = "true"),
+      exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_RH, durable = "true"),
+      key = MonitoringConstants.RESOURCE_SHARING_KEY)
+  )
+  public void resourceSharing(@Payload FederatedResource resources) {
+    FederationInfo fedInfo = federationRepository.findOne(resources.getIdFederation());
+    
+    if (fedInfo == null) {
+      fedInfo = new FederationInfo();
+      fedInfo.setFederationId(resources.getIdFederation());
+    }
+    
+    for (CloudResource resource : resources.getResources()) {
+      fedInfo.getResources().put(resource.getInternalId(), resources.getSharingDate());
+    }
+    
+    federationRepository.save(fedInfo);
+  }
+  
+  @RabbitListener(bindings = @QueueBinding(
+      value = @Queue(value = MonitoringConstants.MONITORING_UNSHARING_QUEUE_NAME, durable = "true",
+          exclusive = "true", autoDelete = "true"),
+      exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_RH, durable = "true"),
+      key = MonitoringConstants.RESOURCE_UNSHARING_KEY)
+  )
+  public void resourceUnsharing(@Payload FederatedResource resources) {
+    
+    FederationInfo fedInfo = federationRepository.findOne(resources.getIdFederation());
+    
+    if (fedInfo != null) {
+      resources.getResources().forEach(resource -> {
+        fedInfo.getResources().remove(resource.getInternalId());
+      });
+      
+      federationRepository.save(fedInfo);
+    }
+    
+    
   }
 }

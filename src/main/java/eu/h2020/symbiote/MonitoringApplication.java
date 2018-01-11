@@ -4,8 +4,6 @@ import eu.h2020.symbiote.constants.MonitoringConstants;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
@@ -40,26 +38,23 @@ public class MonitoringApplication {
   }
   
   @Bean
-  public Queue appQueueGeneric() {
-    return new Queue(MonitoringConstants.MONITORING_QUEUE_NAME,true, false, false);
+  public Queue registrationQueue() {
+    return new Queue(MonitoringConstants.MONITORING_REGISTRATION_QUEUE_NAME,true, true, true);
   }
   
   @Bean
-  public Binding declareBindingRegister() {
-    return BindingBuilder.bind(appQueueGeneric()).to(appExchange())
-               .with(MonitoringConstants.RESOURCE_REGISTRATION_KEY);
+  public Queue unegistrationQueue() {
+    return new Queue(MonitoringConstants.MONITORING_UNREGISTRATION_QUEUE_NAME,true, true, true);
   }
   
   @Bean
-  public Binding declareBindingUnregister() {
-    return BindingBuilder.bind(appQueueGeneric()).to(appExchange())
-               .with(MonitoringConstants.RESOURCE_UNREGISTRATION_KEY);
+  public Queue sharingQueue() {
+    return new Queue(MonitoringConstants.MONITORING_SHARING_QUEUE_NAME,true, true, true);
   }
   
   @Bean
-  public Binding declareBindingUpdate() {
-    return BindingBuilder.bind(appQueueGeneric()).to(appExchange())
-               .with(MonitoringConstants.RESOURCE_UPDATE_KEY);
+  public Queue unSharingQueue() {
+    return new Queue(MonitoringConstants.MONITORING_UNSHARING_QUEUE_NAME,true, true, true);
   }
   
   @Bean
