@@ -4,6 +4,7 @@ public class MonitoringConstants {
 	
 	public static final String AVAILABILITY_TAG = "availability";
 	public static final String LOAD_TAG = "load";
+	public static final String ALL_QUALIFIER = "all";
 
 	public static final String PUBLISH_MONITORING_DATA = "crm/monitoring/{platformId}/devices/status";
 	public static final String METRICS_DATA = "monitoring/metrics";

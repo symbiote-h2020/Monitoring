@@ -92,12 +92,8 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-web')
     compile('org.springframework.boot:spring-boot-starter-data-mongodb')
 
-    // http libraries to develop icinga2 REST client
-    compile ('commons-httpclient:commons-httpclient:3.1')
-    compile ('org.eclipse.persistence:org.eclipse.persistence.moxy:2.5.0')
-
     compile('org.mongodb:mongodb-driver:3.6.0')
-    compile('org.mongodb:mongo-java-driver:3.6.0')
+    compile('org.apache.commons:commons-lang3:3.4')
 
     // Use JUnit4
     testCompile 'junit:junit:4.12'

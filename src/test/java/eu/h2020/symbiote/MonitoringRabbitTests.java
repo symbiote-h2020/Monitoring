@@ -156,14 +156,15 @@ public class MonitoringRabbitTests {
       assert fedId < NUM_FEDERATIONS;
       assert federation.getResources().size() == totalResources/2;
     
-      federation.getResources().forEach((resourceId, date) -> {
+      federation.getResources().forEach((resourceId, value) -> {
         int resId = Integer.valueOf(resourceId);
       
         assert resId % 2 == fedId % 2;
-        assert date != null;
+        assert value != null;
+        assert value.getDate() != null;
         
         if (resId >= resourceStart && resId < resourceEnd) {
-          assert date.equals(fedInfo.getSharingDate());
+          assert value.getDate().equals(fedInfo.getSharingDate());
         }
       
       });

@@ -1,7 +1,7 @@
 package eu.h2020.symbiote.utils;
 
 import eu.h2020.symbiote.beans.CloudMonitoringResource;
-import eu.h2020.symbiote.beans.TimedValue;
+import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 
 import java.time.Instant;

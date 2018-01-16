@@ -6,6 +6,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.BsonField;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
@@ -13,18 +14,21 @@ import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 
 import eu.h2020.symbiote.beans.CloudMonitoringResource;
-import eu.h2020.symbiote.beans.TimedValue;
+import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
+import eu.h2020.symbiote.cloud.monitoring.model.AggregationOperation;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
+import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
 import eu.h2020.symbiote.compat.FiltersCompat;
 import eu.h2020.symbiote.compat.ProjectionsCompat;
 import eu.h2020.symbiote.utils.MonitoringUtils;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;
-import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -37,6 +41,8 @@ public class MongoDbMonitoringBackend {
   public static final String FIRST_DAY = "firstDay";
   public static final String LAST_DAY = "lastDay";
   public static final String TAG = "tag";
+  public static final String DATE = "date";
+  public static final String VALUE = "value";
   private MongoCollection<Document> collection;
   private MongoClient client;
   
@@ -45,7 +51,7 @@ public class MongoDbMonitoringBackend {
         MongoClientOptions.builder().codecRegistry(
             CodecRegistries.fromRegistries(
                 MongoClient.getDefaultCodecRegistry(),
-                CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build())
+                CodecRegistries.fromProviders(new CustomPojoCodecProvider())
         )).build());
     this.collection = client.getDatabase(database).getCollection(collection);
   }
@@ -69,7 +75,7 @@ public class MongoDbMonitoringBackend {
       String resourceId = resource.getResource();
       resource.getMetrics().forEach((metric, days) -> {
         days.forEach((day, values) -> {
-        
+          
           ops.add(new UpdateOneModel<>(
               new Document("_id", resourceId),
               new Document("$push",
@@ -77,6 +83,7 @@ public class MongoDbMonitoringBackend {
                       new Document("$each", values))),
               new UpdateOptions().upsert(true)));
         });
+        
       });
     });
   
@@ -94,6 +101,96 @@ public class MongoDbMonitoringBackend {
       }
     }
     return result;
+  }
+  
+  public List<DeviceMetric> getMetrics(List<String> devices, List<String> metrics,
+                                       Date startDate, Date endDate) {
+    
+    List<DeviceMetric> result = new ArrayList<>();
+    
+    collection.aggregate(getRawPipeline(devices, metrics, startDate, endDate), DeviceMetric.class)
+        .into(result);
+    
+    return result;
+  }
+  
+  public List<AggregatedMetrics> getAggregatedMetrics(List<String> devices, List<String> metrics,
+                                                      Date startDate, Date endDate,
+                                                      List<AggregationOperation> operations,
+                                                      List<String> counts) {
+    
+    List<Bson> pipeline = getRawPipeline(devices, metrics, startDate, endDate);
+    
+    pipeline.add(Aggregates.group(new Document()
+                                      .append(DEVICE_ID, field(DEVICE_ID))
+                                      .append(TAG, field(TAG)),
+        getAggregatedFields(operations, counts)));
+    
+    List<Bson> projections = new ArrayList<>();
+    
+    projections.add(Projections.include("values"));
+    projections.add(Projections.computed(DEVICE_ID, "$_id."+DEVICE_ID));
+    projections.add(Projections.computed(TAG, "$_id."+TAG));
+    
+    for (AggregationOperation operation : operations) {
+      projections.add(
+          Projections.computed(
+              "statistics."+operation.toString(), field(operation.toString())));
+    }
+    
+    for (String count : counts) {
+      projections.add(Projections.computed("counts."+count, field(count)));
+    }
+    
+    pipeline.add(Aggregates.project(
+        Projections.fields(projections)));
+    
+    List<AggregatedMetrics> result = new ArrayList<>();
+    collection.aggregate(pipeline, AggregatedMetrics.class).into(result);
+    return result;
+    
+  }
+  
+  private List<BsonField> getAggregatedFields(List<AggregationOperation> operations,
+                                              List<String> counts) {
+    List<BsonField> fields = new ArrayList<>();
+    
+    fields.add(new BsonField("values",
+        new Document().append("$push",
+            new Document().append(DATE, field(DATE))
+                .append(VALUE, field(VALUE)))));
+    
+    for (AggregationOperation operation : operations) {
+      fields.add(new BsonField(operation.toString(),
+          new Document(field(operation.toString()),field(VALUE))));
+    }
+    
+    for (String count : counts) {
+      Double doubleValue = null;
+      if (NumberUtils.isParsable(count)) {
+        doubleValue = new Double(count);
+      }
+      fields.add(new BsonField(count,
+          new Document().append("$sum",
+              new Document().append("$cond",
+                  new Document().append("if",
+                      new Document("$eq",
+                          Arrays.asList(field(VALUE), (doubleValue!= null)?doubleValue:count)))
+                      .append("then",1).append("else",0)))));
+    }
+    
+    return fields;
+  }
+  
+  private Document getStatistics(List<AggregationOperation> operations) {
+    Document statistics = new Document();
+    
+    operations.forEach(operation -> {
+      statistics.append(operation.toString(),
+          new Document(field(operation.toString()), field(VALUE)));
+    });
+    
+    return statistics;
   }
   
   private Collection<DeviceMetric> getMetricsFromOperation(UpdateOneModel operation) {
@@ -139,9 +236,8 @@ public class MongoDbMonitoringBackend {
     return field + "Obj";
   }
   
-  public List<DeviceMetric> getMetrics(List<String> devices, List<String> metrics,
-                                Date startDate, Date endDate) {
-  
+  protected List<Bson> getRawPipeline(List<String> devices, List<String> metrics,
+                                      Date startDate, Date endDate) {
     List<Bson> pipeline = new ArrayList<>();
   
     if (devices != null && !devices.isEmpty()) {
@@ -153,7 +249,7 @@ public class MongoDbMonitoringBackend {
         Projections.computed(DEVICE_METRICS,
             ProjectionsCompat.objectToArray(field(DEVICE_METRICS)))
     )));
-    
+  
     if (metrics != null && !metrics.isEmpty()) {
       pipeline.add(Aggregates.project(Projections.fields(
           Projections.include(DEVICE_ID, DEVICE_METRICS),
@@ -165,11 +261,11 @@ public class MongoDbMonitoringBackend {
   
     pipeline.add(Aggregates.unwind(field(DEVICE_METRICS)));
   
-    
-    
+  
+  
     if (startDate  != null && endDate != null
             && MonitoringUtils.getDateWithoutTime(startDate).equals(
-                MonitoringUtils.getDateWithoutTime(endDate))) {
+        MonitoringUtils.getDateWithoutTime(endDate))) {
       // Special shortcut. We can shortcut here as we only need to filter one day
       return getDayMetrics(startDate, endDate, pipeline);
     }
@@ -177,7 +273,7 @@ public class MongoDbMonitoringBackend {
     Document rangeCondition = manageDate(startDate, FIRST_DAY, pipeline);
   
     Document endCondition = manageDate(endDate, LAST_DAY, pipeline);
-    
+  
     if (rangeCondition != null && endCondition != null) {
       rangeCondition = FiltersCompat.and(rangeCondition, endCondition);
     } else {
@@ -194,7 +290,7 @@ public class MongoDbMonitoringBackend {
         Projections.computed(obj(FIRST_DAY), ProjectionsCompat.arrayAsObject(field(FIRST_DAY))),
         Projections.computed(obj(LAST_DAY), ProjectionsCompat.arrayAsObject(field(LAST_DAY)))
     )));
-    
+  
     if (rangeCondition != null) {
       pipeline.add(Aggregates.project(Projections.fields(
           Projections.include(DEVICE_ID, TAG, obj(FIRST_DAY), obj(LAST_DAY)),
@@ -209,24 +305,22 @@ public class MongoDbMonitoringBackend {
         Projections.computed("total",
             ProjectionsCompat.concatArrays(field(obj(FIRST_DAY)), "$values", field(obj(LAST_DAY))))
     )));
-    
+  
     pipeline.add(Aggregates.unwind("$total"));
-    
+  
     pipeline.add(Aggregates.unwind("$total.v"));
-    
+  
     pipeline.add(Aggregates.project(Projections.fields(
         Projections.include(DEVICE_ID, TAG),
-        Projections.computed("date", "$total.v.date"),
-        Projections.computed("value", "$total.v.value")
+        Projections.computed(DATE, "$total.v.date"),
+        Projections.computed(VALUE, "$total.v.value")
     )));
     
-    List<DeviceMetric> result = new ArrayList<>();
+    return pipeline;
     
-    collection.aggregate(pipeline, DeviceMetric.class).into(result);
-    return result;
   }
   
-  private List<DeviceMetric> getDayMetrics(Date startDate, Date endDate, List<Bson> pipeline) {
+  private List<Bson> getDayMetrics(Date startDate, Date endDate, List<Bson> pipeline) {
     pipeline.add(Aggregates.project(Projections.fields(
         Projections.include(DEVICE_ID),
         Projections.computed(TAG, field(DEVICE_METRICS+".k")),
@@ -247,12 +341,7 @@ public class MongoDbMonitoringBackend {
         Projections.computed("value", "$total.value")
     )));
     
-    //debug = debugPipeline(pipeline);
-    
-    List<DeviceMetric> metrics = new ArrayList<>();
-    
-    collection.aggregate(pipeline, DeviceMetric.class).into(metrics);
-    return metrics;
+    return pipeline;
   }
   
   private Document manageDate(Date date, String field, List<Bson> pipeline) {

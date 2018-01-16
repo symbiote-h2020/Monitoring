@@ -1,5 +1,7 @@
 package eu.h2020.symbiote.beans;
 
+import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
+
 import org.springframework.data.annotation.Id;
 
 import java.util.HashMap;

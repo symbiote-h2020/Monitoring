@@ -1,6 +1,9 @@
 package eu.h2020.symbiote;
 
+import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
+import eu.h2020.symbiote.cloud.monitoring.model.AggregationOperation;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
+import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
 import eu.h2020.symbiote.db.MongoDbMonitoringBackend;
 import eu.h2020.symbiote.utils.MonitoringTestUtils;
 
@@ -12,7 +15,10 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.DoubleSummaryStatistics;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MongoBackendTest {
 
@@ -152,5 +158,175 @@ public class MongoBackendTest {
     });
     
   }
-
+  
+  @Test
+  public void testAggregations() {
+  
+    List<String> devices = new ArrayList<>();
+    List<String> tags = new ArrayList<>();
+    
+    for (int i = 0; i < NUM_DEVICES/2; i++) {
+      devices.add(MonitoringTestUtils.DEVICE_PF+i);
+    }
+    
+    for (int i=0; i < NUM_TAGS/2; i++) {
+      tags.add(MonitoringTestUtils.TAG_PF+i);
+    }
+  
+    ZonedDateTime start = firstDate.plusDays(1).plusMinutes(1);
+    Date startDate = Date.from(start.toInstant());
+  
+    ZonedDateTime end = lastDate.minusDays(1).minusMinutes(1);
+    Date endDate = Date.from(end.toInstant());
+  
+    List<DeviceMetric> raw = MonitoringTestUtils.benchmark("Get by full query several metrics",
+        () -> backend.getMetrics(devices,tags, startDate, endDate));
+  
+    assert raw.size() == (NUM_DEVICES/2 * NUM_TAGS/2) * ((NUM_DAYS * NUM_METRICS_PER_DAY) - 2*(NUM_METRICS_PER_DAY + 1));
+    raw.forEach(metric -> {
+    
+      assert devices.contains(metric.getDeviceId());
+      assert tags.contains(metric.getTag());
+    
+      ZonedDateTime metricDate = ZonedDateTime.ofInstant(metric.getDate().toInstant(), ZoneId.of("UTC"));
+    
+      assert (start.isBefore(metricDate) || start.isEqual(metricDate))
+                 && (end.isAfter(metricDate) || end.isEqual(metricDate));
+    
+    });
+    
+    List<AggregationOperation> operations = Arrays.asList(AggregationOperation.AVG, AggregationOperation.MAX);
+    List<String> counts = Arrays.asList("100", "50");
+  
+    Map<String, Map<String, AggregatedMetrics>> rawOrganized = aggregate(raw, operations, counts);
+    
+    List<AggregatedMetrics> aggregated = MonitoringTestUtils.benchmark("Get aggregated by full query",
+        () -> backend.getAggregatedMetrics(devices,tags, startDate, endDate, operations, counts));
+    
+    assert aggregated.size() == NUM_DEVICES/2 * NUM_TAGS/2;
+    
+    aggregated.forEach(aggregation -> {
+      assert devices.contains(aggregation.getDeviceId());
+      assert tags.contains(aggregation.getTag());
+      
+      assert aggregation.getValues().size() == (NUM_DAYS * NUM_METRICS_PER_DAY) - 2*(NUM_METRICS_PER_DAY + 1);
+      
+      assert rawOrganized.get(aggregation.getDeviceId()) != null;
+      
+      assert rawOrganized.get(aggregation.getDeviceId()).get(aggregation.getTag()) != null;
+      
+      compareAggregations(rawOrganized.get(aggregation.getDeviceId()).get(aggregation.getTag()), aggregation);
+      
+    });
+    
+  }
+  
+  private void compareAggregations(AggregatedMetrics toCompare, AggregatedMetrics aggregation) {
+    assert toCompare != null;
+    
+    assert toCompare.getDeviceId().equals(aggregation.getDeviceId());
+    
+    assert toCompare.getTag().equals(aggregation.getTag());
+    
+    assert toCompare.getValues().size() == aggregation.getValues().size();
+    
+    compareValues(toCompare.getValues(), aggregation.getValues());
+    
+    compareMap(toCompare.getStatistics(), aggregation.getStatistics());
+  
+    compareMap(toCompare.getCounts(), aggregation.getCounts());
+  }
+  
+  private <T> void  compareMap(Map<String, T> toCompare, Map<String, T> map) {
+    
+    toCompare.forEach((key, value) -> {
+      map.get(key).equals(value);
+    });
+    
+  }
+  
+  private void compareValues(List<TimedValue> toCompare, List<TimedValue> values) {
+    
+    List<TimedValue> toRemove = new ArrayList<>(toCompare);
+    
+    values.forEach(value -> {
+      toRemove.removeIf(comparison -> {
+        return value.getDate().equals(comparison.getDate()) && value.getValue().equals(comparison.getValue());
+      });
+    });
+    
+    assert toRemove.isEmpty();
+  }
+  
+  Map<String, Map<String, AggregatedMetrics>> aggregate(List<DeviceMetric> raw, List<AggregationOperation> operations, List<String> counts) {
+    Map<String, Map<String, AggregatedMetrics>> result = new HashMap<>();
+    
+    raw.forEach(deviceMetric -> {
+      Map<String, AggregatedMetrics> deviceMetrics = result.get(deviceMetric.getDeviceId());
+      if (deviceMetrics == null) {
+        deviceMetrics = new HashMap<>();
+        result.put(deviceMetric.getDeviceId(), deviceMetrics);
+      }
+      
+      AggregatedMetrics tagMetrics = deviceMetrics.get(deviceMetric.getTag());
+      if (tagMetrics == null) {
+        tagMetrics = new AggregatedMetrics();
+        tagMetrics.setDeviceId(deviceMetric.getDeviceId());
+        tagMetrics.setTag(deviceMetric.getTag());
+        deviceMetrics.put(deviceMetric.getTag(), tagMetrics);
+      }
+      
+      addMetric(deviceMetric, tagMetrics, counts);
+      
+    });
+    
+    result.values().forEach(tag -> {
+      tag.values().forEach(aggregation -> {
+        DoubleSummaryStatistics statistics = aggregation.getValues().stream()
+                                                 .mapToDouble(value -> new Double(value.getValue()))
+                                                 .summaryStatistics();
+        operations.forEach(operation -> {
+          Double value = null;
+          switch (operation) {
+            case AVG:
+              value = statistics.getAverage();
+              break;
+            case MAX:
+              value = statistics.getMax();
+              break;
+            case MIN:
+              value = statistics.getMin();
+              break;
+            case SUM:
+              value = statistics.getSum();
+              break;
+          }
+          aggregation.getStatistics().put(operation.toString(), value);
+        });
+      });
+    });
+    
+    return result;
+  }
+  
+  private void addMetric(DeviceMetric deviceMetric, AggregatedMetrics tagMetrics, List<String> counts) {
+  
+    TimedValue value = new TimedValue();
+    value.setDate(deviceMetric.getDate());
+    value.setValue(deviceMetric.getValue());
+    
+    tagMetrics.getValues().add(value);
+    
+    for (String count : counts) {
+      if (count.equals(deviceMetric.getValue())) {
+        Integer actual = tagMetrics.getCounts().get(count);
+        if (actual == null) {
+          tagMetrics.getCounts().put(count, 0);
+        } else {
+          tagMetrics.getCounts().put(count, actual + 1);
+        }
+      }
+    }
+  }
+  
 }

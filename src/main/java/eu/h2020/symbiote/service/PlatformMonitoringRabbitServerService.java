@@ -1,6 +1,7 @@
 package eu.h2020.symbiote.service;
 
 import eu.h2020.symbiote.beans.FederationInfo;
+import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
 import eu.h2020.symbiote.cloud.model.FederatedResource;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.constants.MonitoringConstants;
@@ -79,7 +80,14 @@ public class PlatformMonitoringRabbitServerService {
     }
     
     for (CloudResource resource : resources.getResources()) {
-      fedInfo.getResources().put(resource.getInternalId(), resources.getSharingDate());
+  
+      TimedValue value = new TimedValue();
+      value.setDate(resources.getSharingDate());
+      if (resource.getParams() != null) {
+        value.setValue(resource.getParams().getType());
+      }
+      
+      fedInfo.getResources().put(resource.getInternalId(), value);
     }
     
     federationRepository.save(fedInfo);
