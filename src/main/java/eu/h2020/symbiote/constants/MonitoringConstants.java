@@ -7,7 +7,9 @@ public class MonitoringConstants {
 	public static final String ALL_QUALIFIER = "all";
 
 	public static final String PUBLISH_MONITORING_DATA = "crm/monitoring/{platformId}/devices/status";
-	public static final String METRICS_DATA = "monitoring/metrics";
+	public static final String METRICS_DATA = "monitoring/metrics/raw";
+	public static final String AGGREGATED_DATA = "monitoring/metrics/aggregated";
+	public static final String SUMMARY_DATA = "monitoring/metrics/summary";
 	
 	public static final String EXCHANGE_NAME_RH = "symbIoTe.rh";
 

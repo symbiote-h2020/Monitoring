@@ -132,14 +132,18 @@ public class MongoDbMonitoringBackend {
     projections.add(Projections.computed(DEVICE_ID, "$_id."+DEVICE_ID));
     projections.add(Projections.computed(TAG, "$_id."+TAG));
     
-    for (AggregationOperation operation : operations) {
-      projections.add(
-          Projections.computed(
-              "statistics."+operation.toString(), field(operation.toString())));
+    if (operations != null) {
+      for (AggregationOperation operation : operations) {
+        projections.add(
+            Projections.computed(
+                "statistics." + operation.toString(), field(operation.toString())));
+      }
     }
     
-    for (String count : counts) {
-      projections.add(Projections.computed("counts."+count, field(count)));
+    if (counts != null) {
+      for (String count : counts) {
+        projections.add(Projections.computed("counts." + count, field(count)));
+      }
     }
     
     pipeline.add(Aggregates.project(
@@ -160,23 +164,27 @@ public class MongoDbMonitoringBackend {
             new Document().append(DATE, field(DATE))
                 .append(VALUE, field(VALUE)))));
     
-    for (AggregationOperation operation : operations) {
-      fields.add(new BsonField(operation.toString(),
-          new Document(field(operation.toString()),field(VALUE))));
+    if (operations != null) {
+      for (AggregationOperation operation : operations) {
+        fields.add(new BsonField(operation.toString(),
+            new Document(field(operation.toString()), field(VALUE))));
+      }
     }
     
-    for (String count : counts) {
-      Double doubleValue = null;
-      if (NumberUtils.isParsable(count)) {
-        doubleValue = new Double(count);
+    if (counts != null) {
+      for (String count : counts) {
+        Double doubleValue = null;
+        if (NumberUtils.isParsable(count)) {
+          doubleValue = new Double(count);
+        }
+        fields.add(new BsonField(count,
+            new Document().append("$sum",
+                new Document().append("$cond",
+                    new Document().append("if",
+                        new Document("$eq",
+                            Arrays.asList(field(VALUE), (doubleValue != null) ? doubleValue : count)))
+                        .append("then", 1).append("else", 0)))));
       }
-      fields.add(new BsonField(count,
-          new Document().append("$sum",
-              new Document().append("$cond",
-                  new Document().append("if",
-                      new Document("$eq",
-                          Arrays.asList(field(VALUE), (doubleValue!= null)?doubleValue:count)))
-                      .append("then",1).append("else",0)))));
     }
     
     return fields;

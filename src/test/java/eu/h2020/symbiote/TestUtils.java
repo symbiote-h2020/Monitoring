@@ -10,17 +10,17 @@ import java.util.List;
 public class TestUtils {
   
   public static final String SYMBIOTE_PREFIX = "symbiote_";
-  public static final String RESOURCE_TYPE = "type1";
+  public static final String RESOURCE_TYPE = "type";
   
-  public static CloudResource createResource(String id) {
+  public static CloudResource createResource(String id, String type) {
     CloudResource resource = new CloudResource();
-    
+  
     resource.setInternalId(id);
-    
+  
     CloudResourceParams params = new CloudResourceParams();
-    params.setType(RESOURCE_TYPE);
+    params.setType(type);
     resource.setParams(params);
-    
+  
     Resource r = new Resource();
     r.setId(SYMBIOTE_PREFIX+id);
     r.setInterworkingServiceURL("http://tests.io/interworking/url");
@@ -33,8 +33,13 @@ public class TestUtils {
     labels.add("label2");
 //		r.setLabels(labels);
     resource.setResource(r);
-    
+  
     return resource;
+  
+  }
+  
+  public static CloudResource createResource(String id) {
+    return createResource(id, RESOURCE_TYPE+"1");
   }
   
 }
