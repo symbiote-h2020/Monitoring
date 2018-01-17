@@ -1,12 +1,12 @@
-package eu.h2020.symbiote;
+package eu.h2020.symbiote.monitoring.tests;
 
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
-import eu.h2020.symbiote.db.CloudResourceRepository;
-import eu.h2020.symbiote.db.ResourceMetricsRepository;
-import eu.h2020.symbiote.rest.crm.MonitoringClient;
-import eu.h2020.symbiote.service.MetricsProcessor;
-import eu.h2020.symbiote.utils.MonitoringTestUtils;
+import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
+import eu.h2020.symbiote.monitoring.db.ResourceMetricsRepository;
+import eu.h2020.symbiote.monitoring.crm.MonitoringClient;
+import eu.h2020.symbiote.monitoring.service.MetricsProcessor;
+import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
 
 import feign.Feign;
 import feign.jackson.JacksonDecoder;
@@ -39,7 +39,7 @@ import java.util.List;
     "symbIoTe.coreaam.url=http://localhost:8083"})
 public class MetricsProcessorTests {
   
-  private interface Benchmark<T> extends eu.h2020.symbiote.utils.Benchmark<T> {
+  private interface Benchmark<T> extends eu.h2020.symbiote.monitoring.tests.utils.Benchmark<T> {
   }
   
   public static final String MONITORING_URL = "http://localhost:18033";

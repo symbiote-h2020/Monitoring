@@ -1,4 +1,4 @@
-package eu.h2020.symbiote;
+package eu.h2020.symbiote.monitoring.tests;
 
 import eu.h2020.symbiote.cloud.model.CloudResourceParams;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;

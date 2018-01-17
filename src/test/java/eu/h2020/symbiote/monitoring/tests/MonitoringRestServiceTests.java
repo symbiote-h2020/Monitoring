@@ -1,16 +1,16 @@
-package eu.h2020.symbiote;
+package eu.h2020.symbiote.monitoring.tests;
 
-import eu.h2020.symbiote.beans.FederationInfo;
+import eu.h2020.symbiote.monitoring.beans.FederationInfo;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregationOperation;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
-import eu.h2020.symbiote.db.CloudResourceRepository;
-import eu.h2020.symbiote.db.FederationInfoRepository;
-import eu.h2020.symbiote.db.MongoDbMonitoringBackend;
-import eu.h2020.symbiote.rest.crm.MonitoringClient;
-import eu.h2020.symbiote.utils.MonitoringTestUtils;
+import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
+import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
+import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
+import eu.h2020.symbiote.monitoring.crm.MonitoringClient;
+import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
 
 import feign.Feign;
 import feign.jackson.JacksonDecoder;

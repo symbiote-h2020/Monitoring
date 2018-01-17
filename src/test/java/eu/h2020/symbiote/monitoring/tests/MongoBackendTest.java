@@ -1,11 +1,11 @@
-package eu.h2020.symbiote;
+package eu.h2020.symbiote.monitoring.tests;
 
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregationOperation;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
-import eu.h2020.symbiote.db.MongoDbMonitoringBackend;
-import eu.h2020.symbiote.utils.MonitoringTestUtils;
+import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
+import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -155,6 +155,25 @@ public class MongoBackendTest {
       assert (start.isBefore(metricDate) || start.isEqual(metricDate))
                  && (end.isAfter(metricDate) || end.isEqual(metricDate));
       
+    });
+  
+    startDate.setTime(firstDate.plusMinutes(1).toInstant().toEpochMilli());
+    endDate.setTime(firstDate.plusMinutes(NUM_METRICS_PER_DAY-2).toInstant().toEpochMilli());
+  
+    metrics = MonitoringTestUtils.benchmark("Get by single day",
+        () ->  backend.getMetrics(Arrays.asList(deviceId),
+            Arrays.asList(tag), startDate, endDate));
+    
+    assert metrics.size() == NUM_METRICS_PER_DAY-2;
+  
+    metrics.forEach(metric -> {
+    
+      assert deviceId.equals(metric.getDeviceId());
+      assert tag.equals(metric.getTag());
+    
+      assert (startDate.before(metric.getDate()) || startDate.equals(metric.getDate()))
+                 && (endDate.after(metric.getDate()) || endDate.equals(metric.getDate()));
+    
     });
     
   }
