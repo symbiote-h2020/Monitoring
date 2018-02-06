@@ -7,7 +7,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -56,12 +55,6 @@ public class MonitoringApplication {
   public Queue unSharingQueue() {
     return new Queue(MonitoringConstants.MONITORING_UNSHARING_QUEUE_NAME,true, true, true);
   }
-  
-  @Bean
-  public Jackson2JsonMessageConverter converter() {
-    return new Jackson2JsonMessageConverter();
-  }
-  
 
 	public static void main(String[] args) {
 		

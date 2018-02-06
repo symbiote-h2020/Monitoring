@@ -57,7 +57,7 @@ public class PlatformMonitoringRestService {
   @Value("${monitoring.mongo.uri:#{null}}")
   private String mongoUri;
   
-  @Value("${monitoring.mongo.database:#{symbiote-cloud-monitoring-database}}")
+  @Value("${monitoring.mongo.database:symbiote-cloud-monitoring-database}")
   private String mongoDatabase;
   
   @Autowired

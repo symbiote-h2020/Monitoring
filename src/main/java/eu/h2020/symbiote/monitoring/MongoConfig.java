@@ -16,16 +16,12 @@ public class MongoConfig extends AbstractMongoConfiguration {
     @Value("${monitoring.mongo.uri:#{null}}")
     private String mongoUri;
     
-    @Value("${monitoring.mongo.database:#{null}}")
+    @Value("${monitoring.mongo.database:symbiote-cloud-monitoring-database}")
     private String mongoDatabase;
 
     @Override
     protected String getDatabaseName() {
-        if (mongoDatabase != null) {
-            return mongoDatabase;
-        } else {
-            return "symbiote-cloud-monitoring-database";
-        }
+        return mongoDatabase;
     }
     
     @Override

@@ -1,8 +1,10 @@
 package eu.h2020.symbiote.monitoring.tests;
 
-import eu.h2020.symbiote.monitoring.beans.FederationInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import eu.h2020.symbiote.cloud.model.FederatedResource;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
+import eu.h2020.symbiote.monitoring.beans.FederationInfo;
 import eu.h2020.symbiote.monitoring.constants.MonitoringConstants;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
@@ -12,6 +14,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +62,8 @@ public class MonitoringRabbitTests {
   public static final int NUM_FEDERATIONS = 3;
   
   public static final int NUM_RESOURCES = 100;
+  
+  private ObjectMapper mapper = new ObjectMapper();
   
   @Before
   public void setup() throws IOException, TimeoutException {
@@ -215,7 +222,13 @@ public class MonitoringRabbitTests {
     return TestUtils.createResource(id);
   }
   
-  void sendResourceMessage(String key, Object message) throws Exception {
+  void sendResourceMessage(String key, Object toSend) throws Exception {
+  
+    MessageProperties properties = new MessageProperties();
+    properties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+    
+    Message message = MessageBuilder.withBody(mapper.writeValueAsBytes(toSend))
+                          .andProperties(properties).build();
     
     rabbitTemplate.convertAndSend(MonitoringConstants.EXCHANGE_NAME_RH, key, message);
     TimeUnit.SECONDS.sleep(1);

@@ -1,5 +1,8 @@
 package eu.h2020.symbiote.monitoring.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import eu.h2020.symbiote.monitoring.beans.FederationInfo;
 import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
 import eu.h2020.symbiote.cloud.model.FederatedResource;
@@ -10,6 +13,7 @@ import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
@@ -18,13 +22,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 
 @Service
 public class PlatformMonitoringRabbitServerService {
   
-  private static Log log = LogFactory.getLog(PlatformMonitoringRabbitServerService.class);
+  private static Log logger = LogFactory.getLog(PlatformMonitoringRabbitServerService.class);
   
   @Autowired
   CloudResourceRepository coreRepository;
@@ -32,6 +38,7 @@ public class PlatformMonitoringRabbitServerService {
   @Autowired
   FederationInfoRepository federationRepository;
   
+  private ObjectMapper mapper = new ObjectMapper();
   
   /**
    * Spring AMQP Listener for resource registration requests. This method is invoked when Registration
@@ -39,7 +46,7 @@ public class PlatformMonitoringRabbitServerService {
    * to the symbIoTe core. As soon as it receives a reply, it manually sends back the response
    * to the Registration Handler via the appropriate message queue by the use of the RestAPICallback.
    *
-   * @param resources List of resources to add process
+   * @param message List of resources to add process
    */
   @RabbitListener(bindings = @QueueBinding(
       value = @Queue(value = MonitoringConstants.MONITORING_REGISTRATION_QUEUE_NAME, durable = "true",
@@ -47,7 +54,8 @@ public class PlatformMonitoringRabbitServerService {
       exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_RH, durable = "true"),
       key = MonitoringConstants.RESOURCE_REGISTRATION_KEY)
   )
-  public void resourceRegistration(@Payload List<CloudResource> resources) {
+  public void resourceRegistration(@Payload Message message) {
+    List<CloudResource> resources = toList(message, new TypeReference<List<CloudResource>>() {});
     coreRepository.save(resources);
   }
   
@@ -57,8 +65,8 @@ public class PlatformMonitoringRabbitServerService {
       exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_RH, durable = "true"),
       key = MonitoringConstants.RESOURCE_UNREGISTRATION_KEY)
   )
-  public void resourceUnregistration(@Payload List<String> resources) {
-
+  public void resourceUnregistration(@Payload Message message) {
+    List<String> resources = toList(message, new TypeReference<List<String>>() {});
     for (String resourceId : resources) {
       coreRepository.delete(resourceId);
     }
@@ -71,26 +79,29 @@ public class PlatformMonitoringRabbitServerService {
       exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_RH, durable = "true"),
       key = MonitoringConstants.RESOURCE_SHARING_KEY)
   )
-  public void resourceSharing(@Payload FederatedResource resources) {
-    FederationInfo fedInfo = federationRepository.findOne(resources.getIdFederation());
-    
-    if (fedInfo == null) {
-      fedInfo = new FederationInfo();
-      fedInfo.setFederationId(resources.getIdFederation());
-    }
-    
-    for (CloudResource resource : resources.getResources()) {
+  public void resourceSharing(@Payload Message message) {
+    FederatedResource resources = toObject(message, FederatedResource.class);
+    if (resources != null) {
+      FederationInfo fedInfo = federationRepository.findOne(resources.getIdFederation());
   
-      TimedValue value = new TimedValue();
-      value.setDate(resources.getSharingDate());
-      if (resource.getParams() != null) {
-        value.setValue(resource.getParams().getType());
+      if (fedInfo == null) {
+        fedInfo = new FederationInfo();
+        fedInfo.setFederationId(resources.getIdFederation());
       }
-      
-      fedInfo.getResources().put(resource.getInternalId(), value);
-    }
+  
+      for (CloudResource resource : resources.getResources()) {
     
-    federationRepository.save(fedInfo);
+        TimedValue value = new TimedValue();
+        value.setDate(resources.getSharingDate());
+        if (resource.getParams() != null) {
+          value.setValue(resource.getParams().getType());
+        }
+    
+        fedInfo.getResources().put(resource.getInternalId(), value);
+      }
+  
+      federationRepository.save(fedInfo);
+    }
   }
   
   @RabbitListener(bindings = @QueueBinding(
@@ -99,18 +110,39 @@ public class PlatformMonitoringRabbitServerService {
       exchange = @Exchange(value = MonitoringConstants.EXCHANGE_NAME_RH, durable = "true"),
       key = MonitoringConstants.RESOURCE_UNSHARING_KEY)
   )
-  public void resourceUnsharing(@Payload FederatedResource resources) {
+  public void resourceUnsharing(@Payload Message message) {
+  
+    FederatedResource resources = toObject(message, FederatedResource.class);
+    if (resources != null) {
+      FederationInfo fedInfo = federationRepository.findOne(resources.getIdFederation());
+  
+      if (fedInfo != null) {
+        resources.getResources().forEach(resource -> {
+          fedInfo.getResources().remove(resource.getInternalId());
+        });
     
-    FederationInfo fedInfo = federationRepository.findOne(resources.getIdFederation());
-    
-    if (fedInfo != null) {
-      resources.getResources().forEach(resource -> {
-        fedInfo.getResources().remove(resource.getInternalId());
-      });
-      
-      federationRepository.save(fedInfo);
+        federationRepository.save(fedInfo);
+      }
+    }
+  }
+  
+  private <T> T toList(Message message, TypeReference<T> reference) {
+    try {
+      return mapper.readValue(message.getBody(), reference);
+    } catch (IOException e) {
+      logger.warn("Invalid JSON message received: " + message.getBody(), e);
     }
     
+    return (T) new ArrayList<Object>();
+  }
+  
+  private <T> T toObject(Message message, Class<T> clazz) {
+    try {
+      return mapper.readValue(message.getBody(), clazz);
+    } catch (IOException e) {
+      logger.warn("Invalid JSON message received: " + message.getBody(), e);
+    }
     
+    return null;
   }
 }
