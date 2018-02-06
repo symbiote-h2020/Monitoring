@@ -105,11 +105,15 @@ public class MonitoringTestUtils {
   }
   
   public static DeviceMetric generateMetric(String deviceId, String tag, int maxValue, Date date) {
+    return generateMetric(deviceId, tag, new Double(ThreadLocalRandom.current().nextInt(0,maxValue)), date);
+  }
+  
+  public static DeviceMetric generateMetric(String deviceId, String tag, double value, Date date) {
     DeviceMetric metric = new DeviceMetric();
     metric.setDeviceId(deviceId);
     metric.setDate(date);
     metric.setTag(tag);
-    metric.setValue(Integer.toString(ThreadLocalRandom.current().nextInt(0,maxValue)));
+    metric.setValue(Double.toString(value));
     return metric;
   }
   

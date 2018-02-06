@@ -81,7 +81,7 @@ public class PlatformMonitoringRabbitServerService {
   )
   public void resourceSharing(@Payload Message message) {
     FederatedResource resources = toObject(message, FederatedResource.class);
-    if (resources != null) {
+    if (resources != null && resources.getSharingDate() != null && resources.getResources() != null) {
       FederationInfo fedInfo = federationRepository.findOne(resources.getIdFederation());
   
       if (fedInfo == null) {
@@ -101,6 +101,8 @@ public class PlatformMonitoringRabbitServerService {
       }
   
       federationRepository.save(fedInfo);
+    } else {
+      logger.warn("Malformed resource sharing information received " + message.getBody());
     }
   }
   
@@ -113,7 +115,7 @@ public class PlatformMonitoringRabbitServerService {
   public void resourceUnsharing(@Payload Message message) {
   
     FederatedResource resources = toObject(message, FederatedResource.class);
-    if (resources != null) {
+    if (resources != null && resources.getResources() != null) {
       FederationInfo fedInfo = federationRepository.findOne(resources.getIdFederation());
   
       if (fedInfo != null) {
@@ -123,6 +125,8 @@ public class PlatformMonitoringRabbitServerService {
     
         federationRepository.save(fedInfo);
       }
+    } else {
+      logger.warn("Malformed resource sharing information received " + message.getBody());
     }
   }
   

@@ -2,12 +2,12 @@ package eu.h2020.symbiote.monitoring.service;
 
 import com.mongodb.bulk.BulkWriteResult;
 
-import eu.h2020.symbiote.monitoring.beans.CloudMonitoringResource;
-import eu.h2020.symbiote.monitoring.beans.FederationInfo;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregationOperation;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
+import eu.h2020.symbiote.monitoring.beans.CloudMonitoringResource;
+import eu.h2020.symbiote.monitoring.beans.FederationInfo;
 import eu.h2020.symbiote.monitoring.constants.MonitoringConstants;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
@@ -22,6 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -183,9 +185,10 @@ public class PlatformMonitoringRestService {
   }
   
   @RequestMapping(method = RequestMethod.GET, path = MonitoringConstants.SUMMARY_DATA, produces = "application/json", consumes = "application/json")
-  public Map<String, Double> getSummaryMetric(@RequestParam(value = "federation") String federationId,
-                                              @RequestParam(value = "metric") String inputMetric) {
-    
+  public ResponseEntity<?> getSummaryMetric(@RequestParam(value = "federation") String federationId,
+                                                             @RequestParam(value = "metric") String inputMetric) {
+    HttpStatus status = HttpStatus.OK;
+    String error = "";
     if (!StringUtils.isBlank(federationId) && !StringUtils.isBlank(inputMetric)) {
       String metric = inputMetric.toLowerCase();
       String tag = null;
@@ -217,24 +220,31 @@ public class PlatformMonitoringRestService {
           
           FederationInfo federationInfo = federationInfoRepository.findOne(federationId);
           if (federationInfo != null) {
-            return getAggregatedMetric(inputMetric, federationInfo, tag, duration, type);
+            return new ResponseEntity<>(
+                getAggregatedMetric(inputMetric, federationInfo, tag, duration, type), status);
           } else {
-            logger.error("Can't find information of federation " + federationId);
+            error = "Can't find information of federation " + federationId;
+            status = HttpStatus.NOT_FOUND;
           }
           
         } else {
-          logger.error("Non numeric or all duration " + duration);
+          error = "Non numeric or all duration " + duration;
+          status = HttpStatus.BAD_REQUEST;
         }
         
       } else {
-        logger.error("Received unknown metric " + metric);
+        error = "Received unknown metric " + metric;
+        status = HttpStatus.BAD_REQUEST;
       }
       
     } else {
-      logger.error("Received blank metric: " + inputMetric + "or federation id: " + federationId);
+      error = "Received blank metric: " + inputMetric + " or federation id: " + federationId;
+      status = HttpStatus.BAD_REQUEST;
     }
     
-    return null;
+    logger.error(error);
+    
+    return new ResponseEntity<>(error, status);
   }
   
   private Map<String, Double> getAggregatedMetric(String inputMetric, FederationInfo federationInfo, String tag, String duration, String type) {
