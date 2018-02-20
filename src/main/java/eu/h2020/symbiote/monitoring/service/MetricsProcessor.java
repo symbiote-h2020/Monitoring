@@ -1,37 +1,28 @@
 package eu.h2020.symbiote.monitoring.service;
 
-import eu.h2020.symbiote.monitoring.MongoConfig;
+import eu.h2020.symbiote.client.CRMRestService;
+import eu.h2020.symbiote.client.SymbioteClientFactory;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
+import eu.h2020.symbiote.monitoring.MongoConfig;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.MetricsRepository;
-import eu.h2020.symbiote.monitoring.crm.CRMRestService;
-import eu.h2020.symbiote.security.ComponentSecurityHandlerFactory;
-import eu.h2020.symbiote.security.commons.SecurityConstants;
 import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
-import eu.h2020.symbiote.security.communication.SymbioteAuthorizationClient;
-import eu.h2020.symbiote.security.handler.IComponentSecurityHandler;
-
-import feign.Client;
-import feign.Feign;
-import feign.jackson.JacksonDecoder;
-import feign.jackson.JacksonEncoder;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.PostConstruct;
 
 /**
  * This class implements the rest interfaces. Initially created by jose
@@ -92,30 +83,13 @@ public class MetricsProcessor {
   
   @PostConstruct
   private void createClient() throws SecurityHandlerException {
-    
-    Feign.Builder builder = Feign.builder()
-                                .decoder(new JacksonDecoder())
-                                .encoder(new JacksonEncoder());
-    if (useSecurity) {
-      IComponentSecurityHandler secHandler = ComponentSecurityHandlerFactory
-                                                 .getComponentSecurityHandler(
-                                                     coreAAMAddress, keystorePath, keystorePassword,
-                                                     clientId, localAAMAddress, false,
-                                                     username, password
-                                                 );
-      
-      Client client = new SymbioteAuthorizationClient(
-                                                         secHandler, "crm", SecurityConstants.CORE_AAM_INSTANCE_ID,
-                                                         new Client.Default(null, null));
-      
-      logger.info("Will use " + crmUrl + " to access to interworking interface");
-      builder = builder.client(client);
-    }
-    
-    jsonclient = builder.target(CRMRestService.class, crmUrl);
+
+    SymbioteClientFactory.SecurityConfiguration securityConfiguration = (useSecurity)?new SymbioteClientFactory.SecurityConfiguration(keystorePath, keystorePassword, clientId, platformId,
+            "crm", coreAAMAddress, username, password): null;
+    jsonclient = SymbioteClientFactory.createClient(crmUrl, CRMRestService.class,securityConfiguration);
   }
   
-  //@Scheduled(cron = "${symbiote.crm.publish.period}")
+  @Scheduled(cron = "${symbiote.crm.publish.period}")
   public void publishMonitoringDataCrm() throws Exception{
     jsonclient.doPost2Crm(platformId, getDataToSend());
     

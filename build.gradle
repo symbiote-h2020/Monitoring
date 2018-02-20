@@ -78,9 +78,9 @@ dependencies {
 
     //Security
     // usual dependency jar
-    compile('com.github.symbiote-h2020:SymbIoTeSecurity:22.+'){ changing = true }
+    compile('com.github.symbiote-h2020:SymbIoTeSecurity:24.+'){ changing = true }
     // sources workaround that allows to select the downloaded matching sources jar in IntelliJ Idea as it fails to do so automatically from JITPack repository.
-    compile('com.github.symbiote-h2020:SymbIoTeSecurity:22.+:sources'){ changing = true }
+    compile('com.github.symbiote-h2020:SymbIoTeSecurity:24.+:sources'){ changing = true }
     
 
     // Spring

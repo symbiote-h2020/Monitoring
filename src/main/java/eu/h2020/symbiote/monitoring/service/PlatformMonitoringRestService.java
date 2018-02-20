@@ -2,6 +2,7 @@ package eu.h2020.symbiote.monitoring.service;
 
 import com.mongodb.bulk.BulkWriteResult;
 
+import eu.h2020.symbiote.client.ClientConstants;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregationOperation;
@@ -91,7 +92,7 @@ public class PlatformMonitoringRestService {
   /**
    * Listen from Platform Host. Received device monitoring data
    */
-  @RequestMapping(method = RequestMethod.POST, path = MonitoringConstants.METRICS_DATA, produces = "application/json", consumes = "application/json")
+  @RequestMapping(method = RequestMethod.POST, path = ClientConstants.METRICS_DATA, produces = "application/json", consumes = "application/json")
   public @ResponseBody
   List<DeviceMetric> saveMetrics(@RequestBody List<DeviceMetric> metrics) throws Throwable {
     
@@ -136,7 +137,7 @@ public class PlatformMonitoringRestService {
     }
   }
   
-  @RequestMapping(method = RequestMethod.GET, path = MonitoringConstants.METRICS_DATA, produces = "application/json", consumes = "application/json")
+  @RequestMapping(method = RequestMethod.GET, path = ClientConstants.METRICS_DATA, produces = "application/json", consumes = "application/json")
   public @ResponseBody
   List<DeviceMetric> getMetrics(@RequestParam(value = "device", required = false) String device,
                                 @RequestParam(value = "metric", required = false) String metric,
@@ -155,7 +156,7 @@ public class PlatformMonitoringRestService {
     return backend.getMetrics(devices, metrics, startDate, endDate);
   }
   
-  @RequestMapping(method = RequestMethod.GET, path = MonitoringConstants.AGGREGATED_DATA, produces = "application/json", consumes = "application/json")
+  @RequestMapping(method = RequestMethod.GET, path = ClientConstants.AGGREGATED_DATA, produces = "application/json", consumes = "application/json")
   public @ResponseBody
   List<AggregatedMetrics> getAggregatedMetrics(@RequestParam(value = "device", required = false)
                                                    List<String> devices,
@@ -184,7 +185,7 @@ public class PlatformMonitoringRestService {
     return backend.getAggregatedMetrics(devices, metrics, startDate, endDate, ops, counts);
   }
   
-  @RequestMapping(method = RequestMethod.GET, path = MonitoringConstants.SUMMARY_DATA, produces = "application/json", consumes = "application/json")
+  @RequestMapping(method = RequestMethod.GET, path = ClientConstants.SUMMARY_DATA, produces = "application/json", consumes = "application/json")
   public ResponseEntity<?> getSummaryMetric(@RequestParam(value = "federation") String federationId,
                                                              @RequestParam(value = "metric") String inputMetric) {
     HttpStatus status = HttpStatus.OK;

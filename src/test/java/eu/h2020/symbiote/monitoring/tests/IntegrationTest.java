@@ -11,7 +11,7 @@ import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.model.mim.QoSMetric;
 import eu.h2020.symbiote.monitoring.constants.MonitoringConstants;
-import eu.h2020.symbiote.monitoring.crm.MonitoringClient;
+import eu.h2020.symbiote.client.MonitoringClient;
 import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
 
 import feign.Feign;

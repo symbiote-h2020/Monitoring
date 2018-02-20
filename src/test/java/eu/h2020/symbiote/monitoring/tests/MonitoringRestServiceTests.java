@@ -1,21 +1,18 @@
 package eu.h2020.symbiote.monitoring.tests;
 
-import eu.h2020.symbiote.monitoring.beans.FederationInfo;
+import eu.h2020.symbiote.client.MonitoringClient;
+import eu.h2020.symbiote.client.SymbioteClientFactory;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregationOperation;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
+import eu.h2020.symbiote.monitoring.beans.FederationInfo;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
 import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
-import eu.h2020.symbiote.monitoring.crm.MonitoringClient;
 import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
-
-import feign.Feign;
-import feign.jackson.JacksonDecoder;
-import feign.jackson.JacksonEncoder;
-
+import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,11 +23,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RunWith(SpringRunner.class)
@@ -72,11 +65,14 @@ public class MonitoringRestServiceTests {
     
     genResults = MonitoringTestUtils.generateMetrics(
         NUM_DEVICES, NUM_TAGS, NUM_DAYS, NUM_METRICS_PER_DAY);
-  
-    
-    client = Feign.builder().encoder(new JacksonEncoder()).decoder(new JacksonDecoder())
-                 .target(MonitoringClient.class, "http://localhost:18033");
-    
+
+
+    try {
+      client = SymbioteClientFactory.createClient("http://localhost:18033", MonitoringClient.class, null);
+    } catch (SecurityHandlerException e) {
+      e.printStackTrace();
+    }
+
   }
   
   @Test

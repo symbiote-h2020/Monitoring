@@ -1,17 +1,14 @@
 package eu.h2020.symbiote.monitoring.tests;
 
+import eu.h2020.symbiote.client.MonitoringClient;
+import eu.h2020.symbiote.client.SymbioteClientFactory;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.ResourceMetricsRepository;
-import eu.h2020.symbiote.monitoring.crm.MonitoringClient;
 import eu.h2020.symbiote.monitoring.service.MetricsProcessor;
 import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
-
-import feign.Feign;
-import feign.jackson.JacksonDecoder;
-import feign.jackson.JacksonEncoder;
-
+import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
@@ -80,12 +77,14 @@ public class MetricsProcessorTests {
     MonitoringTestUtils.GenerationResults metrics = MonitoringTestUtils
                                                         .generateMetrics(NUM_DEVICES + 2,
                                                             NUM_TAGS, NUM_DAYS, NUM_METRICS_PER_DAY);
-  
-    MonitoringClient client = Feign.builder()
-                                  .encoder(new JacksonEncoder())
-                                  .decoder(new JacksonDecoder()).target(MonitoringClient.class,
-            MONITORING_URL);
-    
+
+    MonitoringClient client = null;
+    try {
+      client = SymbioteClientFactory.createClient(MONITORING_URL, MonitoringClient.class, null);
+    } catch (SecurityHandlerException e) {
+      e.printStackTrace();
+    }
+
     client.postMetrics(metrics.getMetrics());
   }
   
