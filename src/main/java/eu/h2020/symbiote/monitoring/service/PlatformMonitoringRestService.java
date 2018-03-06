@@ -1,7 +1,6 @@
 package eu.h2020.symbiote.monitoring.service;
 
 import com.mongodb.bulk.BulkWriteResult;
-
 import eu.h2020.symbiote.client.ClientConstants;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
@@ -10,12 +9,7 @@ import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.monitoring.beans.CloudMonitoringResource;
 import eu.h2020.symbiote.monitoring.beans.FederationInfo;
 import eu.h2020.symbiote.monitoring.constants.MonitoringConstants;
-import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
-import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
-import eu.h2020.symbiote.monitoring.db.MetricsRepository;
-import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
-import eu.h2020.symbiote.monitoring.db.ResourceMetricsRepository;
-
+import eu.h2020.symbiote.monitoring.db.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,25 +19,14 @@ import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import javax.annotation.PostConstruct;
 
 /**
  * Manage the REST operations from Platform using MongoDB
@@ -255,7 +238,7 @@ public class PlatformMonitoringRestService {
     List<String> devices = null;
     if (type != null) {
       devices = federationInfo.getResources().entrySet().stream()
-                    .filter(entry -> type.equals(entry.getValue().getValue()))
+                    .filter(entry -> type.equals(entry.getValue().getType()))
                     .map(entry -> entry.getKey()).collect(Collectors.toList());
     } else {
       devices = federationInfo.getResources().keySet().stream().collect(Collectors.toList());
@@ -266,7 +249,8 @@ public class PlatformMonitoringRestService {
     
     devices.forEach(device -> {
       
-      Instant share = Instant.ofEpochMilli(federationInfo.getResources().get(device).getDate().getTime());
+      Instant share = Instant.ofEpochMilli(federationInfo.getResources().get(device).getSharingInformation()
+              .getSharingDate().getTime());
       
       if (!MonitoringConstants.ALL_QUALIFIER.equals(duration)) {
         int days = Integer.valueOf(duration);

@@ -35,25 +35,35 @@ public class MonitoringApplication {
   public DirectExchange appExchange() {
     return new DirectExchange(MonitoringConstants.EXCHANGE_NAME_RH, true, false);
   }
-  
+
+  @Bean
+  public DirectExchange rapExchange() {
+    return new DirectExchange(MonitoringConstants.EXCHANGE_NAME_RAP, true, false);
+  }
+
   @Bean
   public Queue registrationQueue() {
-    return new Queue(MonitoringConstants.MONITORING_REGISTRATION_QUEUE_NAME,true, true, true);
+    return new Queue(MonitoringConstants.MONITORING_REGISTRATION_QUEUE_NAME,true, false, true);
   }
   
   @Bean
   public Queue unegistrationQueue() {
-    return new Queue(MonitoringConstants.MONITORING_UNREGISTRATION_QUEUE_NAME,true, true, true);
+    return new Queue(MonitoringConstants.MONITORING_UNREGISTRATION_QUEUE_NAME,true, false, true);
   }
   
   @Bean
   public Queue sharingQueue() {
-    return new Queue(MonitoringConstants.MONITORING_SHARING_QUEUE_NAME,true, true, true);
+    return new Queue(MonitoringConstants.MONITORING_SHARING_QUEUE_NAME,true, false, true);
   }
   
   @Bean
   public Queue unSharingQueue() {
-    return new Queue(MonitoringConstants.MONITORING_UNSHARING_QUEUE_NAME,true, true, true);
+    return new Queue(MonitoringConstants.MONITORING_UNSHARING_QUEUE_NAME,true, false, true);
+  }
+
+  @Bean
+  public Queue rapAccessQueue() {
+    return new Queue(MonitoringConstants.MONITORING_RESOURCE_ACCESS_QUEUE_NAME,true, false, true);
   }
 
 	public static void main(String[] args) {

@@ -1,7 +1,7 @@
 package eu.h2020.symbiote.monitoring.tests;
 
 import eu.h2020.symbiote.client.MonitoringClient;
-import eu.h2020.symbiote.client.SymbioteClientFactory;
+import eu.h2020.symbiote.client.SymbioteComponentClientFactory;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
@@ -80,7 +80,7 @@ public class MetricsProcessorTests {
 
     MonitoringClient client = null;
     try {
-      client = SymbioteClientFactory.createClient(MONITORING_URL, MonitoringClient.class, null);
+      client = SymbioteComponentClientFactory.createClient(MONITORING_URL, MonitoringClient.class, null);
     } catch (SecurityHandlerException e) {
       e.printStackTrace();
     }

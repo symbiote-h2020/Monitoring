@@ -1,7 +1,5 @@
 package eu.h2020.symbiote.monitoring.beans;
 
-import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
-
 import org.springframework.data.annotation.Id;
 
 import java.util.HashMap;
@@ -12,7 +10,7 @@ public class FederationInfo {
   @Id
   private String federationId;
   
-  private Map<String, TimedValue> resources = new HashMap<>();
+  private Map<String, FederatedDeviceInfo> resources = new HashMap<>();
   
   public String getFederationId() {
     return federationId;
@@ -22,11 +20,11 @@ public class FederationInfo {
     this.federationId = federationId;
   }
   
-  public Map<String, TimedValue> getResources() {
+  public Map<String, FederatedDeviceInfo> getResources() {
     return resources;
   }
   
-  public void setResources(Map<String, TimedValue> resources) {
+  public void setResources(Map<String, FederatedDeviceInfo> resources) {
     this.resources = resources;
   }
 }

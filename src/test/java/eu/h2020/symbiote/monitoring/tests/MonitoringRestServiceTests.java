@@ -1,12 +1,13 @@
 package eu.h2020.symbiote.monitoring.tests;
 
 import eu.h2020.symbiote.client.MonitoringClient;
-import eu.h2020.symbiote.client.SymbioteClientFactory;
+import eu.h2020.symbiote.client.SymbioteComponentClientFactory;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
+import eu.h2020.symbiote.cloud.model.internal.ResourceSharingInformation;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregationOperation;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
-import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
+import eu.h2020.symbiote.monitoring.beans.FederatedDeviceInfo;
 import eu.h2020.symbiote.monitoring.beans.FederationInfo;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
@@ -18,6 +19,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.Instant;
@@ -30,14 +32,14 @@ import java.util.stream.Collectors;
 @SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
     properties = {"eureka.client.enabled=false",
         "symbIoTe.aam.integration=false",
-        "server.port=18033",
+        "server.port=18035",
         "monitoring.mongo.database=monitoring-test",
-        "symbIoTe.coreaam.url=http://localhost:8083",
+        "symbIoTe.coreaam.url=http://localhost:8085",
         "symbIoTe.crm.integration=false",
         "platform.id=TestPlatform",
-        "symbiote.crm.url=http://localhost:8083",
+        "symbiote.crm.url=http://localhost:8085",
         "symbIoTe.aam.integration=false",
-        "symbIoTe.coreaam.url=http://localhost:8083"})
+        "symbIoTe.coreaam.url=http://localhost:8085"})
 public class MonitoringRestServiceTests {
   
   public static final Integer NUM_DEVICES = 10;
@@ -50,6 +52,9 @@ public class MonitoringRestServiceTests {
   
   @Autowired
   private CloudResourceRepository cloudResourceRepository;
+
+  @Autowired
+  private MongoTemplate template;
   
   private MongoDbMonitoringBackend backend;
   private MonitoringTestUtils.GenerationResults genResults;
@@ -59,16 +64,17 @@ public class MonitoringRestServiceTests {
   
   @Before
   public void setUp() {
+
+    template.getDb().dropDatabase();
   
     backend = new MongoDbMonitoringBackend(null, "monitoring-test", "cloudMonitoringResource");
-    backend.getCollection().drop();
     
     genResults = MonitoringTestUtils.generateMetrics(
         NUM_DEVICES, NUM_TAGS, NUM_DAYS, NUM_METRICS_PER_DAY);
 
 
     try {
-      client = SymbioteClientFactory.createClient("http://localhost:18033", MonitoringClient.class, null);
+      client = SymbioteComponentClientFactory.createClient("http://localhost:18035", MonitoringClient.class, null);
     } catch (SecurityHandlerException e) {
       e.printStackTrace();
     }
@@ -163,10 +169,14 @@ public class MonitoringRestServiceTests {
       devicesType.put(resource.getInternalId(), resource.getParams().getType());
       
       if (i%2 == 0) {
-        TimedValue val = new TimedValue();
-        val.setDate(Date.from(genResults.getFirstDate().plusDays(i).toInstant()));
-        val.setValue(type);
-        info.getResources().put(resource.getInternalId(), val);
+        FederatedDeviceInfo resVal = new FederatedDeviceInfo();
+        resVal.setType(type);
+        ResourceSharingInformation resSharingInfo = new ResourceSharingInformation();
+        resSharingInfo.setSymbioteId(UUID.randomUUID().toString());
+        resSharingInfo.setSharingDate(Date.from(genResults.getFirstDate().plusDays(i).toInstant()));
+        resSharingInfo.setBartering(false);
+        resVal.setSharingInformation(resSharingInfo);
+        info.getResources().put(resource.getInternalId(), resVal);
       }
     }
     
@@ -212,7 +222,7 @@ public class MonitoringRestServiceTests {
   
   private void validateSummary(Map<String, Double> results, FederationInfo info, Date startDate, String metric) {
     for (String key : results.keySet()) {
-      Date start = info.getResources().get(key).getDate();
+      Date start = info.getResources().get(key).getSharingInformation().getSharingDate();
       if (startDate != null && startDate.after(start)) {
           start = startDate;
       }

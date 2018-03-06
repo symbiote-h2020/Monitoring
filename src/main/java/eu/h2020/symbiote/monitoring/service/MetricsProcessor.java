@@ -1,7 +1,7 @@
 package eu.h2020.symbiote.monitoring.service;
 
 import eu.h2020.symbiote.client.CRMRestService;
-import eu.h2020.symbiote.client.SymbioteClientFactory;
+import eu.h2020.symbiote.client.SymbioteComponentClientFactory;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringDevice;
 import eu.h2020.symbiote.cloud.monitoring.model.CloudMonitoringPlatform;
@@ -84,9 +84,9 @@ public class MetricsProcessor {
   @PostConstruct
   private void createClient() throws SecurityHandlerException {
 
-    SymbioteClientFactory.SecurityConfiguration securityConfiguration = (useSecurity)?new SymbioteClientFactory.SecurityConfiguration(keystorePath, keystorePassword, clientId, platformId,
+    SymbioteComponentClientFactory.SecurityConfiguration securityConfiguration = (useSecurity)?new SymbioteComponentClientFactory.SecurityConfiguration(keystorePath, keystorePassword, clientId, platformId,
             "crm", coreAAMAddress, username, password): null;
-    jsonclient = SymbioteClientFactory.createClient(crmUrl, CRMRestService.class,securityConfiguration);
+    jsonclient = SymbioteComponentClientFactory.createClient(crmUrl, CRMRestService.class,securityConfiguration);
   }
   
   @Scheduled(cron = "${symbiote.crm.publish.period}")

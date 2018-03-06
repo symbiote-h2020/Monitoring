@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class MongoBackendTest {
 
-  public static final String DATABASE = "monitoring-test";
+  public static final String DATABASE = "monitoring-backend-test";
   public static final String COLLECTION = "cloudMonitoringResource";
   
   public static final Integer NUM_DEVICES = 10;
@@ -38,7 +38,7 @@ public class MongoBackendTest {
   @Before
   public void setup() {
     
-    backend = new MongoDbMonitoringBackend(null, "metrics-test", "cloudMonitoringResource");
+    backend = new MongoDbMonitoringBackend(null, DATABASE, COLLECTION);
     backend.getCollection().drop();
   
     MonitoringTestUtils.GenerationResults result =
