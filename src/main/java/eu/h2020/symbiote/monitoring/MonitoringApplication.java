@@ -62,6 +62,11 @@ public class MonitoringApplication {
   }
 
   @Bean
+  public Queue removingQueue() {
+    return new Queue(MonitoringConstants.MONITORING_UNREGISTRATION_LOCAL_QUEUE_NAME,true, false, true);
+  }
+
+  @Bean
   public Queue rapAccessQueue() {
     return new Queue(MonitoringConstants.MONITORING_RESOURCE_ACCESS_QUEUE_NAME,true, false, true);
   }

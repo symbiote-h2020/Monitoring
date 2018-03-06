@@ -1,0 +1,155 @@
+package eu.h2020.symbiote.monitoring.tests;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import eu.h2020.symbiote.cloud.model.internal.CloudResource;
+import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
+import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
+import eu.h2020.symbiote.core.cci.accessNotificationMessages.*;
+import eu.h2020.symbiote.monitoring.constants.MonitoringConstants;
+import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
+import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
+        properties = {"eureka.client.enabled=false",
+                "symbIoTe.aam.integration=false",
+                "server.port=18036",
+                "monitoring.mongo.database=monitoring-test",
+                "symbIoTe.coreaam.url=http://localhost:8083",
+                "symbIoTe.crm.integration=false",
+                "platform.id=TestPlatform",
+                "symbiote.crm.url=http://localhost:8083",
+                "symbIoTe.aam.integration=false",
+                "symbIoTe.coreaam.url=http://localhost:8083"})
+public class RAPIntegrationTest {
+
+    private static final int NUM_RESOURCES = 100;
+    private static final int NUM_METRICS_RESOURCE = 100;
+
+    @Autowired
+    private MongoTemplate template;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    private CloudResourceRepository resourceRepo;
+
+    private MongoDbMonitoringBackend backend;
+
+    private ZonedDateTime now = LocalDateTime.now().atZone(ZoneId.of("UTC"));
+
+    @Before
+    public void setUp() throws JsonProcessingException, InterruptedException {
+        template.getDb().dropDatabase();
+
+        backend = new MongoDbMonitoringBackend(null, "monitoring-test", "cloudMonitoringResource");
+
+        List<CloudResource> toAdd = new ArrayList<>();
+
+        for (int i = 0; i < NUM_RESOURCES; i++) {
+            toAdd.add(TestUtils.createResource(Integer.toString(i)));
+        }
+
+        TestUtils.sendMessage(rabbitTemplate, MonitoringConstants.EXCHANGE_NAME_RH,
+                MonitoringConstants.RESOURCE_REGISTRATION_KEY, toAdd);
+    }
+
+    @Test
+    public void testRapIntegration() throws JsonProcessingException, InterruptedException {
+
+        NotificationMessage accessMessage = new NotificationMessage();
+
+        List<SuccessfulAccessMessageInfo> success = createAccessList(0, NUM_RESOURCES/3, (resource -> {
+            SuccessfulAccessMessageInfo result = new SuccessfulAccessMessageInfo();
+            result.setAccessType(SuccessfulAccessMessageInfo.AccessType.NORMAL.toString());
+            result.setSymbIoTeId(resource.getResource().getId());
+            return result;
+        }));
+        accessMessage.setSuccessfulAttempts(success);
+
+        List<SuccessfulPushesMessageInfo> successPush = createAccessList(NUM_RESOURCES/3, (NUM_RESOURCES/3)*2,
+                (resource -> {
+            SuccessfulPushesMessageInfo result = new SuccessfulPushesMessageInfo();
+            result.setSymbIoTeId(resource.getResource().getId());
+            return result;
+        }));
+        accessMessage.setSuccessfulPushes(successPush);
+
+        List<FailedAccessMessageInfo> failed = createAccessList((NUM_RESOURCES/3)*2, NUM_RESOURCES, (resource -> {
+            FailedAccessMessageInfo result = new FailedAccessMessageInfo();
+            result.setCode("500");
+            result.setSymbIoTeId(resource.getResource().getId());
+            return result;
+        }));
+        accessMessage.setFailedAttempts(failed);
+
+        TestUtils.sendMessage(rabbitTemplate, MonitoringConstants.EXCHANGE_NAME_RAP,
+                MonitoringConstants.RESOURCE_ACCESS_KEY, accessMessage);
+
+
+        Map<String, AggregatedMetrics> allMetrics = backend
+                .getAggregatedMetrics(null, null, null, null, null, null)
+                .stream().collect(Collectors.toMap(AggregatedMetrics::getDeviceId, metrics -> metrics));
+
+        checkAccessList(accessMessage.getSuccessfulAttempts(), allMetrics, 1.0);
+        checkAccessList(accessMessage.getSuccessfulPushes(), allMetrics, 1.0);
+        checkAccessList(accessMessage.getFailedAttempts(), allMetrics, 0.0);
+    }
+
+    private <T extends MessageInfo> void checkAccessList(List<T> accesses, Map<String, AggregatedMetrics> allMetrics,
+                                                         double expected) {
+        for (T msg : accesses) {
+            CloudResource resource = resourceRepo.findByResourceId(msg.getSymbIoTeId());
+            AggregatedMetrics metrics = allMetrics.get(resource.getInternalId());
+            for (Date date : msg.getTimestamps()) {
+                assert findValue(date, metrics.getValues()) == expected;
+            }
+        }
+    }
+
+    private Double findValue(Date date, List<TimedValue> values) {
+        Optional<TimedValue> value = values.stream().filter(val -> val.getDate().equals(date)).findFirst();
+        if (value.isPresent()) {
+            return new Double(value.get().getValue());
+        } else {
+            return null;
+        }
+    }
+
+    private <T extends MessageInfo> List<T> createAccessList(int resStart, int resEnd, Function<CloudResource, T> factory) {
+        ZonedDateTime time = now;
+        List<T> result = new ArrayList<>();
+        for (int i = resStart; i < resEnd; i++) {
+            String resId = Integer.toString(i);
+            CloudResource resource = resourceRepo.findOne(resId);
+            T access = factory.apply(resource);
+            List<Date> dates = new ArrayList<>();
+            for (int j = 0; j < NUM_METRICS_RESOURCE ; j++) {
+                dates.add(Date.from(time.toInstant()));
+                time = time.plusMinutes(1);
+            }
+            access.setTimestamps(dates);
+            result.add(access);
+        }
+        return result;
+    }
+
+
+
+}

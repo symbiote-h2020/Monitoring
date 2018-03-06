@@ -13,9 +13,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessageBuilder;
-import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +22,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -249,15 +245,7 @@ public class MonitoringRabbitTests {
     }
 
     void sendResourceMessage(String key, Object toSend) throws Exception {
-
-        MessageProperties properties = new MessageProperties();
-        properties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
-
-        Message message = MessageBuilder.withBody(mapper.writeValueAsBytes(toSend))
-                .andProperties(properties).build();
-
-        rabbitTemplate.convertAndSend(MonitoringConstants.EXCHANGE_NAME_RH, key, message);
-        TimeUnit.SECONDS.sleep(1);
+        TestUtils.sendMessage(rabbitTemplate, MonitoringConstants.EXCHANGE_NAME_RH, key, toSend);
     }
 
 }

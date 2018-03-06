@@ -86,21 +86,25 @@ public class MongoDbMonitoringBackend {
         
       });
     });
-  
-    BulkWriteOptions options = new BulkWriteOptions().bypassDocumentValidation(true).ordered(false);
-    try {
-      collection.bulkWrite(ops, options);
-    } catch (BulkWriteException e) {
-      com.mongodb.BulkWriteResult exceptionResult = e.getWriteResult();
-      for (BulkWriteError error : e.getWriteErrors()) {
-        int index = error.getIndex();
-        if (index < ops.size()) {
-          UpdateOneModel operation = ops.get(index);
-          result.removeAll(getMetricsFromOperation(operation));
+
+    if (!ops.isEmpty()) {
+      BulkWriteOptions options = new BulkWriteOptions().bypassDocumentValidation(true).ordered(false);
+      try {
+        collection.bulkWrite(ops, options);
+      } catch (BulkWriteException e) {
+        com.mongodb.BulkWriteResult exceptionResult = e.getWriteResult();
+        for (BulkWriteError error : e.getWriteErrors()) {
+          int index = error.getIndex();
+          if (index < ops.size()) {
+            UpdateOneModel operation = ops.get(index);
+            result.removeAll(getMetricsFromOperation(operation));
+          }
         }
       }
+      return result;
+    } else {
+      return new ArrayList<>();
     }
-    return result;
   }
   
   public List<DeviceMetric> getMetrics(List<String> devices, List<String> metrics,

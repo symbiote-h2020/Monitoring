@@ -1,11 +1,18 @@
 package eu.h2020.symbiote.monitoring.tests;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.h2020.symbiote.cloud.model.CloudResourceParams;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.model.cim.Resource;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class TestUtils {
   
@@ -40,6 +47,18 @@ public class TestUtils {
   
   public static CloudResource createResource(String id) {
     return createResource(id, RESOURCE_TYPE+"1");
+  }
+
+  public static <T> void sendMessage(RabbitTemplate template, String exchangeName, String exchangeKey, T payload)
+          throws JsonProcessingException, InterruptedException {
+    MessageProperties properties = new MessageProperties();
+    properties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+
+    Message message = MessageBuilder.withBody(new ObjectMapper().writeValueAsBytes(payload))
+            .andProperties(properties).build();
+
+    template.convertAndSend(exchangeName, exchangeKey, message);
+    TimeUnit.SECONDS.sleep(1);
   }
   
 }
