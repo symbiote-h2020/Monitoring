@@ -1,4 +1,4 @@
-package eu.h2020.symbiote.monitoring.tests;
+package eu.h2020.symbiote.monitoring.tests.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.AMQP;
@@ -11,6 +11,7 @@ import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.model.mim.QoSMetric;
 import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
+import eu.h2020.symbiote.monitoring.tests.utils.TestUtils;
 import eu.h2020.symbiote.util.RabbitConstants;
 import feign.Feign;
 import feign.jackson.JacksonDecoder;

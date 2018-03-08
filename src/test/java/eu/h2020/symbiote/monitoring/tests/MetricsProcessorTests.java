@@ -8,6 +8,7 @@ import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.ResourceMetricsRepository;
 import eu.h2020.symbiote.monitoring.service.MetricsProcessor;
 import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
+import eu.h2020.symbiote.monitoring.tests.utils.TestUtils;
 import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,7 +30,10 @@ import java.util.List;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(SpringRunner.class)
-@SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = "server.port=18033")
+@SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = {
+        "server.port=18033",
+        "symbiote.coreinterface.url=http://localhost:18033/coreInterface/v1/"
+})
 //@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"eureka.client.enabled=false", "spring.cloud.sleuth.enabled=false", "platform.id=helloid", "server.port=18033", "symbIoTe.core.cloud.interface.url=http://localhost:18033/testiifnosec", "security.coreAAM.url=http://localhost:18033", "security.rabbitMQ.ip=localhost", "security.enabled=false", "security.user=user", "security.password=password"})
 @Configuration
 @ComponentScan

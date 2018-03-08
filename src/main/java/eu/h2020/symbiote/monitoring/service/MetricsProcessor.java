@@ -40,7 +40,7 @@ public class MetricsProcessor {
   @Value("${platform.id}")
   private String platformId;
   
-  @Value("${symbiote.crm.url:}")
+  @Value("${symbiote.coreinterface.url}")
   private String crmUrl;
   
   @Value("${symbIoTe.aam.integration:true}")

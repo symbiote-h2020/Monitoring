@@ -14,6 +14,7 @@ import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
 import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
 import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
+import eu.h2020.symbiote.monitoring.tests.utils.TestUtils;
 import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import org.junit.Before;
 import org.junit.FixMethodOrder;

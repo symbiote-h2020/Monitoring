@@ -7,6 +7,7 @@ import eu.h2020.symbiote.monitoring.beans.FederatedDeviceInfo;
 import eu.h2020.symbiote.monitoring.beans.FederationInfo;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
+import eu.h2020.symbiote.monitoring.tests.utils.TestUtils;
 import eu.h2020.symbiote.util.RabbitConstants;
 import org.junit.Before;
 import org.junit.FixMethodOrder;

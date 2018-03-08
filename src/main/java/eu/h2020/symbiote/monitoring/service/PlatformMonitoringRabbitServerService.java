@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -267,9 +268,20 @@ public class PlatformMonitoringRabbitServerService {
 
     backend.saveMetrics(toInsert);
 
-    //TODO: Remove L2 symbioteIds
+    List<String> coreResources = coreRepository.findAll().stream().map(cloudResource ->
+            cloudResource.getResource().getId()).collect(Collectors.toList());
+
+    accessMessage.setSuccessfulAttempts(filterL2Access(coreResources, accessMessage.getSuccessfulAttempts()));
+    accessMessage.setSuccessfulPushes(filterL2Access(coreResources, accessMessage.getSuccessfulPushes()));
+    accessMessage.setFailedAttempts(filterL2Access(coreResources, accessMessage.getFailedAttempts()));
 
     cramRestService.publishAccessData(accessMessage);
+  }
+
+  private <T extends MessageInfo> List<T> filterL2Access(List<String> coreResources, List<T> attempts) {
+
+    return attempts.stream().filter(attempt -> coreResources.contains(attempt.getSymbIoTeId()))
+            .collect(Collectors.toList());
   }
 
   private <T extends MessageInfo> List<DeviceMetric>  getMetrics(List<T> inputs, boolean success) {
