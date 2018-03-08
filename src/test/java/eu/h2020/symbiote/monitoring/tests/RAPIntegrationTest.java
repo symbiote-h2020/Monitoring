@@ -5,16 +5,23 @@ import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
 import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
 import eu.h2020.symbiote.core.cci.accessNotificationMessages.*;
-import eu.h2020.symbiote.monitoring.constants.MonitoringConstants;
+import eu.h2020.symbiote.monitoring.beans.CloudMonitoringResource;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
+import eu.h2020.symbiote.util.RabbitConstants;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
@@ -24,22 +31,33 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(SpringRunner.class)
-@SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-        properties = {"eureka.client.enabled=false",
-                "symbIoTe.aam.integration=false",
-                "server.port=18036",
-                "monitoring.mongo.database=monitoring-test",
-                "symbIoTe.coreaam.url=http://localhost:8083",
-                "symbIoTe.crm.integration=false",
-                "platform.id=TestPlatform",
-                "symbiote.crm.url=http://localhost:8083",
-                "symbIoTe.aam.integration=false",
-                "symbIoTe.coreaam.url=http://localhost:8083"})
+@SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = "server.port=18036")
+//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"eureka.client.enabled=false", "spring.cloud.sleuth.enabled=false", "platform.id=helloid", "server.port=18033", "symbIoTe.core.cloud.interface.url=http://localhost:18033/testiifnosec", "security.coreAAM.url=http://localhost:18033", "security.rabbitMQ.ip=localhost", "security.enabled=false", "security.user=user", "security.password=password"})
+@Configuration
+@ComponentScan
+@TestPropertySource(
+        locations = "classpath:test.properties")
 public class RAPIntegrationTest {
 
     private static final int NUM_RESOURCES = 100;
     private static final int NUM_METRICS_RESOURCE = 100;
+
+    @Value("${" + RabbitConstants.EXCHANGE_RH_NAME_PROPERTY + "}")
+    private String rhExchangeName;
+
+    @Value("${" + RabbitConstants.EXCHANGE_RAP_NAME_PROPERTY + "}")
+    private String rapExchangeName;
+
+    @Value("${" + RabbitConstants.ROUTING_KEY_RH_REGISTER_PROPERTY + "}")
+    private String resourceRegistrationKey;
+
+    @Value("${" + RabbitConstants.ROUTING_KEY_RAP_ACCESS_PROPERTY + "}")
+    private String resourceAccessKey;
+
+    @Value("${monitoring.mongo.database}")
+    private String mongoDatabase;
 
     @Autowired
     private MongoTemplate template;
@@ -58,7 +76,8 @@ public class RAPIntegrationTest {
     public void setUp() throws JsonProcessingException, InterruptedException {
         template.getDb().dropDatabase();
 
-        backend = new MongoDbMonitoringBackend(null, "monitoring-test", "cloudMonitoringResource");
+        backend = new MongoDbMonitoringBackend(null, mongoDatabase,
+                template.getCollectionName(CloudMonitoringResource.class));
 
         List<CloudResource> toAdd = new ArrayList<>();
 
@@ -66,8 +85,7 @@ public class RAPIntegrationTest {
             toAdd.add(TestUtils.createResource(Integer.toString(i)));
         }
 
-        TestUtils.sendMessage(rabbitTemplate, MonitoringConstants.EXCHANGE_NAME_RH,
-                MonitoringConstants.RESOURCE_REGISTRATION_KEY, toAdd);
+        TestUtils.sendMessage(rabbitTemplate, rhExchangeName, resourceRegistrationKey, toAdd);
     }
 
     @Test
@@ -99,8 +117,7 @@ public class RAPIntegrationTest {
         }));
         accessMessage.setFailedAttempts(failed);
 
-        TestUtils.sendMessage(rabbitTemplate, MonitoringConstants.EXCHANGE_NAME_RAP,
-                MonitoringConstants.RESOURCE_ACCESS_KEY, accessMessage);
+        TestUtils.sendMessage(rabbitTemplate, rapExchangeName, resourceAccessKey, accessMessage);
 
 
         Map<String, AggregatedMetrics> allMetrics = backend

@@ -12,28 +12,29 @@ import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerExcep
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(SpringRunner.class)
-@SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = {"eureka.client.enabled=false",
-    "symbIoTe.aam.integration=false",
-    "server.port=18033",
-    "monitoring.mongo.database=monitoring-test",
-    "symbIoTe.coreaam.url=http://localhost:8083",
-    "symbIoTe.crm.integration=false",
-    "platform.id=TestPlatform",
-    "symbiote.crm.url=http://localhost:8083",
-    "symbIoTe.aam.integration=false",
-    "symbIoTe.coreaam.url=http://localhost:8083"})
+@SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = "server.port=18033")
+//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"eureka.client.enabled=false", "spring.cloud.sleuth.enabled=false", "platform.id=helloid", "server.port=18033", "symbIoTe.core.cloud.interface.url=http://localhost:18033/testiifnosec", "security.coreAAM.url=http://localhost:18033", "security.rabbitMQ.ip=localhost", "security.enabled=false", "security.user=user", "security.password=password"})
+@Configuration
+@ComponentScan
+@TestPropertySource(
+        locations = "classpath:test.properties")
 public class MetricsProcessorTests {
   
   private interface Benchmark<T> extends eu.h2020.symbiote.monitoring.tests.utils.Benchmark<T> {

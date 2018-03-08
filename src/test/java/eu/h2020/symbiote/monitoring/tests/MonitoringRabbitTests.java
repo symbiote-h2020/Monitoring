@@ -5,19 +5,25 @@ import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.model.internal.ResourceSharingInformation;
 import eu.h2020.symbiote.monitoring.beans.FederatedDeviceInfo;
 import eu.h2020.symbiote.monitoring.beans.FederationInfo;
-import eu.h2020.symbiote.monitoring.constants.MonitoringConstants;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
+import eu.h2020.symbiote.util.RabbitConstants;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
@@ -27,21 +33,35 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-        properties = {"eureka.client.enabled=false",
-                "symbIoTe.aam.integration=false",
-                "server.port=18034",
-                "monitoring.mongo.database=monitoring-test",
-                "symbIoTe.coreaam.url=http://localhost:8084",
-                "symbIoTe.crm.integration=false",
-                "platform.id=TestPlatform",
-                "symbiote.crm.url=http://localhost:8084",
-                "symbIoTe.aam.integration=false",
-                "symbIoTe.coreaam.url=http://localhost:8084"})
+@SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = "server.port=18034")
+//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"eureka.client.enabled=false", "spring.cloud.sleuth.enabled=false", "platform.id=helloid", "server.port=18033", "symbIoTe.core.cloud.interface.url=http://localhost:18033/testiifnosec", "security.coreAAM.url=http://localhost:18033", "security.rabbitMQ.ip=localhost", "security.enabled=false", "security.user=user", "security.password=password"})
+@Configuration
+@ComponentScan
+@TestPropertySource(
+        locations = "classpath:test.properties")
 public class MonitoringRabbitTests {
 
     private static Logger logger = LoggerFactory.getLogger(MonitoringRabbitTests.class);
+
+    @Value("${" + RabbitConstants.EXCHANGE_RH_NAME_PROPERTY + "}")
+    private String rhExchangeName;
+
+    @Value("${" + RabbitConstants.ROUTING_KEY_RH_REGISTER_PROPERTY + "}")
+    private String resourceRegistrationKey;
+
+    @Value("${" + RabbitConstants.ROUTING_KEY_RH_DELETE_PROPERTY + "}")
+    private String resourceDeleteKey;
+
+    @Value("${" + RabbitConstants.ROUTING_KEY_RH_SHARED_PROPERTY + "}")
+    private String resourceShareKey;
+
+    @Value("${" + RabbitConstants.ROUTING_KEY_RH_UNSHARED_PROPERTY + "}")
+    private String resourceUnshareKey;
+
+    @Value("${" + RabbitConstants.ROUTING_KEY_RH_DELETED_PROPERTY + "}")
+    private String resourceLocalDeleteKey;
 
     @Autowired
     private CloudResourceRepository resourceRepo;
@@ -80,7 +100,7 @@ public class MonitoringRabbitTests {
             toAdd.add(getResource(Integer.toString(i)));
         }
 
-        sendResourceMessage(MonitoringConstants.RESOURCE_REGISTRATION_KEY, toAdd);
+        sendResourceMessage(resourceRegistrationKey, toAdd);
 
         List<CloudResource> result = resourceRepo.findAll();
 
@@ -100,7 +120,7 @@ public class MonitoringRabbitTests {
             }
         }
 
-        sendResourceMessage(MonitoringConstants.RESOURCE_UNREGISTRATION_KEY, toDelete);
+        sendResourceMessage(resourceDeleteKey, toDelete);
 
         result = resourceRepo.findAll();
 
@@ -139,7 +159,7 @@ public class MonitoringRabbitTests {
             result.put(fedId, resources);
         }
 
-        sendResourceMessage(MonitoringConstants.RESOURCE_SHARING_KEY, result);
+        sendResourceMessage(resourceShareKey, result);
 
         return result;
     }
@@ -210,7 +230,7 @@ public class MonitoringRabbitTests {
             }
         }
 
-        sendResourceMessage(MonitoringConstants.RESOURCE_UNSHARING_KEY, toDelete);
+        sendResourceMessage(resourceUnshareKey, toDelete);
 
         List<FederationInfo> federations = federationInfoRepository.findAll();
 
@@ -229,7 +249,7 @@ public class MonitoringRabbitTests {
                                 null:federation.getResources().keySet().iterator().next())
                 .filter(id -> id != null).collect(Collectors.toList());
 
-        sendResourceMessage(MonitoringConstants.RESOURCE_UNREGISTRATION_LOCAL_KEY, toRemove);
+        sendResourceMessage(resourceLocalDeleteKey, toRemove);
 
         federations = federationInfoRepository.findAll();
         for (FederationInfo federation : federations) {
@@ -245,7 +265,7 @@ public class MonitoringRabbitTests {
     }
 
     void sendResourceMessage(String key, Object toSend) throws Exception {
-        TestUtils.sendMessage(rabbitTemplate, MonitoringConstants.EXCHANGE_NAME_RH, key, toSend);
+        TestUtils.sendMessage(rabbitTemplate, rhExchangeName, key, toSend);
     }
 
 }

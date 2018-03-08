@@ -1,12 +1,13 @@
 package eu.h2020.symbiote.monitoring;
 
 import eu.h2020.symbiote.monitoring.constants.MonitoringConstants;
-
+import eu.h2020.symbiote.util.RabbitConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -30,15 +31,33 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class MonitoringApplication {
   
   private static Log log = LogFactory.getLog(MonitoringApplication.class);
+
+  @Value("${" + RabbitConstants.EXCHANGE_RH_NAME_PROPERTY + "}")
+  private String rhExchangeName;
+
+  @Value("${" + RabbitConstants.EXCHANGE_RH_DURABLE_PROPERTY + "}")
+  private boolean rhDurable;
+
+  @Value("${" + RabbitConstants.EXCHANGE_RH_AUTODELETE_PROPERTY + "}")
+  private boolean rhAutoDelete;
+
+  @Value("${" + RabbitConstants.EXCHANGE_RH_NAME_PROPERTY + "}")
+  private String rapExchangeName;
+
+  @Value("${" + RabbitConstants.EXCHANGE_RH_DURABLE_PROPERTY + "}")
+  private boolean rapDurable;
+
+  @Value("${" + RabbitConstants.EXCHANGE_RH_AUTODELETE_PROPERTY + "}")
+  private boolean rapAutoDelete;
   
   @Bean
-  public DirectExchange appExchange() {
-    return new DirectExchange(MonitoringConstants.EXCHANGE_NAME_RH, true, false);
+  public DirectExchange rhExchange() {
+    return new DirectExchange(rhExchangeName, rhDurable, rhAutoDelete);
   }
 
   @Bean
   public DirectExchange rapExchange() {
-    return new DirectExchange(MonitoringConstants.EXCHANGE_NAME_RAP, true, false);
+    return new DirectExchange(rapExchangeName, rapDurable, rapAutoDelete);
   }
 
   @Bean

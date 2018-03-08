@@ -7,6 +7,7 @@ import eu.h2020.symbiote.cloud.model.internal.ResourceSharingInformation;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregationOperation;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
+import eu.h2020.symbiote.monitoring.beans.CloudMonitoringResource;
 import eu.h2020.symbiote.monitoring.beans.FederatedDeviceInfo;
 import eu.h2020.symbiote.monitoring.beans.FederationInfo;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
@@ -15,11 +16,17 @@ import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
 import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
 import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.Instant;
@@ -28,18 +35,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(SpringRunner.class)
-@SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = {"eureka.client.enabled=false",
-        "symbIoTe.aam.integration=false",
-        "server.port=18035",
-        "monitoring.mongo.database=monitoring-test",
-        "symbIoTe.coreaam.url=http://localhost:8085",
-        "symbIoTe.crm.integration=false",
-        "platform.id=TestPlatform",
-        "symbiote.crm.url=http://localhost:8085",
-        "symbIoTe.aam.integration=false",
-        "symbIoTe.coreaam.url=http://localhost:8085"})
+@SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = "server.port=18035")
+//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"eureka.client.enabled=false", "spring.cloud.sleuth.enabled=false", "platform.id=helloid", "server.port=18033", "symbIoTe.core.cloud.interface.url=http://localhost:18033/testiifnosec", "security.coreAAM.url=http://localhost:18033", "security.rabbitMQ.ip=localhost", "security.enabled=false", "security.user=user", "security.password=password"})
+@Configuration
+@ComponentScan
+@TestPropertySource(
+        locations = "classpath:test.properties")
 public class MonitoringRestServiceTests {
   
   public static final Integer NUM_DEVICES = 10;
@@ -55,6 +58,9 @@ public class MonitoringRestServiceTests {
 
   @Autowired
   private MongoTemplate template;
+
+  @Value("${monitoring.mongo.database}")
+  private String mongoDatabase;
   
   private MongoDbMonitoringBackend backend;
   private MonitoringTestUtils.GenerationResults genResults;
@@ -66,8 +72,9 @@ public class MonitoringRestServiceTests {
   public void setUp() {
 
     template.getDb().dropDatabase();
-  
-    backend = new MongoDbMonitoringBackend(null, "monitoring-test", "cloudMonitoringResource");
+
+    backend = new MongoDbMonitoringBackend(null, mongoDatabase,
+            template.getCollectionName(CloudMonitoringResource.class));
     
     genResults = MonitoringTestUtils.generateMetrics(
         NUM_DEVICES, NUM_TAGS, NUM_DAYS, NUM_METRICS_PER_DAY);
