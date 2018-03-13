@@ -1,4 +1,2 @@
 rootProject.name = 'Monitoring'
-include ':SymbIoTeLibraries'
-project(':SymbIoTeLibraries').projectDir = new File(settingsDir, '../SymbIoTeLibraries')
 
