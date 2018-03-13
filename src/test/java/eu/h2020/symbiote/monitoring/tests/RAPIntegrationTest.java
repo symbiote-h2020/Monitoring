@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -124,10 +125,15 @@ public class RAPIntegrationTest {
 
         TestUtils.sendMessage(rabbitTemplate, rapExchangeName, resourceAccessKey, accessMessage);
 
+        // A little more time to save metrics
+        TimeUnit.SECONDS.sleep(5);
 
         Map<String, AggregatedMetrics> allMetrics = backend
                 .getAggregatedMetrics(null, null, null, null, null, null)
                 .stream().collect(Collectors.toMap(AggregatedMetrics::getDeviceId, metrics -> metrics));
+
+        assert allMetrics != null;
+        assert !allMetrics.isEmpty();
 
         checkAccessList(accessMessage.getSuccessfulAttempts(), allMetrics, 1.0);
         checkAccessList(accessMessage.getSuccessfulPushes(), allMetrics, 1.0);
@@ -138,7 +144,10 @@ public class RAPIntegrationTest {
                                                          double expected) {
         for (T msg : accesses) {
             CloudResource resource = resourceRepo.findByResourceId(msg.getSymbIoTeId());
+            assert resource != null;
             AggregatedMetrics metrics = allMetrics.get(resource.getInternalId());
+            assert metrics != null;
+            assert metrics.getValues() != null;
             for (Date date : msg.getTimestamps()) {
                 assert findValue(date, metrics.getValues()) == expected;
             }
