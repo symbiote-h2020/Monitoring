@@ -2,6 +2,7 @@ language: java
 env:
   global:
   - GITHUB_REPO=symbiote-h2020/Monitoring
+  - MONGODB=3.6.0
   - secure: UBdB7gjUcpg9FqNRpP/+ozzWtGZ+J6itjIz7NJthbroq8Z368ApCCeXs5qs+gyKyFRTmlLZJqVru5XPOtPuvDyn1GoYSWPPJIWObi7/c5qoA7HBBMLvHJpOaeInGS/esYhiPCf7Jw9ipN/WOodmuzZx8GenND885uiRe0I0MKdL2SgPLjouCa7b5QwTguW2EzU+pWWzijzCGB6O2OSLBAbStcQUwVWufcFr++FiV34zfv8no+aX1feouDKMmkllBaFqbJuxUnQ7l/sOvNtoyqymuubFCEntRnYItzg+LdeEhCu0R5v9FALxl/QfQtkxY4y7fqGSx5kUEtjBOgKWvmRGWOKC7xO7pdSvejOJYlJNeKiKpVLtjml1plEHv110YnQO1JTqOO4voh26uut7sESqo8oyH7r7PRIQLVM8TnWuLXiQlIF5r4VSodz21seAx8sHqpuGliSnoHamH26ApfdFwMpS8zWGPGTlMvETqR4xn9h8h6pIMpFcmkzgBWcG/7uwixW9hcFRCcw8zlrAMsBBiiMo/Pr+xx2aZYttNhbaY0wTYTI2q/GqNpVLyGEluA33yBYwxdaP7waqhXsQOVk/iXk/7EdJ4KqC7rkWu2RY/NT4Hsa2bfZl6xW6AAj/LVU2fmpQcybsGiFXttvBjaItLp28/P5V79b1nynnmzYg=
 jdk:
 - oraclejdk8
@@ -12,7 +13,10 @@ sudo: required
 branches:
   only:
   - staging
-install: true
+install:
+  - wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-${MONGODB}.tgz
+  - tar xzf mongodb-linux-x86_64-${MONGODB}.tgz
+  - ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --version
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
@@ -23,8 +27,13 @@ cache:
 before_script:
 - chmod a+x merge_script.sh
 - "./merge_script.sh"
+- mkdir ${PWD}/mongodb-linux-x86_64-${MONGODB}/data
+- ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --dbpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/data --logpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/mongodb.log --fork
+
 script:
 - gradle build --refresh-dependencies
+after_script:
+  - pkill mongod
 after_success:
 - chmod a+x pushing_script.sh
 - "./pushing_script.sh"
