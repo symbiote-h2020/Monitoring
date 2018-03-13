@@ -29,7 +29,6 @@ before_script:
 - "./merge_script.sh"
 - mkdir ${PWD}/mongodb-linux-x86_64-${MONGODB}/data
 - ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --dbpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/data --logpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/mongodb.log --fork
-
 script:
 - gradle build --refresh-dependencies
 after_script:
