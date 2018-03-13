@@ -126,7 +126,7 @@ public class RAPIntegrationTest {
         TestUtils.sendMessage(rabbitTemplate, rapExchangeName, resourceAccessKey, accessMessage);
 
         // A little more time to save metrics
-        TimeUnit.SECONDS.sleep(5);
+        TimeUnit.SECONDS.sleep(10);
 
         Map<String, AggregatedMetrics> allMetrics = backend
                 .getAggregatedMetrics(null, null, null, null, null, null)
