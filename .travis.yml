@@ -7,7 +7,6 @@ env:
 jdk:
 - oraclejdk8
 services:
-- mongodb
 - rabbitmq
 sudo: required
 branches:
