@@ -112,7 +112,7 @@ task generateJavaDocs(type: Javadoc) {
 test {
     testLogging {
         // Uncomment the following if you need verbose output in console/Travis
-        showStandardStreams = true
+        //showStandardStreams = true
         exceptionFormat = 'full'
     }
 }

@@ -266,6 +266,8 @@ public class PlatformMonitoringRabbitServerService {
     toInsert.addAll(getMetrics(accessMessage.getSuccessfulPushes(), true));
     toInsert.addAll(getMetrics(accessMessage.getFailedAttempts(), false));
 
+    logger.info("Got " + toInsert.size() + " metrics from RAP");
+
     backend.saveMetrics(toInsert);
 
     List<String> coreResources = coreRepository.findAll().stream().map(cloudResource ->
