@@ -3,6 +3,7 @@ package eu.h2020.symbiote.monitoring.tests;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
+import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
 import eu.h2020.symbiote.core.cci.accessNotificationMessages.*;
 import eu.h2020.symbiote.monitoring.beans.CloudMonitoringResource;
@@ -10,6 +11,8 @@ import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
 import eu.h2020.symbiote.monitoring.tests.utils.TestUtils;
 import eu.h2020.symbiote.util.RabbitConstants;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -46,6 +49,8 @@ import java.util.stream.Collectors;
 @TestPropertySource(
         locations = "classpath:test.properties")
 public class RAPIntegrationTest {
+
+    private static Log logger = LogFactory.getLog(RAPIntegrationTest.class);
 
     private static final int NUM_RESOURCES = 100;
     private static final int NUM_METRICS_RESOURCE = 100;
@@ -123,7 +128,13 @@ public class RAPIntegrationTest {
         }));
         accessMessage.setFailedAttempts(failed);
 
+        logger.info("Sending " + NUM_RESOURCES * NUM_METRICS_RESOURCE +" metrics to RAP listener");
+
         TestUtils.sendMessage(rabbitTemplate, rapExchangeName, resourceAccessKey, accessMessage);
+
+        List<DeviceMetric> rawMetrics = backend.getMetrics(null, null, null, null);
+
+        logger.info("There are " + rawMetrics.size() + " metrics in MongoDB database before wait");
 
         // A little more time to save metrics
         TimeUnit.SECONDS.sleep(10);
