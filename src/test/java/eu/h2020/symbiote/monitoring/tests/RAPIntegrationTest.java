@@ -32,7 +32,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -142,7 +141,7 @@ public class RAPIntegrationTest {
         logger.info("There are " + rawMetrics.size() + " metrics in MongoDB database before wait");
 
         // A little more time to save metrics
-        TimeUnit.SECONDS.sleep(10);
+        //TimeUnit.SECONDS.sleep(10);
 
         Map<String, AggregatedMetrics> allMetrics = backend
                 .getAggregatedMetrics(null, null, null, null, null, null)
