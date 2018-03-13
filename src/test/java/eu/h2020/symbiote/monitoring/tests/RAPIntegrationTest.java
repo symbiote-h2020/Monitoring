@@ -97,6 +97,7 @@ public class RAPIntegrationTest {
         }
 
         TestUtils.sendMessage(rabbitTemplate, rhExchangeName, resourceRegistrationKey, toAdd);
+
     }
 
     @Test
@@ -128,7 +129,11 @@ public class RAPIntegrationTest {
         }));
         accessMessage.setFailedAttempts(failed);
 
-        logger.info("Sending " + NUM_RESOURCES * NUM_METRICS_RESOURCE +" metrics to RAP listener");
+        int numMetrics = getMetricsNumber(accessMessage.getSuccessfulAttempts()) +
+                getMetricsNumber(accessMessage.getSuccessfulPushes()) +
+                getMetricsNumber(accessMessage.getFailedAttempts());
+
+        logger.info("Sending " + numMetrics +" metrics to RAP listener");
 
         TestUtils.sendMessage(rabbitTemplate, rapExchangeName, resourceAccessKey, accessMessage);
 
@@ -149,6 +154,14 @@ public class RAPIntegrationTest {
         checkAccessList(accessMessage.getSuccessfulAttempts(), allMetrics, 1.0);
         checkAccessList(accessMessage.getSuccessfulPushes(), allMetrics, 1.0);
         checkAccessList(accessMessage.getFailedAttempts(), allMetrics, 0.0);
+    }
+
+    private <T extends MessageInfo> int getMetricsNumber(List<T> successfulAttempts) {
+        int num = 0;
+        for (T attempt : successfulAttempts) {
+            num += attempt.getTimestamps().size();
+        }
+        return num;
     }
 
     private <T extends MessageInfo> void checkAccessList(List<T> accesses, Map<String, AggregatedMetrics> allMetrics,

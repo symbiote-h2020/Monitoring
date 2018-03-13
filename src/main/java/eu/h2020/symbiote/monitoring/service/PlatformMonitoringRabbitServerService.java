@@ -141,6 +141,11 @@ public class PlatformMonitoringRabbitServerService {
   public void resourceRegistration(@Payload Message message) {
     List<CloudResource> resources = toList(message, new TypeReference<List<CloudResource>>() {});
     coreRepository.save(resources);
+    for (CloudResource resource : resources) {
+      if (resource.getResource() != null) {
+        idMapping.put(resource.getResource().getId(), resource.getInternalId());
+      }
+    }
   }
   
   @RabbitListener(bindings = @QueueBinding(
@@ -153,7 +158,13 @@ public class PlatformMonitoringRabbitServerService {
   public void resourceUnregistration(@Payload Message message) {
     List<String> resources = toList(message, new TypeReference<List<String>>() {});
     for (String resourceId : resources) {
-      coreRepository.delete(resourceId);
+      CloudResource res = coreRepository.findOne(resourceId);
+      if (res != null) {
+        if (res.getResource() != null) {
+          idMapping.remove(res.getResource().getId());
+        }
+        coreRepository.delete(res);
+      }
     }
   }
   
@@ -266,7 +277,7 @@ public class PlatformMonitoringRabbitServerService {
     toInsert.addAll(getMetrics(accessMessage.getSuccessfulPushes(), true));
     toInsert.addAll(getMetrics(accessMessage.getFailedAttempts(), false));
 
-    logger.info("Got " + toInsert.size() + " metrics from RAP");
+    logger.debug("Got " + toInsert.size() + " metrics from RAP");
 
     backend.saveMetrics(toInsert);
 
