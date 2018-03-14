@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -19,10 +20,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 /**
  * Monitor Application main class 
  * Created by mateuszl on 22.09.2016.
- * @author: David Rojo, Fernando Campos
- * @version: 19/04/2017
+ * @author: David Rojo, Fernando Campos, Jose Antonio Sanchez
+ * @version: 14/03/2018
  */
-//@EnableDiscoveryClient    //when Eureka available
+@EnableDiscoveryClient    //when Eureka available
 
 @SpringBootApplication
 @EnableScheduling
