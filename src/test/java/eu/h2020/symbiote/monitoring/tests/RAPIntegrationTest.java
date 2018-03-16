@@ -92,7 +92,7 @@ public class RAPIntegrationTest {
         List<CloudResource> toAdd = new ArrayList<>();
 
         for (int i = 0; i < NUM_RESOURCES; i++) {
-            toAdd.add(TestUtils.createResource(Integer.toString(i)));
+            toAdd.add(TestUtils.createResource(Integer.toString(i), false));
         }
 
         TestUtils.sendMessage(rabbitTemplate, rhExchangeName, resourceRegistrationKey, toAdd);

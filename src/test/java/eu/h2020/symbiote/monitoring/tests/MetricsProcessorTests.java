@@ -74,7 +74,7 @@ public class MetricsProcessorTests {
     List<CloudResource> resources = new ArrayList<>();
     
     for (int i = 0; i < NUM_DEVICES; i++) {
-      resources.add(TestUtils.createResource(MonitoringTestUtils.DEVICE_PF+i));
+      resources.add(TestUtils.createResource(MonitoringTestUtils.DEVICE_PF+i, false));
     }
     
     resourceRepository.save(resources);

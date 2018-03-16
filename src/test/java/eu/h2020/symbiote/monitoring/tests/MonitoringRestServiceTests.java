@@ -7,6 +7,8 @@ import eu.h2020.symbiote.cloud.model.internal.ResourceSharingInformation;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregatedMetrics;
 import eu.h2020.symbiote.cloud.monitoring.model.AggregationOperation;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
+import eu.h2020.symbiote.model.cim.Actuator;
+import eu.h2020.symbiote.model.cim.Sensor;
 import eu.h2020.symbiote.monitoring.beans.CloudMonitoringResource;
 import eu.h2020.symbiote.monitoring.beans.FederatedDeviceInfo;
 import eu.h2020.symbiote.monitoring.beans.FederationInfo;
@@ -71,6 +73,9 @@ public class MonitoringRestServiceTests {
   private MonitoringClient client;
   
   private DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+
+  public static final String SENSOR_TYPE = Sensor.class.getSimpleName();
+  public static final String ACTUATOR_TYPE = Actuator.class.getSimpleName();
   
   @Before
   public void setUp() {
@@ -171,23 +176,23 @@ public class MonitoringRestServiceTests {
   
     FederationInfo info = new FederationInfo();
     info.setFederationId("fed");
-    Map<String, String> devicesType = new HashMap<>();
-    
+
+    boolean actuator = false;
     for (int i=0; i < NUM_DEVICES; i++) {
-      String type = TestUtils.RESOURCE_TYPE+(i%3);
-      CloudResource resource = TestUtils.createResource(MonitoringTestUtils.DEVICE_PF+i, type);
+      String type = (actuator)?ACTUATOR_TYPE:SENSOR_TYPE;
+      CloudResource resource = TestUtils.createResource(MonitoringTestUtils.DEVICE_PF+i, actuator);
       cloudResourceRepository.save(resource);
-      devicesType.put(resource.getInternalId(), resource.getParams().getType());
       
       if (i%2 == 0) {
         FederatedDeviceInfo resVal = new FederatedDeviceInfo();
+        resVal.setSymbioteId(UUID.randomUUID().toString());
         resVal.setType(type);
         ResourceSharingInformation resSharingInfo = new ResourceSharingInformation();
-        resSharingInfo.setSymbioteId(UUID.randomUUID().toString());
         resSharingInfo.setSharingDate(Date.from(genResults.getFirstDate().plusDays(i).toInstant()));
         resSharingInfo.setBartering(false);
         resVal.setSharingInformation(resSharingInfo);
         info.getResources().put(resource.getInternalId(), resVal);
+        actuator = !actuator;
       }
     }
     
@@ -212,14 +217,14 @@ public class MonitoringRestServiceTests {
     assert info.getResources().keySet().containsAll(results.keySet());
     validateSummary(results, info, startDate, metric);
     
-    composed = metric +"."+TestUtils.RESOURCE_TYPE+"0.5";
+    composed = metric +"."+ Actuator.class.getSimpleName() +".5";
   
     startDate = Date.from(Instant.now().atZone(ZoneId.of("UTC")).minusDays(5).toInstant());
     results = client.getSummaryMetric("fed", composed);
     
     List<String> devices = cloudResourceRepository.findAll().stream()
-                               .filter(resource -> resource.getParams().getType()
-                                                       .equals(TestUtils.RESOURCE_TYPE+"0") &&
+                               .filter(resource -> resource.getResource().getClass().getSimpleName()
+                                                       .equals(ACTUATOR_TYPE) &&
                                                        info.getResources().keySet()
                                                            .contains(resource.getInternalId()))
                                .map(resource -> resource.getInternalId())

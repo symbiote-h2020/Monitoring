@@ -174,17 +174,16 @@ public class PlatformMonitoringRestService {
     HttpStatus status = HttpStatus.OK;
     String error = "";
     if (!StringUtils.isBlank(federationId) && !StringUtils.isBlank(inputMetric)) {
-      String metric = inputMetric.toLowerCase();
       String tag = null;
       String type = null;
       String duration = null;
       
-      String[] metricPath = metric.split("\\.");
+      String[] metricPath = inputMetric.split("\\.");
       int length = metricPath.length;
       
       switch (length) {
         case 1:
-          tag = metric;
+          tag = inputMetric;
           duration = MonitoringConstants.ALL_QUALIFIER;
           break;
         case 2:
@@ -217,7 +216,7 @@ public class PlatformMonitoringRestService {
         }
         
       } else {
-        error = "Received unknown metric " + metric;
+        error = "Received unknown metric " + inputMetric;
         status = HttpStatus.BAD_REQUEST;
       }
       

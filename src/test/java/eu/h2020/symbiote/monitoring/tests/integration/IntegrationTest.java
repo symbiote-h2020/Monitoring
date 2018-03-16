@@ -50,7 +50,7 @@ public class IntegrationTest {
       federation.setIdFederation("fed1");
       federation.setSharingDate(new Date());
       List<CloudResource> resources = new ArrayList<>();
-      resources.add(TestUtils.createResource("res1", "actuator"));
+      resources.add(TestUtils.createResource("res1", true));
       federation.setResources(resources);
       
       channel.basicPublish(rhExchange,

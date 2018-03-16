@@ -118,7 +118,7 @@ public class PlatformMonitoringRabbitServerService {
     List<FederationInfo> federations = federationRepository.findAll();
     for (FederationInfo info : federations) {
       for (Map.Entry<String,FederatedDeviceInfo> deviceInfo : info.getResources().entrySet()) {
-        idMapping.put(deviceInfo.getValue().getSharingInformation().getSymbioteId(), deviceInfo.getKey());
+        idMapping.put(deviceInfo.getValue().getSymbioteId(), deviceInfo.getKey());
       }
     }
   }
@@ -190,11 +190,13 @@ public class PlatformMonitoringRabbitServerService {
       for (CloudResource resource : resources.get(federation)) {
 
         FederatedDeviceInfo resourceInfo = new FederatedDeviceInfo();
-        resourceInfo.setType(resource.getParams().getType());
-        resourceInfo.setSharingInformation(resource.getFederationInfo().get(federation));
+        String type = resource.getResource().getClass().getSimpleName();
+        resourceInfo.setType(type);
+        resourceInfo.setSymbioteId(resource.getFederationInfo().getSymbioteId());
+        resourceInfo.setSharingInformation(resource.getFederationInfo().getSharingInformation().get(federation));
         fedInfo.getResources().put(resource.getInternalId(), resourceInfo);
 
-        idMapping.put(resourceInfo.getSharingInformation().getSymbioteId(), resource.getInternalId());
+        idMapping.put(resourceInfo.getSymbioteId(), resource.getInternalId());
       }
 
       federationRepository.save(fedInfo);
@@ -221,9 +223,11 @@ public class PlatformMonitoringRabbitServerService {
         for (CloudResource resource : fedResources) {
           FederatedDeviceInfo resInfo = fedInfo.getResources().get(resource.getInternalId());
           if (resInfo != null) {
-            idMapping.remove(resInfo.getSharingInformation().getSymbioteId());
             fedInfo.getResources().remove(resource.getInternalId());
             federationRepository.save(fedInfo);
+            if (fedInfo.getResources().isEmpty()) {
+              idMapping.remove(resInfo.getSymbioteId());
+            }
           }
         }
       }

@@ -2,9 +2,10 @@ package eu.h2020.symbiote.monitoring.tests.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.h2020.symbiote.cloud.model.CloudResourceParams;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
+import eu.h2020.symbiote.model.cim.Actuator;
 import eu.h2020.symbiote.model.cim.Resource;
+import eu.h2020.symbiote.model.cim.Sensor;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
@@ -17,18 +18,13 @@ import java.util.concurrent.TimeUnit;
 public class TestUtils {
   
   public static final String SYMBIOTE_PREFIX = "symbiote_";
-  public static final String RESOURCE_TYPE = "type";
   
-  public static CloudResource createResource(String id, String type) {
+  public static CloudResource createResource(String id, boolean actuator) {
     CloudResource resource = new CloudResource();
   
     resource.setInternalId(id);
   
-    CloudResourceParams params = new CloudResourceParams();
-    params.setType(type);
-    resource.setParams(params);
-  
-    Resource r = new Resource();
+    Resource r = (actuator)?new Actuator():new Sensor();
     r.setId(SYMBIOTE_PREFIX+id);
     r.setInterworkingServiceURL("http://tests.io/interworking/url");
     List<String> comments = new ArrayList<String>();
@@ -43,10 +39,6 @@ public class TestUtils {
   
     return resource;
   
-  }
-  
-  public static CloudResource createResource(String id) {
-    return createResource(id, RESOURCE_TYPE+"1");
   }
 
   public static <T> void sendMessage(RabbitTemplate template, String exchangeName, String exchangeKey, T payload)

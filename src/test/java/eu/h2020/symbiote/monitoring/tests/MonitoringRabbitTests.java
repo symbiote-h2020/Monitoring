@@ -2,6 +2,7 @@ package eu.h2020.symbiote.monitoring.tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
+import eu.h2020.symbiote.cloud.model.internal.FederationInfoBean;
 import eu.h2020.symbiote.cloud.model.internal.ResourceSharingInformation;
 import eu.h2020.symbiote.monitoring.beans.FederatedDeviceInfo;
 import eu.h2020.symbiote.monitoring.beans.FederationInfo;
@@ -150,14 +151,15 @@ public class MonitoringRabbitTests {
 
                 if (r % 2 == f % 2) {
                     CloudResource resource = getResource(Integer.toString(r));
+                    FederationInfoBean fedInfo = new FederationInfoBean();
+                    fedInfo.setSymbioteId(UUID.randomUUID().toString());
                     ResourceSharingInformation resFedInfo = new ResourceSharingInformation();
                     resFedInfo.setSharingDate(new Date());
                     resFedInfo.setBartering(false);
-                    resFedInfo.setSymbioteId(UUID.randomUUID().toString());
-                    resource.getFederationInfo().put(fedId, resFedInfo);
+                    fedInfo.getSharingInformation().put(fedId, resFedInfo);
+                    resource.setFederationInfo(fedInfo);
                     resources.add(resource);
                 }
-
             }
 
             result.put(fedId, resources);
@@ -196,11 +198,14 @@ public class MonitoringRabbitTests {
                 ResourceSharingInformation resFedInfo = savedResource.getSharingInformation();
                 assert resFedInfo != null;
 
-                ResourceSharingInformation valueFedInfo = value.getFederationInfo().get(federation.getFederationId());
+                FederationInfoBean createdFedInfo = value.getFederationInfo();
+                assert createdFedInfo != null;
+                assert savedResource.getSymbioteId().equals(createdFedInfo.getSymbioteId());
+
+                ResourceSharingInformation valueFedInfo = createdFedInfo.getSharingInformation().get(federation.getFederationId());
                 assert valueFedInfo != null;
 
                 assert resFedInfo.getSharingDate().equals(valueFedInfo.getSharingDate());
-                assert resFedInfo.getSymbioteId().equals(valueFedInfo.getSymbioteId());
                 assert resFedInfo.getBartering().equals(valueFedInfo.getBartering());
 
             });
@@ -227,7 +232,7 @@ public class MonitoringRabbitTests {
             for (int j = 0; j < NUM_RESOURCES; j++) {
                 if (i % 2 == j % 2) {
                     if (delete) {
-                        resources.add(TestUtils.createResource(Integer.toString(j)));
+                        resources.add(TestUtils.createResource(Integer.toString(j), false));
                     }
                     delete = !delete;
                 }
@@ -265,7 +270,7 @@ public class MonitoringRabbitTests {
 
 
     private CloudResource getResource(String id) {
-        return TestUtils.createResource(id);
+        return TestUtils.createResource(id, false);
     }
 
     void sendResourceMessage(String key, Object toSend) throws Exception {
