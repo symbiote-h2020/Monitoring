@@ -73,7 +73,7 @@ dependencies {
             4) never commit build.gradle which has project dependencies active as it will break CI builds
     */
     //compile('com.github.symbiote-h2020:SymbIoTeLibraries:develop-SNAPSHOT') { changing = true }
-    compile('com.github.symbiote-h2020:SymbIoTeLibraries:5.+') { changing = true }
+    compile('com.github.symbiote-h2020:SymbIoTeLibraries:5.12.+') { changing = true }
     //compile project(':SymbIoTeLibraries')
 
     //Security
@@ -81,6 +81,7 @@ dependencies {
     //compile('com.github.symbiote-h2020:SymbIoTeSecurity:24.+'){ changing = true }
     // sources workaround that allows to select the downloaded matching sources jar in IntelliJ Idea as it fails to do so automatically from JITPack repository.
     //compile('com.github.symbiote-h2020:SymbIoTeSecurity:24.+:sources'){ changing = true }
+    //compile project(':SymbIoTeSecurity')
     
 
     // Spring

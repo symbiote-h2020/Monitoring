@@ -9,6 +9,7 @@ import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.monitoring.MongoConfig;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.MetricsRepository;
+import eu.h2020.symbiote.monitoring.utils.SecurityHandlerManager;
 import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,30 +44,6 @@ public class MetricsProcessor {
   @Value("${symbiote.coreinterface.url}")
   private String crmUrl;
   
-  @Value("${symbIoTe.aam.integration:true}")
-  private boolean useSecurity;
-  
-  @Value("${symbIoTe.coreaam.url:}")
-  private String coreAAMAddress;
-  
-  @Value("${symbIoTe.component.keystore.password:}")
-  private String keystorePassword;
-  
-  @Value("${symbIoTe.component.keystore.path:}")
-  private String keystorePath;
-  
-  @Value("${symbIoTe.component.clientId:}")
-  private String clientId;
-  
-  @Value("${symbIoTe.localaam.url:}")
-  private String localAAMAddress;
-  
-  @Value("${symbIoTe.component.username:}")
-  private String username;
-  
-  @Value("${symbIoTe.component.password:}")
-  private String password;
-  
   @Autowired
   private CloudResourceRepository resourceRepository;
   
@@ -78,15 +55,17 @@ public class MetricsProcessor {
   
   @Autowired
   private MongoTemplate template;
+
+  @Autowired
+  private SecurityHandlerManager secHandlerManager;
   
   private CRMRestService jsonclient;
   
   @PostConstruct
   private void createClient() throws SecurityHandlerException {
 
-    SymbioteComponentClientFactory.SecurityConfiguration securityConfiguration = (useSecurity)?new SymbioteComponentClientFactory.SecurityConfiguration(keystorePath, keystorePassword, clientId, platformId,
-            "crm", coreAAMAddress, username, password): null;
-    jsonclient = SymbioteComponentClientFactory.createClient(crmUrl, CRMRestService.class,securityConfiguration);
+    jsonclient = SymbioteComponentClientFactory.createClient(crmUrl, CRMRestService.class, "crm", platformId,
+            secHandlerManager.getSecurityHandler());
   }
   
   @Scheduled(cron = "${symbiote.crm.publish.period}")

@@ -1,17 +1,13 @@
 package eu.h2020.symbiote.monitoring.utils;
 
-import eu.h2020.symbiote.monitoring.beans.CloudMonitoringResource;
-import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
+import eu.h2020.symbiote.cloud.monitoring.model.TimedValue;
+import eu.h2020.symbiote.monitoring.beans.CloudMonitoringResource;
 
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MonitoringUtils {
   

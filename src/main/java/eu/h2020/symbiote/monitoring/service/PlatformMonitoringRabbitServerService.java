@@ -15,6 +15,7 @@ import eu.h2020.symbiote.monitoring.constants.MonitoringConstants;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
 import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
+import eu.h2020.symbiote.monitoring.utils.SecurityHandlerManager;
 import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import eu.h2020.symbiote.util.RabbitConstants;
 import org.apache.commons.logging.Log;
@@ -54,33 +55,6 @@ public class PlatformMonitoringRabbitServerService {
   @Value("${platform.id}")
   private String platformId;
 
-  @Value("${symbiote.crm.url:}")
-  private String crmUrl;
-
-  @Value("${symbIoTe.aam.integration:true}")
-  private boolean useSecurity;
-
-  @Value("${symbIoTe.coreaam.url:}")
-  private String coreAAMAddress;
-
-  @Value("${symbIoTe.component.keystore.password:}")
-  private String keystorePassword;
-
-  @Value("${symbIoTe.component.keystore.path:}")
-  private String keystorePath;
-
-  @Value("${symbIoTe.component.clientId:}")
-  private String clientId;
-
-  @Value("${symbIoTe.localaam.url:}")
-  private String localAAMAddress;
-
-  @Value("${symbIoTe.component.username:}")
-  private String username;
-
-  @Value("${symbIoTe.component.password:}")
-  private String password;
-
   @Autowired
   private MongoTemplate template;
   
@@ -89,6 +63,9 @@ public class PlatformMonitoringRabbitServerService {
   
   @Autowired
   FederationInfoRepository federationRepository;
+
+  @Autowired
+  private SecurityHandlerManager secHandlerManager;
   
   private ObjectMapper mapper = new ObjectMapper();
 
@@ -103,12 +80,8 @@ public class PlatformMonitoringRabbitServerService {
     backend = new MongoDbMonitoringBackend(mongoUri, mongoDatabase,
             template.getCollectionName(CloudMonitoringResource.class));
 
-    SymbioteComponentClientFactory.SecurityConfiguration securityConfiguration = (useSecurity)?
-            new SymbioteComponentClientFactory.SecurityConfiguration(keystorePath, keystorePassword, clientId,
-                    platformId, "cram", localAAMAddress, username, password):null;
-
     cramRestService = SymbioteComponentClientFactory.createClient(coreInterfaceUrl, CRAMRestService.class,
-            securityConfiguration);
+            "cram", platformId, secHandlerManager.getSecurityHandler());
     
     List<CloudResource> coreResources = coreRepository.findAll();
     for (CloudResource resource : coreResources) {
