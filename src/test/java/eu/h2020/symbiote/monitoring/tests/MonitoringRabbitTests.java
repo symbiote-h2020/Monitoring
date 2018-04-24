@@ -30,6 +30,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -107,6 +108,8 @@ public class MonitoringRabbitTests {
 
         sendResourceMessage(resourceRegistrationKey, toAdd);
 
+        TimeUnit.SECONDS.sleep(1);
+
         List<CloudResource> result = resourceRepo.findAll();
 
         assertNotNull(result);
@@ -172,6 +175,8 @@ public class MonitoringRabbitTests {
 
     public void testFederationPartial(int resourceStart, int resourceEnd, int totalResources) throws Exception {
         Map<String, List<CloudResource>> created = addToFederations(resourceStart, resourceEnd);
+
+        TimeUnit.SECONDS.sleep(1);
 
         List<FederationInfo> federations = federationInfoRepository.findAll();
 

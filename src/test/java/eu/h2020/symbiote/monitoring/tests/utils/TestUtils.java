@@ -11,8 +11,6 @@ import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class TestUtils {
@@ -27,14 +25,6 @@ public class TestUtils {
     Resource r = (actuator)?new Actuator():new Sensor();
     r.setId(SYMBIOTE_PREFIX+id);
     r.setInterworkingServiceURL("http://tests.io/interworking/url");
-    List<String> comments = new ArrayList<String>();
-    comments.add("comment1");
-    comments.add("comment2");
-//		r.setComments(comments);
-    List<String> labels = new ArrayList<String>();
-    labels.add("label1");
-    labels.add("label2");
-//		r.setLabels(labels);
     resource.setResource(r);
   
     return resource;
