@@ -42,9 +42,9 @@ import java.util.stream.Collectors;
 @RunWith(SpringRunner.class)
 @SpringBootTest( webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = {
         "server.port=18035",
-        "symbiote.coreinterface.url=http://localhost:18035/coreInterface/v1/"
+        "symbIoTe.core.interface.url=http://localhost:18035/coreInterface/v1/"
 })
-//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"eureka.client.enabled=false", "spring.cloud.sleuth.enabled=false", "platform.id=helloid", "server.port=18033", "symbIoTe.core.cloud.interface.url=http://localhost:18033/testiifnosec", "security.coreAAM.url=http://localhost:18033", "security.rabbitMQ.ip=localhost", "security.enabled=false", "security.user=user", "security.password=password"})
+//@SpringBootTest( webEnvironment = WebEnvironment.DEFINED_PORT, properties = {"eureka.client.enabled=false", "spring.cloud.sleuth.enabled=false", "platform.id=helloid", "server.port=18033", "symbIoTe.core.cloud.interface.url=http://localhost:18033/testiifnosec", "security.coreAAM.url=http://localhost:18033", "security.rabbitMQ.ip=localhost", "security.enabled=false", "symbIoTe.component.username=user", "symbIoTe.component.password=password"})
 @Configuration
 @ComponentScan
 @TestPropertySource(

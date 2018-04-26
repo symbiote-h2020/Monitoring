@@ -15,13 +15,13 @@ public class SecurityHandlerManager {
     @Value("${platform.id}")
     private String platformId;
 
-    @Value("${symbiote.coreinterface.url}")
+    @Value("${symbIoTe.core.interface.url}")
     private String crmUrl;
 
     @Value("${symbIoTe.aam.integration:true}")
     private boolean useSecurity;
 
-    @Value("${symbIoTe.coreaam.url:}")
+    @Value("${symbIoTe.core.interface.url:}")
     private String coreAAMAddress;
 
     @Value("${symbIoTe.component.keystore.password:}")

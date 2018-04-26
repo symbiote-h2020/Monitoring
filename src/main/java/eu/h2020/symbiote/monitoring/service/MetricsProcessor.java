@@ -41,7 +41,7 @@ public class MetricsProcessor {
   @Value("${platform.id}")
   private String platformId;
   
-  @Value("${symbiote.coreinterface.url}")
+  @Value("${symbIoTe.core.cloud.interface.url}")
   private String crmUrl;
   
   @Autowired
