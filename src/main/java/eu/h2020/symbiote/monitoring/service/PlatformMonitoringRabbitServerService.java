@@ -16,6 +16,7 @@ import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.FederationInfoRepository;
 import eu.h2020.symbiote.monitoring.db.MongoDbMonitoringBackend;
 import eu.h2020.symbiote.monitoring.utils.SecurityHandlerManager;
+import eu.h2020.symbiote.security.commons.SecurityConstants;
 import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import eu.h2020.symbiote.util.RabbitConstants;
 import org.apache.commons.logging.Log;
@@ -81,7 +82,7 @@ public class PlatformMonitoringRabbitServerService {
                 template.getCollectionName(CloudMonitoringResource.class));
 
         cramRestService = SymbioteComponentClientFactory.createClient(coreInterfaceUrl, CRAMRestService.class,
-                "cram", platformId, secHandlerManager.getSecurityHandler());
+                "cram", SecurityConstants.CORE_AAM_INSTANCE_ID, secHandlerManager.getSecurityHandler());
 
         List<CloudResource> coreResources = coreRepository.findAll();
         for (CloudResource resource : coreResources) {
