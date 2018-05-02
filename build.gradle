@@ -29,9 +29,9 @@ apply plugin: 'idea'
 
 // publishing
 apply plugin: 'com.cinnober.gradle.semver-git'
+apply plugin: 'maven-publish'
 
-// XXX please change with your commits according to http://semver.org/
-project.version = '1.0.0'
+project.group = 'eu.h2020.symbiote'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -92,6 +92,8 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-data-rest')
     compile('org.springframework.boot:spring-boot-starter-web')
     compile('org.springframework.boot:spring-boot-starter-data-mongodb')
+    compile('org.springframework.retry:spring-retry')
+    compile('org.springframework.boot:spring-boot-starter-aop')
 
     compile('org.mongodb:mongodb-driver:3.6.0')
     compile('org.apache.commons:commons-lang3:3.4')
@@ -104,11 +106,52 @@ dependencies {
 
 }
 
-// code quality below
+// publication
+jar {
+    baseName = 'Monitoring'
+    version = project.version
+}
+
+bootRepackage {
+    classifier = 'run'
+}
+
+
 task generateJavaDocs(type: Javadoc) {
     source = sourceSets.main.allJava
     destinationDir = reporting.file("javadocs")
 }
+
+task javadocJar(type: Jar, dependsOn: generateJavaDocs) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = project.group
+            version = project.version
+            from components.java
+
+            artifact sourceJar {
+                classifier "sources"
+            }
+
+            // artifact javadocJar
+
+            artifact(file("$libsDir/$project.name-$project.version-${bootRepackage.classifier}.jar")) {
+                classifier "run"
+            }
+        }
+    }
+}
+
+publishToMavenLocal.dependsOn(bootRepackage)
 
 test {
     testLogging {

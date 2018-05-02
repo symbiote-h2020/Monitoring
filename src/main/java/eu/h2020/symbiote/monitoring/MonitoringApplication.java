@@ -18,7 +18,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 
 /**
- * Monitor Application main class 
+ * Monitor Application main class
  * Created by mateuszl on 22.09.2016.
  * @author: David Rojo, Fernando Campos, Jose Antonio Sanchez
  * @version: 14/03/2018
@@ -30,7 +30,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableAutoConfiguration
 @EnableRabbit
 public class MonitoringApplication {
-  
+
   private static Log log = LogFactory.getLog(MonitoringApplication.class);
 
   @Value("${" + RabbitConstants.EXCHANGE_RH_NAME_PROPERTY + "}")
@@ -50,7 +50,7 @@ public class MonitoringApplication {
 
   @Value("${" + RabbitConstants.EXCHANGE_RH_AUTODELETE_PROPERTY + "}")
   private boolean rapAutoDelete;
-  
+
   @Bean
   public DirectExchange rhExchange() {
     return new DirectExchange(rhExchangeName, rhDurable, rhAutoDelete);
@@ -65,17 +65,17 @@ public class MonitoringApplication {
   public Queue registrationQueue() {
     return new Queue(MonitoringConstants.MONITORING_REGISTRATION_QUEUE_NAME,true, false, true);
   }
-  
+
   @Bean
   public Queue unegistrationQueue() {
     return new Queue(MonitoringConstants.MONITORING_UNREGISTRATION_QUEUE_NAME,true, false, true);
   }
-  
+
   @Bean
   public Queue sharingQueue() {
     return new Queue(MonitoringConstants.MONITORING_SHARING_QUEUE_NAME,true, false, true);
   }
-  
+
   @Bean
   public Queue unSharingQueue() {
     return new Queue(MonitoringConstants.MONITORING_UNSHARING_QUEUE_NAME,true, false, true);
@@ -91,14 +91,14 @@ public class MonitoringApplication {
     return new Queue(MonitoringConstants.MONITORING_RESOURCE_ACCESS_QUEUE_NAME,true, false, true);
   }
 
-	public static void main(String[] args) {
-		
-		SpringApplication.run(MonitoringApplication.class, args);
+  public static void main(String[] args) {
+    WaitForPort.waitForServices(WaitForPort.findProperty("SPRING_BOOT_WAIT_FOR_SERVICES"));
+    SpringApplication.run(MonitoringApplication.class, args);
 
-        try {
-            // Subscribe to RabbitMQ messages
-        } catch (Exception e) {
-            log.error("Error occured during subscribing from Monitoring", e);
-        }
+    try {
+      // Subscribe to RabbitMQ messages
+    } catch (Exception e) {
+      log.error("Error occured during subscribing from Monitoring", e);
     }
+  }
 }
