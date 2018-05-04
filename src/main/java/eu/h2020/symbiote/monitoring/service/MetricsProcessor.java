@@ -10,6 +10,7 @@ import eu.h2020.symbiote.monitoring.MongoConfig;
 import eu.h2020.symbiote.monitoring.db.CloudResourceRepository;
 import eu.h2020.symbiote.monitoring.db.MetricsRepository;
 import eu.h2020.symbiote.monitoring.utils.SecurityHandlerManager;
+import eu.h2020.symbiote.security.commons.SecurityConstants;
 import eu.h2020.symbiote.security.commons.exceptions.custom.SecurityHandlerException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -64,8 +65,8 @@ public class MetricsProcessor {
   @PostConstruct
   private void createClient() throws SecurityHandlerException {
 
-    jsonclient = SymbioteComponentClientFactory.createClient(crmUrl, CRMRestService.class, "crm", platformId,
-            secHandlerManager.getSecurityHandler());
+    jsonclient = SymbioteComponentClientFactory.createClient(crmUrl, CRMRestService.class, "crm",
+            SecurityConstants.CORE_AAM_INSTANCE_ID, secHandlerManager.getSecurityHandler());
   }
   
   @Scheduled(cron = "${symbiote.crm.publish.period}")
