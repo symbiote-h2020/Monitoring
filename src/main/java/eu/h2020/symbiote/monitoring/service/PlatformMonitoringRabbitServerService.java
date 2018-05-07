@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.h2020.symbiote.client.CRAMRestService;
 import eu.h2020.symbiote.client.SymbioteComponentClientFactory;
+import eu.h2020.symbiote.cloud.model.ResourceLocalSharingMessage;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.core.cci.accessNotificationMessages.MessageInfo;
@@ -166,9 +167,7 @@ public class PlatformMonitoringRabbitServerService {
         try {
             logger.debug("resourceSharing");
 
-            Map<String, List<CloudResource>> resources = toList(message,
-                    new TypeReference<Map<String, List<CloudResource>>>() {
-                    });
+            Map<String, List<CloudResource>> resources = toObject(message, ResourceLocalSharingMessage.class).getSharingMap();
 
             for (String federation : resources.keySet()) {
                 FederationInfo fedInfo = federationRepository.findOne(federation);
@@ -209,9 +208,7 @@ public class PlatformMonitoringRabbitServerService {
         try {
             logger.debug("resourceUnsharing");
 
-            Map<String, List<CloudResource>> resources = toList(message,
-                    new TypeReference<Map<String, List<CloudResource>>>() {
-                    });
+            Map<String, List<CloudResource>> resources = toObject(message, ResourceLocalSharingMessage.class).getSharingMap();
 
             for (String federation : resources.keySet()) {
                 FederationInfo fedInfo = federationRepository.findOne(federation);

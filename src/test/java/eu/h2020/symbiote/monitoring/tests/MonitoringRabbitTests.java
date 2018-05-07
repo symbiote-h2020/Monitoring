@@ -1,6 +1,7 @@
 package eu.h2020.symbiote.monitoring.tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.h2020.symbiote.cloud.model.ResourceLocalSharingMessage;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
 import eu.h2020.symbiote.cloud.model.internal.FederationInfoBean;
 import eu.h2020.symbiote.cloud.model.internal.ResourceSharingInformation;
@@ -168,7 +169,7 @@ public class MonitoringRabbitTests {
             result.put(fedId, resources);
         }
 
-        sendResourceMessage(resourceShareKey, result);
+        sendResourceMessage(resourceShareKey, new ResourceLocalSharingMessage(result));
 
         return result;
     }
@@ -244,7 +245,7 @@ public class MonitoringRabbitTests {
             }
         }
 
-        sendResourceMessage(resourceUnshareKey, toDelete);
+        sendResourceMessage(resourceUnshareKey, new ResourceLocalSharingMessage(toDelete));
 
         List<FederationInfo> federations = federationInfoRepository.findAll();
 
