@@ -179,14 +179,25 @@ public class PlatformMonitoringRabbitServerService {
 
                 for (CloudResource resource : resources.get(federation)) {
 
-                    FederatedDeviceInfo resourceInfo = new FederatedDeviceInfo();
-                    String type = resource.getResource().getClass().getSimpleName();
-                    resourceInfo.setType(type);
-                    resourceInfo.setSymbioteId(resource.getFederationInfo().getSymbioteId());
-                    resourceInfo.setSharingInformation(resource.getFederationInfo().getSharingInformation().get(federation));
-                    fedInfo.getResources().put(resource.getInternalId(), resourceInfo);
+                    if (resource.getFederationInfo() != null
+                            && resource.getFederationInfo().getSharingInformation() != null
+                            && resource.getFederationInfo().getSharingInformation().get(federation) != null) {
 
-                    idMapping.put(resourceInfo.getSymbioteId(), resource.getInternalId());
+                        FederatedDeviceInfo resourceInfo = new FederatedDeviceInfo();
+                        String type = resource.getResource().getClass().getSimpleName();
+                        resourceInfo.setType(type);
+                        resourceInfo.setSymbioteId(
+                                resource.getFederationInfo().getSharingInformation().get(federation).getSymbioteId());
+                        resourceInfo.setSharingInformation(
+                                resource.getFederationInfo().getSharingInformation().get(federation));
+                        fedInfo.getResources().put(resource.getInternalId(), resourceInfo);
+
+                        idMapping.put(resourceInfo.getSymbioteId(), resource.getInternalId());
+
+                    } else {
+                        logger.error("Error saving L2 information of resource " + resource.getInternalId()
+                                + ": Federation " + federation +" information is missing in resource metadata");
+                    }
                 }
 
                 federationRepository.save(fedInfo);

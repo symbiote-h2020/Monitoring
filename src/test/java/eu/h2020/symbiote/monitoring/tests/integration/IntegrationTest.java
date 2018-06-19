@@ -6,8 +6,9 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import eu.h2020.symbiote.client.MonitoringClient;
-import eu.h2020.symbiote.cloud.model.FederatedResource;
 import eu.h2020.symbiote.cloud.model.internal.CloudResource;
+import eu.h2020.symbiote.cloud.model.internal.FederationInfoBean;
+import eu.h2020.symbiote.cloud.model.internal.ResourceSharingInformation;
 import eu.h2020.symbiote.cloud.monitoring.model.DeviceMetric;
 import eu.h2020.symbiote.model.mim.QoSMetric;
 import eu.h2020.symbiote.monitoring.tests.utils.MonitoringTestUtils;
@@ -18,10 +19,7 @@ import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 public class IntegrationTest {
@@ -45,13 +43,23 @@ public class IntegrationTest {
       ObjectMapper mapper = new ObjectMapper();
   
       AMQP.BasicProperties messageProperties = new AMQP.BasicProperties.Builder().contentType("application/json").build();
-  
-      FederatedResource federation = new FederatedResource();
-      federation.setIdFederation("fed1");
-      federation.setSharingDate(new Date());
+
+      Map<String, List<CloudResource>> federation = new HashMap<>();
       List<CloudResource> resources = new ArrayList<>();
-      resources.add(TestUtils.createResource("res1", true));
-      federation.setResources(resources);
+      CloudResource resource = TestUtils.createResource("res1", true);
+      FederationInfoBean fedInfo = new FederationInfoBean();
+      fedInfo.setAggregationId(UUID.randomUUID().toString());
+      Map<String, ResourceSharingInformation> sharingInfo = new HashMap<>();
+      ResourceSharingInformation fedDetails = new ResourceSharingInformation();
+      fedDetails.setSymbioteId(UUID.randomUUID().toString());
+      fedDetails.setBartering(false);
+      fedDetails.setSharingDate(new Date());
+      sharingInfo.put("fed1", fedDetails);
+      fedInfo.setSharingInformation(sharingInfo);
+      resource.setFederationInfo(fedInfo);
+      resources.add(resource);
+
+      federation.put("fed1", resources);
       
       channel.basicPublish(rhExchange,
               properties.getProperty(RabbitConstants.ROUTING_KEY_RH_SHARED_PROPERTY), messageProperties,

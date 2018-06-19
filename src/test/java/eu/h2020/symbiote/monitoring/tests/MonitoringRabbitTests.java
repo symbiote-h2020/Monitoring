@@ -156,10 +156,11 @@ public class MonitoringRabbitTests {
                 if (r % 2 == f % 2) {
                     CloudResource resource = getResource(Integer.toString(r));
                     FederationInfoBean fedInfo = new FederationInfoBean();
-                    fedInfo.setSymbioteId(UUID.randomUUID().toString());
+                    fedInfo.setAggregationId(UUID.randomUUID().toString());
                     ResourceSharingInformation resFedInfo = new ResourceSharingInformation();
                     resFedInfo.setSharingDate(new Date());
                     resFedInfo.setBartering(false);
+                    resFedInfo.setSymbioteId(UUID.randomUUID().toString());
                     fedInfo.getSharingInformation().put(fedId, resFedInfo);
                     resource.setFederationInfo(fedInfo);
                     resources.add(resource);
@@ -206,9 +207,11 @@ public class MonitoringRabbitTests {
 
                 FederationInfoBean createdFedInfo = value.getFederationInfo();
                 assert createdFedInfo != null;
-                assert savedResource.getSymbioteId().equals(createdFedInfo.getSymbioteId());
+                assert savedResource.getSymbioteId().equals(createdFedInfo.getSharingInformation()
+                        .get(federation.getFederationId()).getSymbioteId());
 
-                ResourceSharingInformation valueFedInfo = createdFedInfo.getSharingInformation().get(federation.getFederationId());
+                ResourceSharingInformation valueFedInfo = createdFedInfo.getSharingInformation()
+                        .get(federation.getFederationId());
                 assert valueFedInfo != null;
 
                 assert resFedInfo.getSharingDate().equals(valueFedInfo.getSharingDate());
