@@ -120,7 +120,7 @@ public class PlatformMonitoringRestService {
     }
   }
   
-  @RequestMapping(method = RequestMethod.GET, path = ClientConstants.METRICS_DATA, produces = "application/json", consumes = "application/json")
+  @RequestMapping(method = RequestMethod.GET, path = ClientConstants.METRICS_DATA, produces = "application/json")
   public @ResponseBody
   List<DeviceMetric> getMetrics(@RequestParam(value = "device", required = false) String device,
                                 @RequestParam(value = "metric", required = false) String metric,
@@ -139,7 +139,7 @@ public class PlatformMonitoringRestService {
     return backend.getMetrics(devices, metrics, startDate, endDate);
   }
   
-  @RequestMapping(method = RequestMethod.GET, path = ClientConstants.AGGREGATED_DATA, produces = "application/json", consumes = "application/json")
+  @RequestMapping(method = RequestMethod.GET, path = ClientConstants.AGGREGATED_DATA, produces = "application/json")
   public @ResponseBody
   List<AggregatedMetrics> getAggregatedMetrics(@RequestParam(value = "device", required = false)
                                                    List<String> devices,
@@ -168,7 +168,7 @@ public class PlatformMonitoringRestService {
     return backend.getAggregatedMetrics(devices, metrics, startDate, endDate, ops, counts);
   }
   
-  @RequestMapping(method = RequestMethod.GET, path = ClientConstants.SUMMARY_DATA, produces = "application/json", consumes = "application/json")
+  @RequestMapping(method = RequestMethod.GET, path = ClientConstants.SUMMARY_DATA, produces = "application/json")
   public ResponseEntity<?> getSummaryMetric(@RequestParam(value = "federation") String federationId,
                                                              @RequestParam(value = "metric") String inputMetric) {
     HttpStatus status = HttpStatus.OK;
