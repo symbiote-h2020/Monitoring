@@ -39,8 +39,8 @@ import java.util.stream.Collectors;
 public class PlatformMonitoringRestService {
   
   private static final Log logger = LogFactory.getLog(PlatformMonitoringRestService.class);
-  
-  @Value("${monitoring.mongo.uri:#{null}}")
+
+  @Value("${spring.data.mongodb.host:localhost}")
   private String mongoUri;
   
   @Value("${monitoring.mongo.database:symbiote-cloud-monitoring-database}")

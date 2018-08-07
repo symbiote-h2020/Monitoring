@@ -45,7 +45,7 @@ public class PlatformMonitoringRabbitServerService {
 
     private static Log logger = LogFactory.getLog(PlatformMonitoringRabbitServerService.class);
 
-    @Value("${monitoring.mongo.uri:#{null}}")
+    @Value("${spring.data.mongodb.host:localhost}")
     private String mongoUri;
 
     @Value("${monitoring.mongo.database:symbiote-cloud-monitoring-database}")
