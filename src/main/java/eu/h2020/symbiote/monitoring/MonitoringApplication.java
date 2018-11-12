@@ -1,11 +1,9 @@
 package eu.h2020.symbiote.monitoring;
 
-import eu.h2020.symbiote.monitoring.constants.MonitoringConstants;
 import eu.h2020.symbiote.util.RabbitConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -14,7 +12,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
-
 
 
 /**
@@ -59,36 +56,6 @@ public class MonitoringApplication {
   @Bean
   public DirectExchange rapExchange() {
     return new DirectExchange(rapExchangeName, rapDurable, rapAutoDelete);
-  }
-
-  @Bean
-  public Queue registrationQueue() {
-    return new Queue(MonitoringConstants.MONITORING_REGISTRATION_QUEUE_NAME,true, false, true);
-  }
-
-  @Bean
-  public Queue unegistrationQueue() {
-    return new Queue(MonitoringConstants.MONITORING_UNREGISTRATION_QUEUE_NAME,true, false, true);
-  }
-
-  @Bean
-  public Queue sharingQueue() {
-    return new Queue(MonitoringConstants.MONITORING_SHARING_QUEUE_NAME,true, false, true);
-  }
-
-  @Bean
-  public Queue unSharingQueue() {
-    return new Queue(MonitoringConstants.MONITORING_UNSHARING_QUEUE_NAME,true, false, true);
-  }
-
-  @Bean
-  public Queue removingQueue() {
-    return new Queue(MonitoringConstants.MONITORING_UNREGISTRATION_LOCAL_QUEUE_NAME,true, false, true);
-  }
-
-  @Bean
-  public Queue rapAccessQueue() {
-    return new Queue(MonitoringConstants.MONITORING_RESOURCE_ACCESS_QUEUE_NAME,true, false, true);
   }
 
   public static void main(String[] args) {

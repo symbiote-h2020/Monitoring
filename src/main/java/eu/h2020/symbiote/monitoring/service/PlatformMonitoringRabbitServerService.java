@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.Argument;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
@@ -36,7 +37,11 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -108,7 +113,9 @@ public class PlatformMonitoringRabbitServerService {
      */
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(value = MonitoringConstants.MONITORING_REGISTRATION_QUEUE_NAME, durable = "true",
-                    exclusive = "false", autoDelete = "true"),
+                    exclusive = "false", autoDelete = "true", arguments= {
+                    @Argument(name = "x-message-ttl", value="${spring.rabbitmq.template.reply-timeout}", type="java.lang.Integer")
+            }),
             exchange = @Exchange(value = "${" + RabbitConstants.EXCHANGE_RH_NAME_PROPERTY + "}",
                     type = ExchangeTypes.DIRECT, durable = "${" + RabbitConstants.EXCHANGE_RH_DURABLE_PROPERTY + "}",
                     autoDelete = "${" + RabbitConstants.EXCHANGE_RH_AUTODELETE_PROPERTY + "}"),
@@ -131,7 +138,9 @@ public class PlatformMonitoringRabbitServerService {
 
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(value = MonitoringConstants.MONITORING_UNREGISTRATION_QUEUE_NAME, durable = "true",
-                    exclusive = "false", autoDelete = "true"),
+                    exclusive = "false", autoDelete = "true", arguments= {
+                    @Argument(name = "x-message-ttl", value="${spring.rabbitmq.template.reply-timeout}", type="java.lang.Integer")
+            }),
             exchange = @Exchange(value = "${" + RabbitConstants.EXCHANGE_RH_NAME_PROPERTY + "}",
                     type = ExchangeTypes.DIRECT, durable = "${" + RabbitConstants.EXCHANGE_RH_DURABLE_PROPERTY + "}",
                     autoDelete = "${" + RabbitConstants.EXCHANGE_RH_AUTODELETE_PROPERTY + "}"),
@@ -158,7 +167,9 @@ public class PlatformMonitoringRabbitServerService {
 
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(value = MonitoringConstants.MONITORING_SHARING_QUEUE_NAME, durable = "true",
-                    exclusive = "false", autoDelete = "true"),
+                    exclusive = "false", autoDelete = "true", arguments= {
+                    @Argument(name = "x-message-ttl", value="${spring.rabbitmq.template.reply-timeout}", type="java.lang.Integer")
+            }),
             exchange = @Exchange(value = "${" + RabbitConstants.EXCHANGE_RH_NAME_PROPERTY + "}",
                     type = ExchangeTypes.DIRECT, durable = "${" + RabbitConstants.EXCHANGE_RH_DURABLE_PROPERTY + "}",
                     autoDelete = "${" + RabbitConstants.EXCHANGE_RH_AUTODELETE_PROPERTY + "}"),
@@ -209,7 +220,9 @@ public class PlatformMonitoringRabbitServerService {
 
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(value = MonitoringConstants.MONITORING_UNSHARING_QUEUE_NAME, durable = "true",
-                    exclusive = "false", autoDelete = "true"),
+                    exclusive = "false", autoDelete = "true", arguments= {
+                    @Argument(name = "x-message-ttl", value="${spring.rabbitmq.template.reply-timeout}", type="java.lang.Integer")
+            }),
             exchange = @Exchange(value = "${" + RabbitConstants.EXCHANGE_RH_NAME_PROPERTY + "}",
                     type = ExchangeTypes.DIRECT, durable = "${" + RabbitConstants.EXCHANGE_RH_DURABLE_PROPERTY + "}",
                     autoDelete = "${" + RabbitConstants.EXCHANGE_RH_AUTODELETE_PROPERTY + "}"),
@@ -245,7 +258,9 @@ public class PlatformMonitoringRabbitServerService {
 
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(value = MonitoringConstants.MONITORING_UNREGISTRATION_LOCAL_QUEUE_NAME, durable = "true",
-                    exclusive = "false", autoDelete = "true"),
+                    exclusive = "false", autoDelete = "true", arguments= {
+                    @Argument(name = "x-message-ttl", value="${spring.rabbitmq.template.reply-timeout}", type="java.lang.Integer")
+            }),
             exchange = @Exchange(value = "${" + RabbitConstants.EXCHANGE_RH_NAME_PROPERTY + "}",
                     type = ExchangeTypes.DIRECT, durable = "${" + RabbitConstants.EXCHANGE_RH_DURABLE_PROPERTY + "}",
                     autoDelete = "${" + RabbitConstants.EXCHANGE_RH_AUTODELETE_PROPERTY + "}"),
@@ -285,7 +300,9 @@ public class PlatformMonitoringRabbitServerService {
 
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(value = MonitoringConstants.MONITORING_RESOURCE_ACCESS_QUEUE_NAME, durable = "true",
-                    exclusive = "false", autoDelete = "true"),
+                    exclusive = "false", autoDelete = "true", arguments= {
+                    @Argument(name = "x-message-ttl", value="${spring.rabbitmq.template.reply-timeout}", type="java.lang.Integer")
+            }),
             exchange = @Exchange(value = "${" + RabbitConstants.EXCHANGE_RAP_NAME_PROPERTY + "}",
                     type = ExchangeTypes.DIRECT, durable = "${" + RabbitConstants.EXCHANGE_RAP_DURABLE_PROPERTY + "}",
                     autoDelete = "${" + RabbitConstants.EXCHANGE_RAP_AUTODELETE_PROPERTY + "}"),
